@@ -6,19 +6,20 @@
 
 ## Features
 
-- Show viewer counts that Kick hides.
+- Unhide viewer counts that **KICK** hides.
 - Show stream uptime without visiting the stream.
 - Remove unwanted discovery sections, including recommended channels and channels you might "like".
-- Hide gambling streams from streamers you follow.
-- Hide autoplaying home page streams to avoid noise.
+- Hide live gambling streams from followed channels.
+- Hide auto-playing front page streams to avoid bloat and noise.
 - Customizable chat settings (size, spacing, weight, fonts etc.).
+- A download manager for downloading clips directly _without_ watermark.
 
 ## Installation
 
 1. Install a userscript manager for your browser.
 2. Open [Install Kick Enhancer](https://raw.githubusercontent.com/sixem/kick-enhancer/main/dist/kick-enhancer.user.js).
-3. Install it when prompted, or save the linked file and import it manually.
-4. Open or reload [Kick](https://kick.com/).
+3. Install it when prompted, or import the code manually into your userscript manager.
+4. Open or reload [Kick](https://kick.com/) and look for the **K+** button in the top-right to get started.
 
 ## Development
 
