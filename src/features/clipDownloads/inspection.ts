@@ -63,7 +63,7 @@ export async function inspectClip(
   if (!response.ok) {
     throw new ClipDownloadError(
       'inspection-blocked',
-      'Kick blocked the clip inspection request. Try again shortly.',
+      'KICK blocked the clip inspection request. Try again shortly.',
     )
   }
 
@@ -78,7 +78,7 @@ export async function inspectClip(
   if (!clip || typeof clipUrlValue !== 'string') {
     throw new ClipDownloadError(
       'clip-unavailable',
-      'Kick returned incomplete clip information.',
+      'KICK returned incomplete clip information.',
     )
   }
 
@@ -246,7 +246,7 @@ function validateResponseClipId(
   ) {
     throw new ClipDownloadError(
       'clip-unavailable',
-      'Kick returned information for a different clip.',
+      'KICK returned information for a different clip.',
     )
   }
 }
@@ -265,7 +265,7 @@ function parseJson(bytes: Uint8Array): Record<string, unknown> {
 
   throw new ClipDownloadError(
     'clip-unavailable',
-    'Kick returned malformed clip information.',
+    'KICK returned malformed clip information.',
   )
 }
 
@@ -346,14 +346,14 @@ function toAllowedMediaUrl(value: string) {
   } catch {
     throw new ClipDownloadError(
       'unsupported-media',
-      'Kick returned an invalid clip media URL.',
+      'KICK returned an invalid clip media URL.',
     )
   }
 
   if (!isAllowedMediaUrl(url)) {
     throw new ClipDownloadError(
       'unsupported-media',
-      'Kick returned an untrusted clip media URL.',
+      'KICK returned an untrusted clip media URL.',
     )
   }
 

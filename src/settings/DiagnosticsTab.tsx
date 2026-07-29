@@ -349,7 +349,7 @@ export function DiagnosticsTab({
         >
           <TextField
             autoComplete="off"
-            label="Kick channel"
+            label="KICK channel"
             onValueChange={setChannelSlug}
             placeholder="channel-name"
             spellcheck={false}
@@ -370,7 +370,7 @@ export function DiagnosticsTab({
           columns={CHECK_COLUMNS}
           emptyContent={
             checksRunning
-              ? 'Contacting Kick…'
+              ? 'Contacting KICK…'
               : 'Run checks to test endpoints.'
           }
           getItemKey={(result) => result.endpoint}
@@ -392,7 +392,7 @@ export function DiagnosticsTab({
               Observed responses
             </h3>
             <p className="ke-diagnostics__description">
-              Passive summaries from Kick responses already used by the
+              Passive summaries from KICK responses already used by the
               page or Enhancer. No response bodies are retained.
             </p>
           </div>
@@ -453,7 +453,7 @@ export function DiagnosticsTab({
           </div>
         </div>
         <ListView
-          ariaLabel="Kick Enhancer session logs"
+          ariaLabel="KICK Enhancer session logs"
           ariaLive="polite"
           className="ke-diagnostics__log-list"
           columns={LOG_COLUMNS}

@@ -81,14 +81,14 @@ export function AboutTab({
       />
       <div className="ke-about__identity">
         <h3 className="ke-about__title" id="ke-about-title">
-          Kick Enhancer
+          KICK Enhancer
         </h3>
         <p className="ke-about__version">
           Version {packageMetadata.version}
         </p>
       </div>
       <p className="ke-about__description">
-        A userscript that makes Kick cleaner and puts useful viewing
+        A userscript that makes KICK cleaner and puts useful viewing
         information back in sight.
       </p>
       <div className="ke-about__actions">

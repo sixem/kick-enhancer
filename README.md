@@ -1,7 +1,7 @@
 <div align="center">
-  <img width="128" src="logo.png" alt="Kick Enhancer logo" />
-  <h1>Kick Enhancer</h1>
-  <p>A userscript that makes Kick cleaner and puts useful viewing information back in sight.</p>
+  <img width="128" src="logo.png" alt="KICK Enhancer logo" />
+  <h1>KICK Enhancer</h1>
+  <p>A userscript that makes KICK cleaner and puts useful viewing information back in sight.</p>
 </div>
 
 ## Features
@@ -17,9 +17,9 @@
 ## Installation
 
 1. Install a userscript manager for your browser.
-2. Open [Install Kick Enhancer](https://raw.githubusercontent.com/sixem/kick-enhancer/main/dist/kick-enhancer.user.js).
+2. Open [Install KICK Enhancer](https://raw.githubusercontent.com/sixem/kick-enhancer/main/dist/kick-enhancer.user.js).
 3. Install it when prompted, or import the code manually into your userscript manager.
-4. Open or reload [Kick](https://kick.com/) and look for the **K+** button in the top-right to get started.
+4. Open or reload [KICK](https://kick.com/) and look for the **K+** button in the top-right to get started.
 
 ## Development
 

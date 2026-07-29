@@ -17,7 +17,7 @@ export function DirectClipDownloadAction({
   onSelectClip,
 }: DirectClipDownloadActionProps) {
   const tooltipId = useId()
-  const label = 'Download source clip (Kick Enhancer)'
+  const label = 'Download source clip (KICK Enhancer)'
 
   return (
     <>

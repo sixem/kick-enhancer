@@ -44,7 +44,7 @@ export function StreamAndClipSettingsSection({
     <div className="ke-settings">
       <Toggle
         checked={settings.showHiddenViewerCounts}
-        description="Restore Kick-reported viewer counts on live channels."
+        description="Restore KICK-reported viewer counts on live channels."
         label="Show hidden viewer counts"
         onCheckedChange={(visible) => {
           void setShowHiddenViewerCounts(visible)
@@ -60,7 +60,7 @@ export function StreamAndClipSettingsSection({
       />
       <Toggle
         checked={settings.showClipDownloadButtons}
-        description="Show Kick Enhancer download actions on clip cards and clip pages."
+        description="Show KICK Enhancer download actions on clip cards and clip pages."
         label="Show clip download buttons"
         onCheckedChange={(visible) => {
           void setShowClipDownloadButtons(visible)
@@ -114,7 +114,7 @@ export function ChatSettingsSection({
         description="Adjust message text without changing usernames, timestamps, or controls."
         formatValue={(value) =>
           settings.fontWeight === null
-            ? `Kick default (${value})`
+            ? `KICK default (${value})`
             : String(value)
         }
         label="Message font weight"
@@ -130,7 +130,7 @@ export function ChatSettingsSection({
         description="Adjust chat messages, timestamps, replies, and emotes together."
         formatValue={(value) =>
           settings.fontSize === null
-            ? `Kick default (${value}px)`
+            ? `KICK default (${value}px)`
             : `${value}px`
         }
         label="Chat font size"
@@ -146,7 +146,7 @@ export function ChatSettingsSection({
         description="Adjust the vertical space inside each chat message."
         formatValue={(value) =>
           settings.messageSpacing === null
-            ? `Kick default (${value}px)`
+            ? `KICK default (${value}px)`
             : `${value}px`
         }
         label="Message spacing"
@@ -182,7 +182,7 @@ export function ChatSettingsSection({
             void resetChatAppearance()
           }}
         >
-          Use Kick defaults
+          Use KICK defaults
         </Button>
       </div>
     </div>
@@ -248,7 +248,7 @@ export function SidebarSettingsSection({
 }
 
 const CHAT_FONT_FAMILY_OPTIONS = [
-  { label: 'Kick default', value: 'default' },
+  { label: 'KICK default', value: 'default' },
   { label: 'Arial', value: 'arial' },
   { label: 'Verdana', value: 'verdana' },
   { label: 'Tahoma', value: 'tahoma' },

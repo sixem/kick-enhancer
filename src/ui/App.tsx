@@ -52,7 +52,7 @@ export function App() {
         </button>
       ) : null}
       <button
-        aria-label="Open Kick Enhancer settings"
+        aria-label="Open KICK Enhancer settings"
         class="kick-enhancer-button"
         data-kick-enhancer="top-nav-button"
         onClick={() => setSettingsOpen(true)}

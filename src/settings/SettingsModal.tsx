@@ -61,7 +61,7 @@ export function SettingsModal({
   const showImportError = () =>
     showMessage(
       'Could not import settings',
-      'Choose a valid Kick Enhancer settings JSON file and try again.',
+      'Choose a valid KICK Enhancer settings JSON file and try again.',
     )
 
   const showImportConfirmation = (
@@ -89,7 +89,7 @@ export function SettingsModal({
       confirmLabel: 'Reset settings',
       confirmTone: 'danger',
       description:
-        'This restores every Kick Enhancer setting to its default value.',
+        'This restores every KICK Enhancer setting to its default value.',
       onCancel: closeDialog,
       onConfirm: () => {
         void resetSettings()
@@ -102,12 +102,12 @@ export function SettingsModal({
   return (
     <Modal
       className="ke-workspace-modal ke-settings-modal"
-      description="Customize how Kick behaves and looks."
+      description="Customize how KICK behaves and looks."
       dismissDisabled={dialogOpen}
       footer={
         <>
           <Button
-            aria-label="Open Kick Enhancer on GitHub"
+            aria-label="Open KICK Enhancer on GitHub"
             className="ke-settings-modal__github"
             disabled={dialogOpen}
             onClick={() => {
@@ -140,7 +140,7 @@ export function SettingsModal({
       icon={icon}
       onRequestClose={onRequestClose}
       open={open}
-      title="Kick Enhancer"
+      title="KICK Enhancer"
     >
       <div className="ke-confirmation-host">
         <div
@@ -149,7 +149,7 @@ export function SettingsModal({
           inert={dialogOpen}
         >
           <Tabs
-            ariaLabel="Kick Enhancer settings"
+            ariaLabel="KICK Enhancer settings"
             onChange={setActiveTab}
             tabs={[
               {

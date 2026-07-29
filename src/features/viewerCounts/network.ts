@@ -34,7 +34,7 @@ export async function requestViewerJson(
         durationMs,
         httpStatus: response.status,
         kind: 'failed',
-        summary: `Kick returned HTTP ${response.status}.`,
+        summary: `KICK returned HTTP ${response.status}.`,
       }
     }
 
@@ -56,7 +56,7 @@ export async function requestViewerJson(
         durationMs,
         httpStatus: response.status,
         kind: 'failed',
-        summary: 'Kick returned a response that was not valid JSON.',
+        summary: 'KICK returned a response that was not valid JSON.',
       }
     }
   } catch (error) {
@@ -67,7 +67,7 @@ export async function requestViewerJson(
     return {
       durationMs: performance.now() - startedAt,
       kind: 'failed',
-      summary: 'Network request failed before Kick responded.',
+      summary: 'Network request failed before KICK responded.',
     }
   }
 }

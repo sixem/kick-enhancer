@@ -73,7 +73,7 @@ function notifyHistoryListeners() {
     try {
       listener(snapshot)
     } catch (error) {
-      console.error('[Kick Enhancer] Log history listener failed.', error)
+      console.error('[KICK Enhancer] Log history listener failed.', error)
     }
   }
 }
@@ -177,12 +177,12 @@ function write(
   const method = console[level].bind(console)
 
   if (!config.colors) {
-    method(`[Kick Enhancer] [${scope}]`, ...values)
+    method(`[KICK Enhancer] [${scope}]`, ...values)
     return
   }
 
   method(
-    '%cKick Enhancer%c %s%c',
+    '%cKICK Enhancer%c %s%c',
     BRAND_STYLE,
     `${SCOPE_STYLE}; ${LEVEL_STYLES[level]}`,
     scope,

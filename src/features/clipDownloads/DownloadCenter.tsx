@@ -322,10 +322,10 @@ function DownloadJobDetail({
                     rel="noreferrer"
                     target="_blank"
                   >
-                    {job.title ?? 'Kick clip'}
+                    {job.title ?? 'KICK clip'}
                   </a>
                 ) : (
-                  job.title ?? 'Kick clip'
+                  job.title ?? 'KICK clip'
                 )}
               </h3>
               <p className="ke-download-detail__metadata">

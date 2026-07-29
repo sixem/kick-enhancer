@@ -62,7 +62,7 @@
     }
 
     reportedUnavailable = true
-    console.warn(`[Kick Enhancer] Development build unavailable: ${reason}.`)
+    console.warn(`[KICK Enhancer] Development build unavailable: ${reason}.`)
   }
 
   function loadInitialBuild(source) {
@@ -71,7 +71,7 @@
     try {
       eval(`${source}\n//# sourceURL=kick-enhancer.dev.js`)
     } catch (error) {
-      console.error('[Kick Enhancer] Development build failed to start.', error)
+      console.error('[KICK Enhancer] Development build failed to start.', error)
     }
   }
 

@@ -154,7 +154,7 @@ export async function runViewerEndpointChecks(
       {
         endpoint: 'CHANNEL_DETAILS',
         status: 'failed',
-        summary: 'Enter a valid Kick channel name.',
+        summary: 'Enter a valid KICK channel name.',
       },
       unavailableCurrentViewers('Channel check did not run.'),
     ]
@@ -317,7 +317,7 @@ function notifyObservationListeners() {
       listener(snapshot)
     } catch (error) {
       console.error(
-        '[Kick Enhancer] Endpoint observation listener failed.',
+        '[KICK Enhancer] Endpoint observation listener failed.',
         error,
       )
     }
