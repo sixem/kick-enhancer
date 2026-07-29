@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+
 import preact from '@preact/preset-vite'
 import { defineConfig } from 'vite'
 import monkey from 'vite-plugin-monkey'
@@ -5,6 +7,10 @@ import monkey from 'vite-plugin-monkey'
 const PROJECT_URL = 'https://github.com/sixem/kick-enhancer'
 const RELEASE_BASE_URL =
   'https://raw.githubusercontent.com/sixem/kick-enhancer/main/dist'
+const USERSCRIPT_ICON = `data:image/png;base64,${readFileSync(
+  new URL('./src/assets/userscript-icon.png', import.meta.url),
+  'base64',
+)}`
 
 export default defineConfig(({ mode }) => {
   const development = mode === 'development'
@@ -23,6 +29,7 @@ export default defineConfig(({ mode }) => {
           namespace: 'kick-enhancer/userscript',
           author: 'emy',
           description: 'A lightweight, customizable enhancement layer for KICK.',
+          icon: USERSCRIPT_ICON,
           homepageURL: PROJECT_URL,
           source: PROJECT_URL,
           supportURL: `${PROJECT_URL}/issues`,
