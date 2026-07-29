@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         KICK Enhancer
 // @namespace    kick-enhancer/userscript
-// @author       emy
 // @version      0.1.0
+// @author       emy
 // @description  A lightweight, customizable enhancement layer for KICK.
 // @homepage     https://github.com/sixem/kick-enhancer#readme
 // @homepageURL  https://github.com/sixem/kick-enhancer

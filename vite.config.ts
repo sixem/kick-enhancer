@@ -19,9 +19,10 @@ export default defineConfig(({ mode }) => {
       monkey({
         entry: 'src/main.ts',
         userscript: {
-          name: 'Kick Enhancer',
+          name: 'KICK Enhancer',
           namespace: 'kick-enhancer/userscript',
-          description: 'A lightweight, customizable enhancement layer for Kick.',
+          author: 'emy',
+          description: 'A lightweight, customizable enhancement layer for KICK.',
           homepageURL: PROJECT_URL,
           source: PROJECT_URL,
           supportURL: `${PROJECT_URL}/issues`,

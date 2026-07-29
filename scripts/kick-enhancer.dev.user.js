@@ -1,8 +1,9 @@
 // ==UserScript==
-// @name         Kick Enhancer (development)
+// @name         KICK Enhancer (development)
 // @namespace    kick-enhancer/userscript
+// @author       emy
 // @version      0.1.0
-// @description  Development loader for Kick Enhancer.
+// @description  Development loader for KICK Enhancer.
 // @match        https://kick.com/*
 // @grant        GM.getValue
 // @grant        GM.setValue
