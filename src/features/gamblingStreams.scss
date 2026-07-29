@@ -1,0 +1,7 @@
+[data-testid='followed-livestreams']
+  [data-testid='livestream-results-card']:has(
+    a[href='/category/slots']
+  ),
+#sidebar-wrapper [data-kick-enhancer-gambling-stream] {
+  display: none !important;
+}

@@ -1,0 +1,193 @@
+@use 'tokens';
+
+.ke-diagnostics {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.ke-diagnostics__section {
+  min-width: 0;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.ke-diagnostics__section-heading {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ke-diagnostics__title {
+  margin: 0;
+  color: tokens.$text;
+  font-size: 0.9rem;
+  font-weight: 750;
+  line-height: 1.3;
+}
+
+.ke-diagnostics__description {
+  margin: 0.25rem 0 0;
+  color: tokens.$text-description;
+  font-size: 0.76rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.ke-diagnostics__check-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.65rem;
+}
+
+.ke-diagnostics__actions {
+  display: flex;
+  flex: none;
+  gap: 0.45rem;
+}
+
+.ke-diagnostics__check-list {
+  max-height: 8.5rem;
+
+  .ke-list-view__empty {
+    min-height: 2.125rem;
+    padding: 0.42rem 0.6rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.ke-diagnostics__observation-list {
+  height: 13rem;
+}
+
+.ke-diagnostics__log-list {
+  height: 13.25rem;
+}
+
+.ke-diagnostics__pill {
+  max-width: 100%;
+  display: inline-flex;
+  box-sizing: border-box;
+  min-width: 4.8rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.12rem 0.42rem;
+  overflow: hidden;
+  border: 1px solid tokens.$border-hover;
+  border-radius: tokens.$badge-radius;
+  color: tokens.$text-muted;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.03em;
+  line-height: 1.35;
+  text-transform: capitalize;
+
+  &[data-tone='passed'],
+  &[data-tone='observed'] {
+    border-color: rgb(83 252 24 / 0.4);
+    color: tokens.$accent;
+  }
+
+  &[data-tone='degraded'],
+  &[data-tone='unavailable'],
+  &[data-tone='warn'] {
+    border-color: rgb(245 196 81 / 0.4);
+    color: #f5c451;
+  }
+
+  &[data-tone='failed'],
+  &[data-tone='error'] {
+    border-color: rgb(255 107 107 / 0.45);
+    color: tokens.$danger;
+  }
+
+  &[data-tone='debug'],
+  &[data-tone='info'],
+  &[data-tone='warn'],
+  &[data-tone='error'] {
+    text-transform: uppercase;
+  }
+
+  &[data-tone='info'],
+  &[data-tone='scope-blue'] {
+    border-color: rgb(117 178 255 / 0.42);
+    color: #a9cfff;
+  }
+
+  &[data-tone^='scope-'] {
+    text-transform: none;
+  }
+
+  &[data-tone='scope-cyan'] {
+    border-color: rgb(95 214 225 / 0.42);
+    color: #8bdce4;
+  }
+
+  &[data-tone='scope-green'] {
+    border-color: rgb(83 252 24 / 0.36);
+    color: #8eea70;
+  }
+
+  &[data-tone='scope-amber'] {
+    border-color: rgb(245 196 81 / 0.4);
+    color: #f5c451;
+  }
+
+  &[data-tone='scope-violet'] {
+    border-color: rgb(179 142 255 / 0.42);
+    color: #c6a9ff;
+  }
+
+  &[data-tone='scope-rose'] {
+    border-color: rgb(242 128 170 / 0.42);
+    color: #f09bbb;
+  }
+}
+
+.ke-diagnostics__pill-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ke-diagnostics__details-cell {
+  align-items: flex-start;
+}
+
+.ke-diagnostics__details-cell .ke-list-view__cell-content {
+  overflow: visible;
+  line-height: 1.4;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.ke-diagnostics__log-controls {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.65rem;
+}
+
+.ke-diagnostics__log-message .ke-list-view__cell-content {
+  line-height: 1.4;
+}
+
+@media (max-width: 36rem) {
+  .ke-diagnostics__section-heading {
+    display: grid;
+  }
+
+  .ke-diagnostics__actions {
+    justify-content: flex-start;
+  }
+
+  .ke-diagnostics__check-controls,
+  .ke-diagnostics__log-controls {
+    grid-template-columns: 1fr;
+  }
+}

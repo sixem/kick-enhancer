@@ -1,0 +1,58 @@
+@use 'tokens';
+
+.ke-confirmation-host {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ke-confirmation-layer {
+  position: absolute;
+  z-index: 10;
+  inset: 0;
+  display: grid;
+  padding: 1rem;
+  place-items: center;
+  background: rgb(0 0 0 / 0.32);
+  backdrop-filter: blur(3px);
+}
+
+.ke-confirmation-dialog {
+  width: min(24rem, 100%);
+  padding: 1.1rem;
+  border: 1px solid tokens.$border-hover;
+  border-radius: tokens.$radius;
+  background: tokens.$surface-raised;
+  box-shadow: 0 1rem 3rem rgb(0 0 0 / 0.55);
+}
+
+.ke-confirmation-dialog__copy {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.ke-confirmation-dialog__title {
+  margin: 0;
+  color: tokens.$text;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.ke-confirmation-dialog__description {
+  margin: 0;
+  color: tokens.$text-description;
+  font-size: 0.825rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.ke-confirmation-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}

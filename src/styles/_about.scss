@@ -1,0 +1,49 @@
+@use 'tokens';
+
+.ke-about {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  text-align: center;
+}
+
+.ke-about__icon {
+  width: 4rem;
+  height: 4rem;
+  object-fit: contain;
+}
+
+.ke-about__identity {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.ke-about__title {
+  margin: 0;
+  color: tokens.$text;
+  font-size: 1.2rem;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+.ke-about__version {
+  margin: 0;
+  color: tokens.$text-muted;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ke-about__description {
+  margin: 0;
+  color: tokens.$text-description;
+  font-size: 0.825rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.ke-about__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.65rem;
+}

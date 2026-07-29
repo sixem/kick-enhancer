@@ -1,0 +1,321 @@
+@use 'tokens';
+
+.ke-button,
+.ke-text-field,
+.ke-select-box__input,
+.ke-track-bar {
+  box-sizing: border-box;
+  font: inherit;
+}
+
+.ke-button {
+  min-height: tokens.$control-height;
+  padding: 0 0.85rem;
+  border: 1px solid tokens.$border;
+  border-radius: tokens.$radius;
+  background: tokens.$control;
+  color: tokens.$text;
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background tokens.$transition,
+    border-color tokens.$transition,
+    color tokens.$transition;
+
+  &:hover:not(:disabled) {
+    border-color: tokens.$border-hover;
+    background: tokens.$control-hover;
+  }
+
+  &:focus-visible {
+    outline: 2px solid tokens.$border-focus;
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  &--compact {
+    min-height: 2rem;
+    padding-inline: 0.65rem;
+  }
+
+  &--primary {
+    border-color: tokens.$accent;
+    background: tokens.$accent;
+    color: tokens.$accent-text;
+
+    &:hover:not(:disabled) {
+      border-color: #7dff50;
+      background: #7dff50;
+    }
+  }
+
+  &--danger {
+    color: tokens.$danger;
+  }
+}
+
+.ke-form-field {
+  display: grid;
+  min-width: 0;
+  gap: 0.4rem;
+  color: tokens.$text;
+}
+
+.ke-form-field__label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.ke-form-field__description {
+  display: block;
+  color: tokens.$text-description;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.ke-text-field,
+.ke-select-box__input {
+  width: 100%;
+  min-height: tokens.$control-height;
+  border: 1px solid tokens.$border;
+  border-radius: tokens.$radius;
+  outline: none;
+  background: tokens.$control;
+  color: tokens.$text;
+  font-size: 0.875rem;
+  transition:
+    background tokens.$transition,
+    border-color tokens.$transition;
+
+  &:hover:not(:disabled) {
+    border-color: tokens.$border-hover;
+    background: tokens.$control-hover;
+  }
+
+  &:focus-visible {
+    border-color: tokens.$border-focus;
+    box-shadow: 0 0 0 1px tokens.$border-focus;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+}
+
+.ke-text-field {
+  padding: 0 0.72rem;
+  user-select: text;
+
+  &::placeholder {
+    color: tokens.$text-muted;
+  }
+}
+
+.ke-text-field-shell {
+  display: flex;
+  align-items: stretch;
+}
+
+.ke-text-field-shell .ke-text-field {
+  flex: 1 1 auto;
+  min-width: 0;
+  border-radius: tokens.$radius 0 0 tokens.$radius;
+}
+
+.ke-text-field__suffix {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding-inline: 0.7rem;
+  border: 1px solid tokens.$border;
+  border-left: 0;
+  border-radius: 0 tokens.$radius tokens.$radius 0;
+  background: tokens.$surface-raised;
+  color: tokens.$text-muted;
+  font-size: 0.875rem;
+}
+
+.ke-text-field-shell:focus-within .ke-text-field__suffix {
+  border-color: tokens.$border-focus;
+}
+
+.ke-select-box {
+  position: relative;
+  display: block;
+}
+
+.ke-select-box__input {
+  appearance: none;
+  padding: 0 2.2rem 0 0.72rem;
+  color-scheme: dark;
+  cursor: pointer;
+}
+
+.ke-select-box__chevron {
+  position: absolute;
+  top: 50%;
+  right: 0.85rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-right: 1.5px solid tokens.$text-muted;
+  border-bottom: 1.5px solid tokens.$text-muted;
+  pointer-events: none;
+  transform: translateY(-70%) rotate(45deg);
+}
+
+.ke-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: tokens.$text;
+  cursor: pointer;
+}
+
+.ke-toggle__copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.4rem;
+}
+
+.ke-toggle__control {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.ke-toggle__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ke-toggle__track {
+  position: relative;
+  display: block;
+  width: 2.4rem;
+  height: 1.35rem;
+  border: 1px solid tokens.$border-hover;
+  border-radius: 999px;
+  background: tokens.$control;
+  transition:
+    background tokens.$transition,
+    border-color tokens.$transition;
+}
+
+.ke-toggle__thumb {
+  position: absolute;
+  top: 0.18rem;
+  left: 0.18rem;
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  background: tokens.$text-muted;
+  transition:
+    background tokens.$transition,
+    transform tokens.$transition;
+}
+
+.ke-toggle__input:checked + .ke-toggle__track {
+  border-color: tokens.$accent;
+  background: tokens.$accent;
+}
+
+.ke-toggle__input:checked + .ke-toggle__track .ke-toggle__thumb {
+  background: tokens.$accent-text;
+  transform: translateX(1.02rem);
+}
+
+.ke-toggle__input:focus-visible + .ke-toggle__track {
+  outline: 2px solid tokens.$border-focus;
+  outline-offset: 2px;
+}
+
+.ke-toggle__input:disabled + .ke-toggle__track {
+  opacity: 0.45;
+}
+
+.ke-track-bar__heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ke-track-bar__value {
+  color: tokens.$text-muted;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ke-track-bar {
+  width: 100%;
+  height: 1.25rem;
+  margin: 0;
+  appearance: none;
+  outline: none;
+  background: transparent;
+  cursor: pointer;
+
+  &::-webkit-slider-runnable-track {
+    height: 0.28rem;
+    border-radius: 999px;
+    background: linear-gradient(
+      to right,
+      tokens.$accent 0 var(--ke-track-progress),
+      tokens.$border var(--ke-track-progress) 100%
+    );
+  }
+
+  &::-moz-range-track {
+    height: 0.28rem;
+    border-radius: 999px;
+    background: tokens.$border;
+  }
+
+  &::-moz-range-progress {
+    height: 0.28rem;
+    border-radius: 999px;
+    background: tokens.$accent;
+  }
+
+  &::-webkit-slider-thumb {
+    width: 1rem;
+    height: 1rem;
+    margin-top: -0.36rem;
+    appearance: none;
+    border: 2px solid tokens.$accent;
+    border-radius: 50%;
+    background: tokens.$surface;
+  }
+
+  &::-moz-range-thumb {
+    width: 0.8rem;
+    height: 0.8rem;
+    border: 2px solid tokens.$accent;
+    border-radius: 50%;
+    background: tokens.$surface;
+  }
+
+  &:focus-visible::-webkit-slider-thumb {
+    outline: 2px solid tokens.$border-focus;
+    outline-offset: 2px;
+  }
+
+  &:focus-visible::-moz-range-thumb {
+    outline: 2px solid tokens.$border-focus;
+    outline-offset: 2px;
+  }
+}

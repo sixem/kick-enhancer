@@ -1,0 +1,177 @@
+import { type Dispose } from '../lifecycle'
+import {
+  observeSetting,
+} from '../settings/settings'
+import styles from './gamblingStreams.scss?inline'
+import { applyStyleToggle } from './styleToggle'
+
+const STYLE_ID = 'kick-enhancer-hide-gambling-streams'
+const SIDEBAR_GAMBLING_ATTRIBUTE =
+  'data-kick-enhancer-gambling-stream'
+const SIDEBAR_FOLLOWING_SELECTOR =
+  'a[data-testid^="sidebar-following-channel-"]'
+const GAMBLING_SURFACE_SELECTOR = [
+  '[data-testid="followed-livestreams"]',
+  '#sidebar-wrapper',
+].join(', ')
+
+let gamblingStreamsHidden = false
+let featureActive = false
+let sidebarScanFrame: number | undefined
+let stopActiveFeature: Dispose | undefined
+
+function applyGamblingStreamsVisibility(hidden: boolean) {
+  applyStyleToggle(STYLE_ID, styles, hidden)
+}
+
+function getFollowedGamblingChannelPaths() {
+  const paths = new Set<string>()
+
+  for (const card of document.querySelectorAll<HTMLElement>(
+    '[data-testid="followed-livestreams"] ' +
+      '[data-testid="livestream-results-card"]' +
+      ':has(a[href="/category/slots"])',
+  )) {
+    const channelLink =
+      card.querySelector<HTMLAnchorElement>(
+        'a[data-testid="media-card-thumbnail"]',
+      )
+    const path = channelLink?.getAttribute('href')
+
+    if (path) {
+      paths.add(path)
+    }
+  }
+
+  return paths
+}
+
+function isSlotsAndCasinoRow(
+  link: HTMLAnchorElement,
+  gamblingChannelPaths: ReadonlySet<string>,
+) {
+  const path = link.getAttribute('href')
+
+  if (path && gamblingChannelPaths.has(path)) {
+    return true
+  }
+
+  return [...link.querySelectorAll('span')].some(
+    (span) => span.textContent?.trim() === 'Slots & Casino',
+  )
+}
+
+function updateSidebarRows() {
+  sidebarScanFrame = undefined
+
+  if (!gamblingStreamsHidden) {
+    for (const row of document.querySelectorAll(
+      `[${SIDEBAR_GAMBLING_ATTRIBUTE}]`,
+    )) {
+      row.removeAttribute(SIDEBAR_GAMBLING_ATTRIBUTE)
+    }
+
+    return
+  }
+
+  const gamblingChannelPaths = getFollowedGamblingChannelPaths()
+
+  for (const link of document.querySelectorAll<HTMLAnchorElement>(
+    SIDEBAR_FOLLOWING_SELECTOR,
+  )) {
+    const row = link.closest('button') ?? link
+    row.toggleAttribute(
+      SIDEBAR_GAMBLING_ATTRIBUTE,
+      isSlotsAndCasinoRow(link, gamblingChannelPaths),
+    )
+  }
+}
+
+function scheduleSidebarScan() {
+  if (!featureActive || sidebarScanFrame !== undefined) {
+    return
+  }
+
+  sidebarScanFrame = window.requestAnimationFrame(updateSidebarRows)
+}
+
+function mutationsTouchGamblingSurfaces(
+  records: readonly MutationRecord[],
+) {
+  return records.some((record) => {
+    const target =
+      record.target instanceof Element
+        ? record.target
+        : record.target.parentElement
+
+    if (target?.closest(GAMBLING_SURFACE_SELECTOR)) {
+      return true
+    }
+
+    return [
+      ...record.addedNodes,
+      ...record.removedNodes,
+    ].some(
+      (node) =>
+        node instanceof Element &&
+        (node.matches(GAMBLING_SURFACE_SELECTOR) ||
+          Boolean(node.querySelector(GAMBLING_SURFACE_SELECTOR))),
+    )
+  })
+}
+
+export function startGamblingStreamsVisibility(): Dispose {
+  stopActiveFeature?.()
+  featureActive = true
+
+  const observer = new MutationObserver((records) => {
+    if (
+      gamblingStreamsHidden &&
+      mutationsTouchGamblingSurfaces(records)
+    ) {
+      scheduleSidebarScan()
+    }
+  })
+
+  observer.observe(document.documentElement, {
+    characterData: true,
+    childList: true,
+    subtree: true,
+  })
+
+  const stopObserving = observeSetting(
+    (settings) => settings.ui.hideGamblingStreams,
+    (hidden) => {
+      gamblingStreamsHidden = hidden
+      applyGamblingStreamsVisibility(gamblingStreamsHidden)
+      scheduleSidebarScan()
+    },
+  )
+  let stopped = false
+  const stop = () => {
+    if (stopped) {
+      return
+    }
+
+    stopped = true
+    featureActive = false
+    observer.disconnect()
+    stopObserving()
+
+    if (sidebarScanFrame !== undefined) {
+      window.cancelAnimationFrame(sidebarScanFrame)
+      sidebarScanFrame = undefined
+    }
+
+    gamblingStreamsHidden = false
+    applyGamblingStreamsVisibility(false)
+    updateSidebarRows()
+
+    if (stopActiveFeature === stop) {
+      stopActiveFeature = undefined
+    }
+  }
+
+  stopActiveFeature = stop
+  return stop
+}

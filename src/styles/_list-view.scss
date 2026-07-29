@@ -1,0 +1,146 @@
+@use 'tokens';
+
+.ke-list-view {
+  --ke-list-view-scrollbar-gutter: 0.5rem;
+
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 2rem minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid tokens.$border;
+  border-radius: tokens.$radius;
+  background: tokens.$surface-raised;
+  user-select: none;
+}
+
+.ke-list-view__header-group,
+.ke-list-view__scroll {
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  padding-right: var(--ke-list-view-scrollbar-gutter);
+}
+
+.ke-list-view__scroll {
+  --ke-scroll-indicator-right: var(
+    --ke-list-view-scrollbar-gutter
+  );
+}
+
+.ke-list-view__header-group {
+  border-bottom: 1px solid tokens.$border;
+  background: tokens.$control;
+}
+
+.ke-list-view__header,
+.ke-list-view__row {
+  min-width: 0;
+  width: 100%;
+  display: grid;
+}
+
+.ke-list-view__header {
+  height: 100%;
+  color: tokens.$text-muted;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ke-list-view__header-cell,
+.ke-list-view__cell {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  padding: 0.42rem 0.6rem;
+  overflow: hidden;
+
+  &:not(:last-child) {
+    border-right: 1px solid tokens.$border;
+  }
+
+  &[data-align='center'] {
+    justify-content: center;
+    text-align: center;
+  }
+
+  &[data-align='end'] {
+    justify-content: flex-end;
+    text-align: right;
+  }
+}
+
+.ke-list-view__header-label,
+.ke-list-view__cell-content {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ke-list-view__body {
+  position: relative;
+  min-width: 0;
+  min-height: 100%;
+
+  &[data-virtualized='true'] {
+    contain: layout paint style;
+  }
+}
+
+.ke-list-view__row {
+  min-height: 2.125rem;
+  box-sizing: border-box;
+  border-bottom: 1px solid tokens.$border;
+  color: tokens.$text;
+  font-size: 0.76rem;
+
+  &[data-last-row='true'] {
+    border-bottom: 0;
+  }
+
+  &[data-virtualized='true'] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    contain: layout paint style;
+  }
+
+  &:hover {
+    background: tokens.$control-hover;
+  }
+
+  &.is-interactive {
+    cursor: pointer;
+  }
+
+  &.is-interactive:focus-visible {
+    outline: 1px solid tokens.$border-focus;
+    outline-offset: -1px;
+  }
+}
+
+.ke-list-view__empty {
+  min-height: 4rem;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  color: tokens.$text-muted;
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.ke-list-view__live-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  border: 0;
+  white-space: nowrap;
+}

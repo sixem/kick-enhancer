@@ -1,0 +1,35 @@
+{
+  "name": "kick-enhancer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A lightweight, customizable enhancement layer for Kick.",
+  "homepage": "https://github.com/sixem/kick-enhancer#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sixem/kick-enhancer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sixem/kick-enhancer/issues"
+  },
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "pnpm typecheck && vite build",
+    "preview": "vite preview",
+    "test": "node --test --experimental-transform-types tests/*.test.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "mux.js": "6.3.0",
+    "preact": "^10.29.7"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.6",
+    "happy-dom": "^20.11.1",
+    "sass-embedded": "^1.100.0",
+    "typescript": "^6.0.2",
+    "vite": "^8.1.5",
+    "vite-plugin-monkey": "^8.1.0"
+  }
+}

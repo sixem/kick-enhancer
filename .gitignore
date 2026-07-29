@@ -1,0 +1,6 @@
+node_modules/
+*.local
+/HTML/**
+/AGENTS.md
+/COMMANDS.md
+/PLAN*.md

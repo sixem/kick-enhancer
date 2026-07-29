@@ -1,0 +1,198 @@
+@use 'tokens';
+
+.ke-modal {
+  width: min(36rem, calc(100vw - 2rem));
+  max-width: none;
+  max-height: calc(100vh - 2rem);
+  margin: auto;
+  padding: 0;
+  overflow: visible;
+  border: 1px solid tokens.$border;
+  border-radius: 0.65rem;
+  outline: none;
+  background: transparent;
+  color: tokens.$text;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  box-shadow: 0 1.5rem 5rem rgb(0 0 0 / 0.65);
+  user-select: none;
+
+  &::backdrop {
+    background: rgb(0 0 0 / 0.62);
+    backdrop-filter: blur(2px);
+  }
+}
+
+.ke-modal,
+.ke-modal * {
+  box-sizing: border-box;
+}
+
+.ke-modal ::selection {
+  background: #fff;
+  color: #000;
+}
+
+.ke-modal__surface {
+  display: grid;
+  max-height: calc(100vh - 2rem);
+  overflow: hidden;
+  border-radius: inherit;
+  background: tokens.$surface;
+  animation: ke-modal-enter 150ms ease-out;
+}
+
+.ke-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.25rem 1rem;
+  border-bottom: 1px solid tokens.$border;
+}
+
+.ke-modal__heading {
+  min-width: 0;
+}
+
+.ke-modal__identity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.ke-modal__icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.ke-modal__title {
+  margin: 0;
+  color: tokens.$text;
+  font-size: 1.1rem;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+.ke-modal__description {
+  margin: 0.35rem 0 0;
+  color: tokens.$text-muted;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.ke-modal__close {
+  display: grid;
+  width: 2rem;
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0;
+  place-items: center;
+  font-size: 1.3rem;
+  font-weight: 400;
+}
+
+.ke-modal__body {
+  min-height: 0;
+  padding: 1.25rem;
+  overflow-y: auto;
+  scrollbar-color: tokens.$border-hover transparent;
+}
+
+.ke-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid tokens.$border;
+  background: tokens.$surface-raised;
+}
+
+.ke-settings {
+  display: grid;
+  gap: 1.35rem;
+}
+
+.ke-settings__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ke-workspace-modal {
+  --ke-workspace-modal-gutter: clamp(1rem, 4vw, 2rem);
+  --ke-workspace-modal-height: 52rem;
+  --ke-workspace-modal-width: 52rem;
+
+  width: min(
+    var(--ke-workspace-modal-width),
+    calc(100vw - var(--ke-workspace-modal-gutter))
+  );
+  max-height: calc(
+    100dvh - var(--ke-workspace-modal-gutter)
+  );
+}
+
+.ke-workspace-modal .ke-modal__surface {
+  height: min(
+    var(--ke-workspace-modal-height),
+    calc(100dvh - var(--ke-workspace-modal-gutter))
+  );
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.ke-workspace-modal .ke-modal__body {
+  padding: 0;
+  overflow: hidden;
+}
+
+.ke-settings-modal {
+  --ke-workspace-modal-height: 46rem;
+}
+
+.ke-settings-modal__tabs {
+  width: 100%;
+  height: 100%;
+}
+
+.ke-settings-modal__github {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-right: auto;
+
+  &:hover:not(:disabled) {
+    background: tokens.$control;
+    color: tokens.$accent;
+  }
+}
+
+.ke-settings-modal__github-icon {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: 0 0 auto;
+}
+
+@keyframes ke-modal-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.35rem) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ke-modal__surface {
+    animation: none;
+  }
+}
