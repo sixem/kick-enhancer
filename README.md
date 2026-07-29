@@ -1,7 +1,7 @@
 <div align="center">
   <img width="128" src="logo.png" alt="Kick Enhancer logo" />
   <h1>Kick Enhancer</h1>
-  <p>A userscript that makes Kick cleaner and puts useful viewing information back in sight.</p>
+  <p>A userscript that makes KICK cleaner and puts useful viewing information back in sight.</p>
 </div>
 
 ## Features
