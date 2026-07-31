@@ -61,9 +61,11 @@ let config: LogConfig = {
   level: 'info',
 }
 
+let excludedScopePatterns: readonly string[] = []
 let history: LogEntry[] = []
 const historyListeners = new Set<LogHistoryListener>()
 let historyNotifyTimer: ReturnType<typeof setTimeout> | undefined
+let includedScopePatterns: readonly string[] = []
 let nextLogEntryId = 1
 
 function notifyHistoryListeners() {
@@ -118,21 +120,45 @@ function matchesPattern(scope: string, pattern: string) {
   return scope === pattern
 }
 
-function isScopeEnabled(scope: string) {
-  const includedPatterns = config.filters.filter(
-    (pattern) => !pattern.startsWith('-'),
-  )
-  const excludedPatterns = config.filters
-    .filter((pattern) => pattern.startsWith('-'))
-    .map((pattern) => pattern.slice(1))
+function rebuildScopePatterns(filters: readonly string[]) {
+  const excluded: string[] = []
+  const included: string[] = []
 
+  for (const pattern of filters) {
+    if (pattern.startsWith('-')) {
+      excluded.push(pattern.slice(1))
+    } else {
+      included.push(pattern)
+    }
+  }
+
+  excludedScopePatterns = excluded
+  includedScopePatterns = included
+}
+
+function matchesAnyPattern(
+  scope: string,
+  patterns: readonly string[],
+) {
+  for (const pattern of patterns) {
+    if (matchesPattern(scope, pattern)) {
+      return true
+    }
+  }
+
+  return false
+}
+
+rebuildScopePatterns(config.filters)
+
+function isScopeEnabled(scope: string) {
   const included =
-    includedPatterns.length === 0 ||
-    includedPatterns.some((pattern) => matchesPattern(scope, pattern))
+    includedScopePatterns.length === 0 ||
+    matchesAnyPattern(scope, includedScopePatterns)
 
   return (
     included &&
-    !excludedPatterns.some((pattern) => matchesPattern(scope, pattern))
+    !matchesAnyPattern(scope, excludedScopePatterns)
   )
 }
 
@@ -203,12 +229,17 @@ export function createLogger(scope: string): Logger {
 
 export function configureLogging(update: Partial<LogConfig>) {
   const previousHistoryLength = history.length
+  const updatedFilters = update.filters
 
   config = {
     ...config,
     ...update,
-    filters: update.filters ? [...update.filters] : config.filters,
+    filters: updatedFilters ? [...updatedFilters] : config.filters,
     historyLimit: Math.max(0, update.historyLimit ?? config.historyLimit),
+  }
+
+  if (updatedFilters !== undefined) {
+    rebuildScopePatterns(config.filters)
   }
 
   if (history.length > config.historyLimit) {

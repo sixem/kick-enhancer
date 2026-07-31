@@ -1,5 +1,6 @@
 node_modules/
 *.local
+/dist/greasyfork/
 /HTML/**
 /AGENTS.md
 /COMMANDS.md

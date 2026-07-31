@@ -57,9 +57,13 @@ function isSlotsAndCasinoRow(
     return true
   }
 
-  return [...link.querySelectorAll('span')].some(
-    (span) => span.textContent?.trim() === 'Slots & Casino',
-  )
+  for (const span of link.querySelectorAll('span')) {
+    if (span.textContent?.trim() === 'Slots & Casino') {
+      return true
+    }
+  }
+
+  return false
 }
 
 function updateSidebarRows() {

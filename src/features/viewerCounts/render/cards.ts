@@ -152,30 +152,38 @@ function renderCardUptime(
 }
 
 function hasNativeCardCount(thumbnail: HTMLElement) {
-  return [...thumbnail.querySelectorAll<HTMLElement>('[title]')].some(
-    (element) => {
-      if (element.closest(VIEWER_COUNT_SELECTOR)) {
-        return false
-      }
+  for (const element of thumbnail.querySelectorAll<HTMLElement>(
+    '[title]',
+  )) {
+    if (element.closest(VIEWER_COUNT_SELECTOR)) {
+      continue
+    }
 
-      const title = element.getAttribute('title')
-      const parentText = element.parentElement?.textContent ?? ''
+    const title = element.getAttribute('title')
+    const parentText = element.parentElement?.textContent ?? ''
 
-      return (
-        isCompactCount(title) &&
-        /\bwatching\b/i.test(parentText)
-      )
-    },
-  )
+    if (isCompactCount(title) && /\bwatching\b/i.test(parentText)) {
+      return true
+    }
+  }
+
+  return false
 }
 
 function findCardLiveBadge(thumbnail: HTMLElement) {
-  return [...thumbnail.querySelectorAll<HTMLElement>('div, span')].find(
-    (element) =>
+  for (const element of thumbnail.querySelectorAll<HTMLElement>(
+    'div, span',
+  )) {
+    if (
       !element.closest(RENDER_ELEMENT_SELECTOR) &&
       element.childElementCount === 0 &&
-      element.textContent?.trim().toLowerCase() === 'live',
-  )
+      element.textContent?.trim().toLowerCase() === 'live'
+    ) {
+      return element
+    }
+  }
+
+  return undefined
 }
 
 function isCardHiddenByEnhancer(

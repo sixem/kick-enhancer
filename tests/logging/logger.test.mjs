@@ -8,6 +8,49 @@ import {
   subscribeLogHistory,
 } from '../../src/logging/logger.ts'
 
+test('scope filters update when logging is reconfigured', (t) => {
+  const messages = []
+  t.mock.method(console, 'info', (prefix, message) => {
+    messages.push([prefix, message])
+  })
+  configureLogging({
+    colors: false,
+    filters: ['viewer-counts*', '-viewer-counts:network'],
+    historyLimit: 0,
+    level: 'info',
+  })
+  t.after(() => {
+    clearLogHistory()
+    configureLogging({
+      colors: true,
+      filters: ['*'],
+      historyLimit: 250,
+      level: 'info',
+    })
+  })
+
+  const viewerCountsLog = createLogger('viewer-counts')
+  const networkLog = createLogger('viewer-counts:network')
+  const settingsLog = createLogger('settings')
+
+  viewerCountsLog.info('Rendered')
+  networkLog.info('Fetched')
+  settingsLog.info('Saved')
+
+  assert.deepEqual(messages, [
+    ['[KICK Enhancer] [viewer-counts]', 'Rendered'],
+  ])
+
+  configureLogging({ filters: ['settings'] })
+  viewerCountsLog.info('Rendered again')
+  settingsLog.info('Saved again')
+
+  assert.deepEqual(messages, [
+    ['[KICK Enhancer] [viewer-counts]', 'Rendered'],
+    ['[KICK Enhancer] [settings]', 'Saved again'],
+  ])
+})
+
 test('log history subscriptions batch additions with stable IDs', (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] })
   clearLogHistory()

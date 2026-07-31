@@ -17,6 +17,7 @@ import {
   cleanupViewerCountDom,
   renderViewerCounts,
   type SidebarHoverTarget,
+  type ViewerCountRenderResult,
 } from './render'
 import { SIDEBAR_LINK_SELECTOR } from './render/selectors'
 import { getChannelSlugFromHref } from './slug'
@@ -46,7 +47,7 @@ let historyPushState: History['pushState'] | undefined
 let historyReplaceState: History['replaceState'] | undefined
 let historyPushStateWrapper: History['pushState'] | undefined
 let historyReplaceStateWrapper: History['replaceState'] | undefined
-let lastLogSummary = ''
+let lastLogCounts: ViewerCountRenderResult['counts'] | undefined
 let lastUrl = window.location.href
 let observer: MutationObserver | undefined
 let renderDeadline = Number.POSITIVE_INFINITY
@@ -393,10 +394,8 @@ function runRender(reason: string) {
     result.activeChannelSlug,
   )
 
-  const summary = JSON.stringify(result.counts)
-
-  if (summary !== lastLogSummary) {
-    lastLogSummary = summary
+  if (!areRenderCountsEqual(result.counts, lastLogCounts)) {
+    lastLogCounts = result.counts
     const details = {
       reason,
       ...result.counts,
@@ -417,6 +416,22 @@ function runRender(reason: string) {
       log.debug('Surfaces updated', details)
     }
   }
+}
+
+function areRenderCountsEqual(
+  left: ViewerCountRenderResult['counts'],
+  right: ViewerCountRenderResult['counts'] | undefined,
+) {
+  return (
+    right !== undefined &&
+    left.cardUptimes === right.cardUptimes &&
+    left.cards === right.cards &&
+    left.channel === right.channel &&
+    left.sidebar === right.sidebar &&
+    left.sidebarUptimes === right.sidebarUptimes &&
+    left.tooltipUptimes === right.tooltipUptimes &&
+    left.tooltips === right.tooltips
+  )
 }
 
 function handleSidebarHover(event: Event) {

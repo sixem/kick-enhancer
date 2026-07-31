@@ -128,10 +128,17 @@ function getTooltipIds(sourceLink: HTMLAnchorElement) {
 function containsExactText(scope: ParentNode, expected: string) {
   const normalizedExpected = expected.trim().toLowerCase()
 
-  return [...scope.querySelectorAll<HTMLElement>('span, p, div')].some(
-    (element) =>
+  for (const element of scope.querySelectorAll<HTMLElement>(
+    'span, p, div',
+  )) {
+    if (
       !element.closest(RENDER_ELEMENT_SELECTOR) &&
       element.childElementCount === 0 &&
-      element.textContent?.trim().toLowerCase() === normalizedExpected,
-  )
+      element.textContent?.trim().toLowerCase() === normalizedExpected
+    ) {
+      return true
+    }
+  }
+
+  return false
 }
