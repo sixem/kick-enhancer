@@ -12,6 +12,7 @@ import { SettingsModal } from '../settings/SettingsModal'
 import { useSettings } from '../settings/useSettings'
 import { installSharedUiStyles } from '../styles/sharedUi'
 import styles from './app.scss?inline'
+import { findTopNavActions } from './topNavAnchor'
 
 export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -74,7 +75,6 @@ export function App() {
   )
 }
 
-const ANCHOR_SELECTOR = 'button[data-testid="kicks-top-nav"]'
 const HOST_ID = 'kick-enhancer-top-nav'
 const STYLE_ID = 'kick-enhancer-styles'
 let mountedHost: HTMLElement | null = null
@@ -103,8 +103,7 @@ function mountButton() {
     return
   }
 
-  const anchor = document.querySelector<HTMLButtonElement>(ANCHOR_SELECTOR)
-  const actions = anchor?.parentElement
+  const actions = findTopNavActions()
 
   if (!actions) {
     return

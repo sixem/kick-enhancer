@@ -42,16 +42,17 @@ export async function inspectClip(
     )
   }
 
-  const response = await fetchImplementation(
+  const apiUrl = new URL(
     `/api/v2/clips/${encodeURIComponent(clipId)}/play`,
-    {
-      credentials: 'same-origin',
-      headers: {
-        Accept: 'application/json',
-      },
-      signal,
-    },
+    pageUrl,
   )
+  const response = await fetchImplementation(apiUrl.href, {
+    credentials: 'same-origin',
+    headers: {
+      Accept: 'application/json',
+    },
+    signal,
+  })
 
   if (response.status === 404) {
     throw new ClipDownloadError(
