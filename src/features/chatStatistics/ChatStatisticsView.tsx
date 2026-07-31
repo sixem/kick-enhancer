@@ -172,7 +172,7 @@ export function ChatStatisticsCard({
                   }
                 />
               </strong>{' '}
-              active chatters
+              unique chatters/min
             </span>
             <span>
               <strong>
@@ -199,8 +199,8 @@ export function ChatStatisticsCard({
                       ? snapshot.peakMessagesPerMinute
                       : 0
                   }
-                />
-                /min
+                />{' '}
+                msg/min
               </strong>
             </span>
             <span>

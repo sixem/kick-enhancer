@@ -1231,7 +1231,7 @@
 					u("span", { children: [
 						u("strong", { children: u(AnimatedNumber, { value: snapshot.status === "active" ? snapshot.activeChatters : 0 }) }),
 						" ",
-						"active chatters"
+						"unique chatters/min"
 					] }),
 					u("span", { children: [
 						u("strong", { children: snapshot.status !== "active" || snapshot.socketRttMs === null ? "—" : u(S, { children: [
@@ -1245,7 +1245,11 @@
 					u("span", { children: [
 						"Peak",
 						" ",
-						u("strong", { children: [u(AnimatedNumber, { value: snapshot.status === "active" ? snapshot.peakMessagesPerMinute : 0 }), "/min"] })
+						u("strong", { children: [
+							u(AnimatedNumber, { value: snapshot.status === "active" ? snapshot.peakMessagesPerMinute : 0 }),
+							" ",
+							"msg/min"
+						] })
 					] }),
 					u("span", { children: [
 						u("strong", { children: u(AnimatedNumber, { value: snapshot.status === "active" ? snapshot.totalMessages : 0 }) }),
@@ -7477,7 +7481,7 @@
 			"build": "pnpm typecheck && vite build",
 			"build:greasyfork": "pnpm typecheck && vite build --mode greasyfork",
 			"preview": "vite preview",
-			"test": "node --test --experimental-transform-types tests/*.test.mjs",
+			"test": "node --test --experimental-transform-types \"tests/**/*.test.mjs\"",
 			"typecheck": "tsc --noEmit"
 		},
 		dependencies: {

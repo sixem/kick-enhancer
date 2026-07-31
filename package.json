@@ -18,7 +18,7 @@
     "build": "pnpm typecheck && vite build",
     "build:greasyfork": "pnpm typecheck && vite build --mode greasyfork",
     "preview": "vite preview",
-    "test": "node --test --experimental-transform-types tests/*.test.mjs",
+    "test": "node --test --experimental-transform-types \"tests/**/*.test.mjs\"",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
