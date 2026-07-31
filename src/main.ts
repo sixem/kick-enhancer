@@ -1,4 +1,6 @@
 import { startChatAppearance } from './features/chatAppearance'
+import { startChatStatistics } from './features/chatStatistics'
+import { initializeChatStatisticsCapture } from './features/chatStatistics/runtime'
 import { startClipDownloadActions } from './features/clipDownloads'
 import { startFollowingRecommendationsVisibility } from './features/followingRecommendations'
 import { startGamblingStreamsVisibility } from './features/gamblingStreams'
@@ -23,6 +25,7 @@ let stopFeatures: Dispose | undefined
 // Capture must be installed at document-start; waiting for settings I/O can
 // miss responses Kick consumes during its initial render.
 initializeViewerCountCapture()
+initializeChatStatisticsCapture()
 
 async function start() {
   await initializeSettings()
@@ -30,6 +33,7 @@ async function start() {
   stopFeatures?.()
   stopFeatures = composeDisposers(
     startChatAppearance(),
+    startChatStatistics(),
     startClipDownloadActions(),
     startViewerEnhancements(),
     startFollowingRecommendationsVisibility(),

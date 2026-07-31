@@ -17,7 +17,12 @@ test('round-trips current settings without a compatibility warning', () => {
   assert.equal(result.compatibilityWarning, false)
 })
 
-test('imports version 4 settings and defaults newer values', () => {
+test('imports older settings and defaults newer values', () => {
+  const version4Chat = {
+    ...DEFAULT_SETTINGS.chat,
+  }
+  delete version4Chat.showChatStatistics
+
   const version4Ui = {
     ...DEFAULT_SETTINGS.ui,
     hideHomepageCarousel: true,
@@ -29,7 +34,7 @@ test('imports version 4 settings and defaults newer values', () => {
   const result = expectSuccessful(
     parseSettingsFile(
       JSON.stringify({
-        chat: DEFAULT_SETTINGS.chat,
+        chat: version4Chat,
         ui: version4Ui,
         version: 4,
       }),
@@ -39,6 +44,7 @@ test('imports version 4 settings and defaults newer values', () => {
   assert.equal(result.compatibilityWarning, true)
   assert.equal(result.settings.ui.hideHomepageCarousel, true)
   assert.equal(result.settings.ui.showClipDownloadButtons, true)
+  assert.equal(result.settings.chat.showChatStatistics, false)
   assert.equal(result.settings.version, SETTINGS_VERSION)
 })
 

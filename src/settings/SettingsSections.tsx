@@ -20,6 +20,7 @@ import {
   setRememberSidebarState,
   setShowClipDownloadButtons,
   setShowHiddenViewerCounts,
+  setShowChatStatistics,
   setShowStreamUptime,
 } from './actions'
 import {
@@ -166,6 +167,14 @@ export function ChatSettingsSection({
         label="Message dividers"
         onCheckedChange={(enabled) => {
           void setChatMessageDividers(enabled)
+        }}
+      />
+      <Toggle
+        checked={settings.showChatStatistics}
+        description="Show live message activity, active chatters, socket RTT, and session totals in chat."
+        label="Show chat statistics"
+        onCheckedChange={(visible) => {
+          void setShowChatStatistics(visible)
         }}
       />
       <div className="ke-settings__actions">

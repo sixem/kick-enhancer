@@ -16,7 +16,7 @@ export function renderAnimatedNumber(
   container: HTMLElement,
   value: number,
 ) {
-  const formatted = Math.abs(value).toLocaleString()
+  const formatted = formatNumber(value)
   const existing = states.get(container)
 
   if (existing?.value === formatted) {
@@ -128,6 +128,10 @@ export function renderAnimatedNumber(
       state.animations.push(animation)
     }
   })
+}
+
+function formatNumber(value: number) {
+  return value.toLocaleString()
 }
 
 function cancelState(state: AnimationState | undefined) {

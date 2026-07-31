@@ -61,6 +61,10 @@ export function setChatMessageSpacing(value: number | null) {
   )
 }
 
+export function setShowChatStatistics(visible: boolean) {
+  return updateChatSetting('showChatStatistics', visible)
+}
+
 export function resetChatAppearance() {
   return updateSettings((settings) => {
     if (
@@ -76,6 +80,7 @@ export function resetChatAppearance() {
     return {
       ...settings,
       chat: {
+        ...settings.chat,
         fontFamily: null,
         fontSize: null,
         fontWeight: null,

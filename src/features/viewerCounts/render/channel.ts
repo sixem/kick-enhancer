@@ -1,4 +1,4 @@
-import { renderAnimatedNumber } from '../animatedNumber.ts'
+import { renderAnimatedNumber } from '../../../components/numberReel.ts'
 import { getChannelSlugFromPath } from '../slug.ts'
 import { type ViewerCountStore } from '../store.ts'
 import { type ViewerCountDomOwnership } from './domOwnership.ts'

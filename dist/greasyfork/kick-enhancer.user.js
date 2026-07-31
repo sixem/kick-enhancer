@@ -255,7 +255,7 @@
  *    limitations under the License.
  */
 
-(function(preact, preact_jsx_runtime, preact_hooks, preact_compat) {
+(function(preact, preact_hooks, preact_jsx_runtime, preact_compat) {
 	"use strict";
 	var _GM = (() => typeof GM != "undefined" ? GM : void 0)();
 	var _unsafeWindow = (() => typeof unsafeWindow != "undefined" ? unsafeWindow : void 0)();
@@ -398,7 +398,8 @@
 			fontSize: null,
 			fontWeight: null,
 			messageDividers: false,
-			messageSpacing: null
+			messageSpacing: null,
+			showChatStatistics: false
 		},
 		ui: {
 			hideFollowingRecommendations: false,
@@ -411,19 +412,20 @@
 			showStreamUptime: false,
 			sidebarCollapsed: false
 		},
-		version: 5
+		version: 6
 	};
 	function parseSettings(value) {
-		if (!isRecord$2(value)) return DEFAULT_SETTINGS;
-		const chat = isRecord$2(value.chat) ? value.chat : {};
-		const ui = isRecord$2(value.ui) ? value.ui : {};
+		if (!isRecord$4(value)) return DEFAULT_SETTINGS;
+		const chat = isRecord$4(value.chat) ? value.chat : {};
+		const ui = isRecord$4(value.ui) ? value.ui : {};
 		return {
 			chat: {
 				fontFamily: normalizeChatFontFamily(chat.fontFamily),
 				fontSize: normalizeChatValue(chat.fontSize, 10, 24),
 				fontWeight: normalizeChatFontWeight(chat.fontWeight),
 				messageDividers: chat.messageDividers === true,
-				messageSpacing: normalizeChatValue(chat.messageSpacing, 0, 12)
+				messageSpacing: normalizeChatValue(chat.messageSpacing, 0, 12),
+				showChatStatistics: chat.showChatStatistics === true
 			},
 			ui: {
 				hideFollowingRecommendations: ui.hideFollowingRecommendations === true,
@@ -436,7 +438,7 @@
 				showStreamUptime: ui.showStreamUptime === true,
 				sidebarCollapsed: ui.sidebarCollapsed === true
 			},
-			version: 5
+			version: 6
 		};
 	}
 	function parseSettingsFile(text) {
@@ -446,7 +448,7 @@
 		} catch {
 			return { ok: false };
 		}
-		if (!isRecord$2(value) || !hasRecognizedSetting(value)) return { ok: false };
+		if (!isRecord$4(value) || !hasRecognizedSetting(value)) return { ok: false };
 		const settings = parseSettings(value);
 		return {
 			compatibilityWarning: !matchesCanonicalValue(value, settings),
@@ -471,20 +473,20 @@
 		return hasRecognizedSectionValue(value.chat, DEFAULT_SETTINGS.chat) || hasRecognizedSectionValue(value.ui, DEFAULT_SETTINGS.ui);
 	}
 	function hasRecognizedSectionValue(value, expected) {
-		return isRecord$2(value) && Object.keys(expected).some((key) => Object.prototype.hasOwnProperty.call(value, key));
+		return isRecord$4(value) && Object.keys(expected).some((key) => Object.prototype.hasOwnProperty.call(value, key));
 	}
 	function matchesCanonicalValue(value, expected) {
-		if (!isRecord$2(expected)) return Object.is(value, expected);
-		if (!isRecord$2(value)) return false;
+		if (!isRecord$4(expected)) return Object.is(value, expected);
+		if (!isRecord$4(value)) return false;
 		const expectedKeys = Object.keys(expected);
 		const valueKeys = Object.keys(value);
 		return expectedKeys.length === valueKeys.length && expectedKeys.every((key) => Object.prototype.hasOwnProperty.call(value, key) && matchesCanonicalValue(value[key], expected[key]));
 	}
-	function isRecord$2(value) {
+	function isRecord$4(value) {
 		return value !== null && typeof value === "object" && !Array.isArray(value);
 	}
 	var SETTINGS_KEY = "settings";
-	var log$8 = createLogger("settings");
+	var log$9 = createLogger("settings");
 	var listeners$1 = new Set();
 	var currentSettings = DEFAULT_SETTINGS;
 	var pendingWrite = Promise.resolve();
@@ -496,7 +498,7 @@
 			const storedSettings = await _GM.getValue(SETTINGS_KEY, "");
 			currentSettings = storedSettings ? parseSettings(JSON.parse(storedSettings)) : DEFAULT_SETTINGS;
 		} catch (error) {
-			log$8.warn("Load failed; using defaults", error);
+			log$9.warn("Load failed; using defaults", error);
 			currentSettings = DEFAULT_SETTINGS;
 		}
 	}
@@ -532,7 +534,7 @@
 		notifyListeners();
 		const serializedSettings = JSON.stringify(currentSettings);
 		pendingWrite = pendingWrite.catch(() => void 0).then(() => _GM.setValue(SETTINGS_KEY, serializedSettings)).catch((error) => {
-			log$8.error("Save failed", error);
+			log$9.error("Save failed", error);
 		});
 		return pendingWrite;
 	}
@@ -594,25 +596,25 @@
 		trebuchet: "\"Trebuchet MS\", Arial, sans-serif",
 		verdana: "Verdana, Geneva, sans-serif"
 	};
-	var STYLE_ID$8 = "kick-enhancer-chat-appearance";
-	var stopActiveFeature$4;
+	var STYLE_ID$9 = "kick-enhancer-chat-appearance";
+	var stopActiveFeature$5;
 	function startChatAppearance() {
-		stopActiveFeature$4?.();
+		stopActiveFeature$5?.();
 		let stopped = false;
 		const stopObserving = observeSetting((settings) => settings.chat, applyChatAppearance);
 		const stop = () => {
 			if (stopped) return;
 			stopped = true;
 			stopObserving();
-			document.getElementById(STYLE_ID$8)?.remove();
-			if (stopActiveFeature$4 === stop) stopActiveFeature$4 = void 0;
+			document.getElementById(STYLE_ID$9)?.remove();
+			if (stopActiveFeature$5 === stop) stopActiveFeature$5 = void 0;
 		};
-		stopActiveFeature$4 = stop;
+		stopActiveFeature$5 = stop;
 		return stop;
 	}
 	function applyChatAppearance(settings) {
 		const styles = createChatAppearanceStyles(settings);
-		const existingStyle = document.getElementById(STYLE_ID$8);
+		const existingStyle = document.getElementById(STYLE_ID$9);
 		if (!styles) {
 			existingStyle?.remove();
 			return;
@@ -622,36 +624,112 @@
 			return;
 		}
 		const style = document.createElement("style");
-		style.id = STYLE_ID$8;
+		style.id = STYLE_ID$9;
 		style.textContent = styles;
 		document.documentElement.append(style);
 	}
-	function onDocumentElementReady(callback, ownerDocument = document, createObserver = (observerCallback) => new MutationObserver(observerCallback)) {
-		if (ownerDocument.documentElement) {
-			callback();
-			return () => void 0;
+	var DIGITS = Array.from({ length: 30 }, (_, index) => index % 10);
+	var states = new WeakMap();
+	function renderAnimatedNumber(container, value) {
+		const formatted = formatNumber(value);
+		const existing = states.get(container);
+		if (existing?.value === formatted) return;
+		cancelState(existing);
+		if (prefersReducedMotion()) {
+			container.textContent = formatted;
+			states.set(container, {
+				animations: [],
+				value: formatted
+			});
+			return;
 		}
-		let active = true;
-		const observer = createObserver(() => {
-			if (!active || !ownerDocument.documentElement) return;
-			active = false;
-			observer.disconnect();
-			callback();
-		});
-		observer.observe(ownerDocument, { childList: true });
-		return () => {
-			active = false;
-			observer.disconnect();
+		const fragment = document.createDocumentFragment();
+		const reels = [];
+		let digitIndex = 0;
+		for (const character of formatted) {
+			if (!/\d/.test(character)) {
+				const separator = document.createElement("span");
+				separator.className = "ke-animated-number__separator";
+				separator.textContent = character;
+				fragment.append(separator);
+				continue;
+			}
+			const viewport = document.createElement("span");
+			viewport.className = "ke-animated-number__digit";
+			const reel = document.createElement("span");
+			reel.className = "ke-animated-number__reel";
+			for (const digit of DIGITS) {
+				const cell = document.createElement("span");
+				cell.className = "ke-animated-number__cell";
+				cell.textContent = String(digit);
+				reel.append(cell);
+			}
+			viewport.append(reel);
+			fragment.append(viewport);
+			reels.push({
+				digit: Number(character),
+				element: reel,
+				index: digitIndex,
+				viewport
+			});
+			digitIndex += 1;
+		}
+		container.replaceChildren(fragment);
+		const state = {
+			animations: [],
+			value: formatted
 		};
+		states.set(container, state);
+		state.frame = window.requestAnimationFrame(() => {
+			state.frame = void 0;
+			if (states.get(container) !== state || !container.isConnected) return;
+			for (const reel of reels) {
+				const digitHeight = reel.viewport.getBoundingClientRect().height;
+				if (digitHeight <= 0) continue;
+				const target = -(20 + reel.digit) * digitHeight;
+				const animation = reel.element.animate([
+					{ transform: "translateY(0)" },
+					{
+						offset: .82,
+						transform: `translateY(${target - digitHeight * .3}px)`
+					},
+					{
+						offset: .93,
+						transform: `translateY(${target + digitHeight * .1}px)`
+					},
+					{ transform: `translateY(${target}px)` }
+				], {
+					delay: reel.index * 35,
+					duration: 520 + reel.index * 70,
+					easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
+					fill: "backwards"
+				});
+				reel.element.style.transform = `translateY(${target}px)`;
+				state.animations.push(animation);
+			}
+		});
 	}
-	var shared_ui_default = ".ke-confirmation-host {\n  position: relative;\n  width: 100%;\n  height: 100%;\n  min-width: 0;\n  min-height: 0;\n  overflow: hidden;\n}\n\n.ke-confirmation-layer {\n  position: absolute;\n  z-index: 10;\n  inset: 0;\n  display: grid;\n  padding: 1rem;\n  place-items: center;\n  background: rgba(0, 0, 0, 0.32);\n  backdrop-filter: blur(3px);\n}\n\n.ke-confirmation-dialog {\n  width: min(24rem, 100%);\n  padding: 1.1rem;\n  border: 1px solid #303030;\n  border-radius: 0.45rem;\n  background: #080808;\n  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.55);\n}\n\n.ke-confirmation-dialog__copy {\n  display: grid;\n  gap: 0.45rem;\n}\n\n.ke-confirmation-dialog__title {\n  margin: 0;\n  color: #f2f2f2;\n  font-size: 1rem;\n  font-weight: 700;\n  line-height: 1.3;\n}\n\n.ke-confirmation-dialog__description {\n  margin: 0;\n  color: #747474;\n  font-size: 0.825rem;\n  font-weight: 500;\n  line-height: 1.5;\n}\n\n.ke-confirmation-dialog__actions {\n  display: flex;\n  justify-content: flex-end;\n  gap: 0.65rem;\n  margin-top: 1rem;\n}\n\n.ke-button,\n.ke-text-field,\n.ke-select-box__input,\n.ke-track-bar {\n  box-sizing: border-box;\n  font: inherit;\n}\n\n.ke-button {\n  min-height: 2.35rem;\n  padding: 0 0.85rem;\n  border: 1px solid #1b1b1b;\n  border-radius: 0.45rem;\n  background: #0a0a0a;\n  color: #f2f2f2;\n  font-size: 0.875rem;\n  font-weight: 650;\n  line-height: 1;\n  cursor: pointer;\n  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;\n}\n.ke-button:hover:not(:disabled) {\n  border-color: #303030;\n  background: #101010;\n}\n.ke-button:focus-visible {\n  outline: 2px solid #53fc18;\n  outline-offset: 2px;\n}\n.ke-button:disabled {\n  cursor: not-allowed;\n  opacity: 0.45;\n}\n.ke-button--compact {\n  min-height: 2rem;\n  padding-inline: 0.65rem;\n}\n.ke-button--primary {\n  border-color: #53fc18;\n  background: #53fc18;\n  color: #071402;\n}\n.ke-button--primary:hover:not(:disabled) {\n  border-color: #7dff50;\n  background: #7dff50;\n}\n.ke-button--danger {\n  color: #ff6b6b;\n}\n\n.ke-form-field {\n  display: grid;\n  min-width: 0;\n  gap: 0.4rem;\n  color: #f2f2f2;\n}\n\n.ke-form-field__label {\n  display: block;\n  font-size: 0.875rem;\n  font-weight: 650;\n  line-height: 1.25;\n}\n\n.ke-form-field__description {\n  display: block;\n  color: #747474;\n  font-size: 0.78rem;\n  line-height: 1.4;\n  font-weight: 500;\n}\n\n.ke-text-field,\n.ke-select-box__input {\n  width: 100%;\n  min-height: 2.35rem;\n  border: 1px solid #1b1b1b;\n  border-radius: 0.45rem;\n  outline: none;\n  background: #0a0a0a;\n  color: #f2f2f2;\n  font-size: 0.875rem;\n  transition: background 140ms ease, border-color 140ms ease;\n}\n.ke-text-field:hover:not(:disabled),\n.ke-select-box__input:hover:not(:disabled) {\n  border-color: #303030;\n  background: #101010;\n}\n.ke-text-field:focus-visible,\n.ke-select-box__input:focus-visible {\n  border-color: #53fc18;\n  box-shadow: 0 0 0 1px #53fc18;\n}\n.ke-text-field:disabled,\n.ke-select-box__input:disabled {\n  cursor: not-allowed;\n  opacity: 0.45;\n}\n\n.ke-text-field {\n  padding: 0 0.72rem;\n  user-select: text;\n}\n.ke-text-field::placeholder {\n  color: #8c8c8c;\n}\n\n.ke-text-field-shell {\n  display: flex;\n  align-items: stretch;\n}\n\n.ke-text-field-shell .ke-text-field {\n  flex: 1 1 auto;\n  min-width: 0;\n  border-radius: 0.45rem 0 0 0.45rem;\n}\n\n.ke-text-field__suffix {\n  display: flex;\n  flex: 0 0 auto;\n  align-items: center;\n  padding-inline: 0.7rem;\n  border: 1px solid #1b1b1b;\n  border-left: 0;\n  border-radius: 0 0.45rem 0.45rem 0;\n  background: #080808;\n  color: #8c8c8c;\n  font-size: 0.875rem;\n}\n\n.ke-text-field-shell:focus-within .ke-text-field__suffix {\n  border-color: #53fc18;\n}\n\n.ke-select-box {\n  position: relative;\n  display: block;\n}\n\n.ke-select-box__input {\n  appearance: none;\n  padding: 0 2.2rem 0 0.72rem;\n  color-scheme: dark;\n  cursor: pointer;\n}\n\n.ke-select-box__chevron {\n  position: absolute;\n  top: 50%;\n  right: 0.85rem;\n  width: 0.45rem;\n  height: 0.45rem;\n  border-right: 1.5px solid #8c8c8c;\n  border-bottom: 1.5px solid #8c8c8c;\n  pointer-events: none;\n  transform: translateY(-70%) rotate(45deg);\n}\n\n.ke-toggle {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 1rem;\n  color: #f2f2f2;\n  cursor: pointer;\n}\n\n.ke-toggle__copy {\n  display: grid;\n  min-width: 0;\n  gap: 0.4rem;\n}\n\n.ke-toggle__control {\n  position: relative;\n  flex: 0 0 auto;\n}\n\n.ke-toggle__input {\n  position: absolute;\n  width: 1px;\n  height: 1px;\n  overflow: hidden;\n  opacity: 0;\n  pointer-events: none;\n}\n\n.ke-toggle__track {\n  position: relative;\n  display: block;\n  width: 2.4rem;\n  height: 1.35rem;\n  border: 1px solid #303030;\n  border-radius: 999px;\n  background: #0a0a0a;\n  transition: background 140ms ease, border-color 140ms ease;\n}\n\n.ke-toggle__thumb {\n  position: absolute;\n  top: 0.18rem;\n  left: 0.18rem;\n  width: 0.85rem;\n  height: 0.85rem;\n  border-radius: 50%;\n  background: #8c8c8c;\n  transition: background 140ms ease, transform 140ms ease;\n}\n\n.ke-toggle__input:checked + .ke-toggle__track {\n  border-color: #53fc18;\n  background: #53fc18;\n}\n\n.ke-toggle__input:checked + .ke-toggle__track .ke-toggle__thumb {\n  background: #071402;\n  transform: translateX(1.02rem);\n}\n\n.ke-toggle__input:focus-visible + .ke-toggle__track {\n  outline: 2px solid #53fc18;\n  outline-offset: 2px;\n}\n\n.ke-toggle__input:disabled + .ke-toggle__track {\n  opacity: 0.45;\n}\n\n.ke-track-bar__heading {\n  display: flex;\n  align-items: baseline;\n  justify-content: space-between;\n  gap: 1rem;\n}\n\n.ke-track-bar__value {\n  color: #8c8c8c;\n  font-size: 0.78rem;\n  font-variant-numeric: tabular-nums;\n}\n\n.ke-track-bar {\n  width: 100%;\n  height: 1.25rem;\n  margin: 0;\n  appearance: none;\n  outline: none;\n  background: transparent;\n  cursor: pointer;\n}\n.ke-track-bar::-webkit-slider-runnable-track {\n  height: 0.28rem;\n  border-radius: 999px;\n  background: linear-gradient(to right, #53fc18 0 var(--ke-track-progress), #1b1b1b var(--ke-track-progress) 100%);\n}\n.ke-track-bar::-moz-range-track {\n  height: 0.28rem;\n  border-radius: 999px;\n  background: #1b1b1b;\n}\n.ke-track-bar::-moz-range-progress {\n  height: 0.28rem;\n  border-radius: 999px;\n  background: #53fc18;\n}\n.ke-track-bar::-webkit-slider-thumb {\n  width: 1rem;\n  height: 1rem;\n  margin-top: -0.36rem;\n  appearance: none;\n  border: 2px solid #53fc18;\n  border-radius: 50%;\n  background: #050505;\n}\n.ke-track-bar::-moz-range-thumb {\n  width: 0.8rem;\n  height: 0.8rem;\n  border: 2px solid #53fc18;\n  border-radius: 50%;\n  background: #050505;\n}\n.ke-track-bar:focus-visible::-webkit-slider-thumb {\n  outline: 2px solid #53fc18;\n  outline-offset: 2px;\n}\n.ke-track-bar:focus-visible::-moz-range-thumb {\n  outline: 2px solid #53fc18;\n  outline-offset: 2px;\n}\n\n.ke-list-view {\n  --ke-list-view-scrollbar-gutter: 0.5rem;\n  min-width: 0;\n  min-height: 0;\n  display: grid;\n  grid-template-rows: 2rem minmax(0, 1fr);\n  overflow: hidden;\n  border: 1px solid #1b1b1b;\n  border-radius: 0.45rem;\n  background: #080808;\n  user-select: none;\n}\n\n.ke-list-view__header-group,\n.ke-list-view__scroll {\n  min-width: 0;\n  min-height: 0;\n  box-sizing: border-box;\n  padding-right: var(--ke-list-view-scrollbar-gutter);\n}\n\n.ke-list-view__scroll {\n  --ke-scroll-indicator-right: var(\n    --ke-list-view-scrollbar-gutter\n  );\n}\n\n.ke-list-view__header-group {\n  border-bottom: 1px solid #1b1b1b;\n  background: #0a0a0a;\n}\n\n.ke-list-view__header,\n.ke-list-view__row {\n  min-width: 0;\n  width: 100%;\n  display: grid;\n}\n\n.ke-list-view__header {\n  height: 100%;\n  color: #8c8c8c;\n  font-size: 0.72rem;\n  font-weight: 700;\n  letter-spacing: 0.04em;\n  text-transform: uppercase;\n}\n\n.ke-list-view__header-cell,\n.ke-list-view__cell {\n  min-width: 0;\n  display: flex;\n  align-items: center;\n  padding: 0.42rem 0.6rem;\n  overflow: hidden;\n}\n.ke-list-view__header-cell:not(:last-child),\n.ke-list-view__cell:not(:last-child) {\n  border-right: 1px solid #1b1b1b;\n}\n.ke-list-view__header-cell[data-align=center],\n.ke-list-view__cell[data-align=center] {\n  justify-content: center;\n  text-align: center;\n}\n.ke-list-view__header-cell[data-align=end],\n.ke-list-view__cell[data-align=end] {\n  justify-content: flex-end;\n  text-align: right;\n}\n\n.ke-list-view__header-label,\n.ke-list-view__cell-content {\n  min-width: 0;\n  max-width: 100%;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.ke-list-view__body {\n  position: relative;\n  min-width: 0;\n  min-height: 100%;\n}\n.ke-list-view__body[data-virtualized=true] {\n  contain: layout paint style;\n}\n\n.ke-list-view__row {\n  min-height: 2.125rem;\n  box-sizing: border-box;\n  border-bottom: 1px solid #1b1b1b;\n  color: #f2f2f2;\n  font-size: 0.76rem;\n}\n.ke-list-view__row[data-last-row=true] {\n  border-bottom: 0;\n}\n.ke-list-view__row[data-virtualized=true] {\n  position: absolute;\n  top: 0;\n  left: 0;\n  contain: layout paint style;\n}\n.ke-list-view__row:hover {\n  background: #101010;\n}\n.ke-list-view__row.is-interactive {\n  cursor: pointer;\n}\n.ke-list-view__row.is-interactive:focus-visible {\n  outline: 1px solid #53fc18;\n  outline-offset: -1px;\n}\n\n.ke-list-view__empty {\n  min-height: 4rem;\n  display: grid;\n  place-items: center;\n  padding: 1rem;\n  color: #8c8c8c;\n  font-size: 0.78rem;\n  text-align: center;\n}\n\n.ke-list-view__live-status {\n  position: absolute;\n  width: 1px;\n  height: 1px;\n  padding: 0;\n  overflow: hidden;\n  clip: rect(0 0 0 0);\n  clip-path: inset(50%);\n  border: 0;\n  white-space: nowrap;\n}\n\n.ke-modal {\n  width: min(36rem, 100vw - 2rem);\n  max-width: none;\n  max-height: calc(100vh - 2rem);\n  margin: auto;\n  padding: 0;\n  overflow: visible;\n  border: 1px solid #1b1b1b;\n  border-radius: 0.65rem;\n  outline: none;\n  background: transparent;\n  color: #f2f2f2;\n  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;\n  font-size: 16px;\n  line-height: 1.5;\n  box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.65);\n  user-select: none;\n}\n.ke-modal::backdrop {\n  background: rgba(0, 0, 0, 0.62);\n  backdrop-filter: blur(2px);\n}\n\n.ke-modal,\n.ke-modal * {\n  box-sizing: border-box;\n}\n\n.ke-modal ::selection {\n  background: #fff;\n  color: #000;\n}\n\n.ke-modal__surface {\n  display: grid;\n  max-height: calc(100vh - 2rem);\n  overflow: hidden;\n  border-radius: inherit;\n  background: #050505;\n  animation: ke-modal-enter 150ms ease-out;\n}\n\n.ke-modal__header {\n  display: flex;\n  align-items: flex-start;\n  justify-content: space-between;\n  gap: 1rem;\n  padding: 1.25rem 1.25rem 1rem;\n  border-bottom: 1px solid #1b1b1b;\n}\n\n.ke-modal__heading {\n  min-width: 0;\n}\n\n.ke-modal__identity {\n  min-width: 0;\n  display: flex;\n  align-items: center;\n  gap: 0.85rem;\n}\n\n.ke-modal__icon {\n  width: 2.75rem;\n  height: 2.75rem;\n  flex: 0 0 auto;\n  object-fit: contain;\n}\n\n.ke-modal__title {\n  margin: 0;\n  color: #f2f2f2;\n  font-size: 1.1rem;\n  font-weight: 750;\n  line-height: 1.25;\n}\n\n.ke-modal__description {\n  margin: 0.35rem 0 0;\n  color: #8c8c8c;\n  font-size: 0.8rem;\n  font-weight: 500;\n  line-height: 1.45;\n}\n\n.ke-modal__close {\n  display: grid;\n  width: 2rem;\n  min-width: 2rem;\n  min-height: 2rem;\n  padding: 0;\n  place-items: center;\n  font-size: 1.3rem;\n  font-weight: 400;\n}\n\n.ke-modal__body {\n  min-height: 0;\n  padding: 1.25rem;\n  overflow-y: auto;\n  scrollbar-color: #303030 transparent;\n}\n\n.ke-modal__footer {\n  display: flex;\n  justify-content: flex-end;\n  gap: 0.65rem;\n  padding: 1rem 1.25rem;\n  border-top: 1px solid #1b1b1b;\n  background: #080808;\n}\n\n.ke-settings {\n  display: grid;\n  gap: 1.35rem;\n}\n\n.ke-settings__actions {\n  display: flex;\n  justify-content: flex-end;\n}\n\n.ke-workspace-modal {\n  --ke-workspace-modal-gutter: clamp(1rem, 4vw, 2rem);\n  --ke-workspace-modal-height: 52rem;\n  --ke-workspace-modal-width: 52rem;\n  width: min(var(--ke-workspace-modal-width), 100vw - var(--ke-workspace-modal-gutter));\n  max-height: calc(100dvh - var(--ke-workspace-modal-gutter));\n}\n\n.ke-workspace-modal .ke-modal__surface {\n  height: min(var(--ke-workspace-modal-height), 100dvh - var(--ke-workspace-modal-gutter));\n  grid-template-rows: auto minmax(0, 1fr) auto;\n}\n\n.ke-workspace-modal .ke-modal__body {\n  padding: 0;\n  overflow: hidden;\n}\n\n.ke-settings-modal {\n  --ke-workspace-modal-height: 46rem;\n}\n\n.ke-settings-modal__tabs {\n  width: 100%;\n  height: 100%;\n}\n\n.ke-settings-modal__github {\n  display: inline-flex;\n  align-items: center;\n  gap: 0.45rem;\n  margin-right: auto;\n}\n.ke-settings-modal__github:hover:not(:disabled) {\n  background: #0a0a0a;\n  color: #53fc18;\n}\n\n.ke-settings-modal__github-icon {\n  width: 1.05rem;\n  height: 1.05rem;\n  flex: 0 0 auto;\n}\n\n@keyframes ke-modal-enter {\n  from {\n    opacity: 0;\n    transform: translateY(0.35rem) scale(0.985);\n  }\n  to {\n    opacity: 1;\n    transform: translateY(0) scale(1);\n  }\n}\n@media (prefers-reduced-motion: reduce) {\n  .ke-modal__surface {\n    animation: none;\n  }\n}\n.ke-scroll-area {\n  position: relative;\n  min-width: 0;\n  min-height: 0;\n  height: 100%;\n  overflow: hidden;\n}\n.ke-scroll-area[data-height=content] {\n  height: auto;\n}\n.ke-scroll-area[data-height=content] .ke-scroll-area__viewport {\n  height: auto;\n  max-height: inherit;\n}\n.ke-scroll-area[data-height=content] .ke-scroll-area__content {\n  min-height: 0;\n}\n\n.ke-scroll-area__viewport {\n  min-width: 0;\n  min-height: 0;\n  width: 100%;\n  height: 100%;\n  overflow: auto;\n  overscroll-behavior: contain;\n  scrollbar-width: none;\n}\n.ke-scroll-area__viewport::-webkit-scrollbar {\n  width: 0;\n  height: 0;\n}\n.ke-scroll-area__viewport:focus {\n  outline: none;\n}\n.ke-scroll-area__viewport:focus-visible {\n  outline: 1px solid #1b1b1b;\n  outline-offset: -1px;\n}\n\n.ke-scroll-area__content {\n  min-width: 100%;\n  min-height: 100%;\n}\n\n.ke-scroll-area[data-scroll-indicators=true]::before, .ke-scroll-area[data-scroll-indicators=true]::after {\n  position: absolute;\n  z-index: 1;\n  right: var(--ke-scroll-indicator-right, 0);\n  left: 0;\n  height: 0.75rem;\n  content: \"\";\n  pointer-events: none;\n}\n.ke-scroll-area[data-scroll-indicators=true][data-overflow-top]::before {\n  top: 0;\n  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent);\n}\n.ke-scroll-area[data-scroll-indicators=true][data-overflow-bottom]::after {\n  bottom: 0;\n  background: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent);\n}\n\n.ke-scroll-area__thumb {\n  position: absolute;\n  z-index: 2;\n  top: 0;\n  right: 0.25rem;\n  width: 0.25rem;\n  border-radius: 0.125rem;\n  background: #fff;\n  cursor: default;\n  opacity: 0;\n  pointer-events: none;\n  touch-action: none;\n  transition: background 140ms ease, opacity 140ms ease;\n}\n.ke-scroll-area__thumb:not([data-visible=true]) {\n  display: none;\n}\n\n.ke-scroll-area:hover > .ke-scroll-area__thumb[data-visible=true],\n.ke-scroll-area:focus-within > .ke-scroll-area__thumb[data-visible=true],\n.ke-scroll-area.is-dragging > .ke-scroll-area__thumb[data-visible=true] {\n  background: #fff;\n  opacity: 1;\n  pointer-events: auto;\n}\n\n.ke-scroll-area[data-scrollbar=compact] > .ke-scroll-area__thumb {\n  right: 0.15rem;\n  width: 0.1875rem;\n}\n\n.ke-scroll-area[data-scrollbar=overlay] > .ke-scroll-area__thumb {\n  right: 0.3rem;\n  width: 0.25rem;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .ke-scroll-area__thumb {\n    transition: none;\n  }\n}\n.ke-tabs {\n  width: 100%;\n  height: 100%;\n  min-width: 0;\n  min-height: 0;\n  display: grid;\n  grid-template-rows: auto minmax(0, 1fr);\n  overflow: hidden;\n}\n\n.ke-tabs__list {\n  display: flex;\n  min-width: 0;\n  min-height: 2.5rem;\n  align-items: stretch;\n  overflow: hidden;\n  border-bottom: 1px solid #1b1b1b;\n  background: #050505;\n}\n\n.ke-tabs__tab {\n  min-width: 0;\n  flex: 0 1 auto;\n  padding: 0.5rem 0.75rem;\n  overflow: hidden;\n  border: 0;\n  border-bottom: 0.125rem solid transparent;\n  outline: none;\n  background: transparent;\n  color: #8c8c8c;\n  font: inherit;\n  font-size: 0.875rem;\n  font-weight: 550;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  cursor: pointer;\n  user-select: none;\n  transition: background 140ms ease, color 140ms ease;\n}\n.ke-tabs__tab:hover:not(:disabled) {\n  background: #101010;\n  color: #f2f2f2;\n}\n.ke-tabs__tab:focus-visible {\n  outline: 1px solid #53fc18;\n  outline-offset: -1px;\n}\n.ke-tabs__tab[aria-selected=true] {\n  border-bottom-color: #f2f2f2;\n  color: #f2f2f2;\n}\n.ke-tabs__tab:disabled {\n  color: #747474;\n  cursor: default;\n  opacity: 0.45;\n}\n\n.ke-tabs__panel {\n  min-width: 0;\n  min-height: 0;\n  overflow: hidden;\n}\n.ke-tabs__panel[hidden] {\n  display: none;\n}\n\n.ke-tabs__scroll {\n  height: 100%;\n}\n\n.ke-tabs__panel-content {\n  padding: 1rem 1.25rem 1.25rem;\n}\n\n.ke-tabs__panel-content--centered {\n  display: grid;\n  align-items: safe center;\n  justify-items: center;\n}";
-	var STYLE_ID$7 = "kick-enhancer-shared-ui-styles";
-	function installSharedUiStyles() {
-		if (document.getElementById(STYLE_ID$7)) return;
-		const style = document.createElement("style");
-		style.id = STYLE_ID$7;
-		style.textContent = shared_ui_default;
-		document.documentElement.append(style);
+	function formatNumber(value) {
+		return value.toLocaleString();
+	}
+	function cancelState(state) {
+		if (!state) return;
+		if (state.frame !== void 0) window.cancelAnimationFrame(state.frame);
+		for (const animation of state.animations) animation.cancel();
+	}
+	function prefersReducedMotion() {
+		return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+	}
+	function AnimatedNumber({ value }) {
+		const elementRef = (0, preact_hooks.useRef)(null);
+		(0, preact_hooks.useLayoutEffect)(() => {
+			if (elementRef.current) renderAnimatedNumber(elementRef.current, value);
+		}, [value]);
+		return (0, preact_jsx_runtime.jsx)("span", {
+			"aria-label": value.toLocaleString(),
+			className: "ke-animated-number",
+			ref: elementRef
+		});
 	}
 	function DownloadIcon({ class: className }) {
 		return (0, preact_jsx_runtime.jsxs)("svg", {
@@ -703,6 +781,927 @@
 				"stroke-width": "2.5"
 			})]
 		});
+	}
+	function ChatStatisticsTrigger({ expanded, onToggle, snapshot }) {
+		const calibrating = snapshot.status === "pending" || snapshot.status === "active" && Date.now() < snapshot.trendReadyAt;
+		const unavailable = snapshot.status === "unavailable";
+		const trend = snapshot.status === "active" && !calibrating ? formatTrend(snapshot.trendPercent) : null;
+		return (0, preact_jsx_runtime.jsxs)("button", {
+			"aria-controls": "kick-enhancer-chat-statistics-card",
+			"aria-expanded": expanded,
+			"aria-label": unavailable ? "Chat statistics unavailable" : "Toggle chat statistics",
+			className: "ke-chat-statistics-trigger",
+			onClick: onToggle,
+			type: "button",
+			children: [unavailable ? (0, preact_jsx_runtime.jsx)("span", { children: "Chat" }) : (0, preact_jsx_runtime.jsxs)("span", { children: [(0, preact_jsx_runtime.jsx)(AnimatedNumber, { value: snapshot.status === "active" ? snapshot.messagesPerMinute : 0 }), "/min"] }), unavailable ? (0, preact_jsx_runtime.jsx)("span", {
+				"aria-hidden": "true",
+				className: "ke-chat-statistics-trigger__unavailable",
+				children: "!"
+			}) : calibrating ? (0, preact_jsx_runtime.jsx)(LoadingSpinnerIcon, { class: "ke-chat-statistics-trigger__trend-loader" }) : trend ? (0, preact_jsx_runtime.jsxs)("span", {
+				className: "ke-chat-statistics-trigger__trend",
+				"data-tone": trend.tone,
+				children: [
+					trend.direction,
+					(0, preact_jsx_runtime.jsx)(AnimatedNumber, { value: trend.value }),
+					"%"
+				]
+			}) : null]
+		});
+	}
+	function ChatStatisticsCard({ onClose, snapshot }) {
+		const calibrating = snapshot.status === "pending" || snapshot.status === "active" && Date.now() < snapshot.trendReadyAt;
+		const trend = snapshot.status === "active" ? formatTrend(snapshot.trendPercent) : null;
+		return (0, preact_jsx_runtime.jsxs)("section", {
+			"aria-label": "Chat statistics",
+			className: "ke-chat-statistics-card",
+			id: "kick-enhancer-chat-statistics-card",
+			children: [(0, preact_jsx_runtime.jsxs)("header", {
+				className: "ke-chat-statistics-card__header",
+				children: [(0, preact_jsx_runtime.jsxs)("span", {
+					className: "ke-chat-statistics-card__title",
+					children: [(0, preact_jsx_runtime.jsx)("span", {
+						"aria-hidden": "true",
+						className: "ke-chat-statistics-card__live-dot",
+						"data-status": calibrating ? "calibrating" : snapshot.status
+					}), snapshot.status === "active" ? (0, preact_jsx_runtime.jsxs)("span", { children: [
+						"Chat Statistics (ID:",
+						" ",
+						(0, preact_jsx_runtime.jsx)("span", {
+							className: "ke-chat-statistics-card__room-id",
+							children: snapshot.chatroomId
+						}),
+						")"
+					] }) : "Chat Statistics"]
+				}), (0, preact_jsx_runtime.jsx)("button", {
+					"aria-label": "Close chat statistics",
+					className: "ke-chat-statistics-card__close",
+					onClick: onClose,
+					type: "button",
+					children: "×"
+				})]
+			}), snapshot.status === "unavailable" ? (0, preact_jsx_runtime.jsx)("p", {
+				className: "ke-chat-statistics-card__error",
+				children: snapshot.reason === "multiple-sessions" ? "Multiple compatible chat sessions were detected, so no room was selected." : snapshot.reason === "capture-failed" ? "Chat socket observation could not be installed." : "The KICK chat socket connection failed."
+			}) : (0, preact_jsx_runtime.jsxs)(preact_jsx_runtime.Fragment, { children: [(0, preact_jsx_runtime.jsxs)("div", {
+				className: "ke-chat-statistics-card__primary",
+				children: [(0, preact_jsx_runtime.jsxs)("span", {
+					className: "ke-chat-statistics-card__rate",
+					children: [
+						(0, preact_jsx_runtime.jsx)(AnimatedNumber, { value: snapshot.status === "active" ? snapshot.messagesPerMinute : 0 }),
+						" ",
+						(0, preact_jsx_runtime.jsx)("small", { children: "msg/min" })
+					]
+				}), calibrating ? (0, preact_jsx_runtime.jsx)("span", {
+					className: "ke-chat-statistics-card__calibrating",
+					children: "Calibrating..."
+				}) : trend ? (0, preact_jsx_runtime.jsxs)("span", {
+					className: "ke-chat-statistics-card__trend",
+					"data-tone": trend.tone,
+					children: [
+						trend.direction,
+						" ",
+						(0, preact_jsx_runtime.jsx)(AnimatedNumber, { value: trend.value }),
+						"%"
+					]
+				}) : null]
+			}), (0, preact_jsx_runtime.jsxs)("div", {
+				className: "ke-chat-statistics-card__details",
+				children: [
+					(0, preact_jsx_runtime.jsxs)("span", { children: [
+						(0, preact_jsx_runtime.jsx)("strong", { children: (0, preact_jsx_runtime.jsx)(AnimatedNumber, { value: snapshot.status === "active" ? snapshot.activeChatters : 0 }) }),
+						" ",
+						"active chatters"
+					] }),
+					(0, preact_jsx_runtime.jsxs)("span", { children: [
+						(0, preact_jsx_runtime.jsx)("strong", { children: snapshot.status !== "active" || snapshot.socketRttMs === null ? "—" : (0, preact_jsx_runtime.jsxs)(preact_jsx_runtime.Fragment, { children: [
+							(0, preact_jsx_runtime.jsx)(AnimatedNumber, { value: snapshot.socketRttMs }),
+							" ",
+							"ms"
+						] }) }),
+						" ",
+						"socket RTT"
+					] }),
+					(0, preact_jsx_runtime.jsxs)("span", { children: [
+						"Peak",
+						" ",
+						(0, preact_jsx_runtime.jsxs)("strong", { children: [(0, preact_jsx_runtime.jsx)(AnimatedNumber, { value: snapshot.status === "active" ? snapshot.peakMessagesPerMinute : 0 }), "/min"] })
+					] }),
+					(0, preact_jsx_runtime.jsxs)("span", { children: [
+						(0, preact_jsx_runtime.jsx)("strong", { children: (0, preact_jsx_runtime.jsx)(AnimatedNumber, { value: snapshot.status === "active" ? snapshot.totalMessages : 0 }) }),
+						" ",
+						"total messages"
+					] })
+				]
+			})] })]
+		});
+	}
+	function formatTrend(value) {
+		if (value === null) return null;
+		if (value > 0) return {
+			direction: "↑",
+			tone: "positive",
+			value
+		};
+		if (value < 0) return {
+			direction: "↓",
+			tone: "negative",
+			value: Math.abs(value)
+		};
+		return {
+			direction: "–",
+			tone: "neutral",
+			value: 0
+		};
+	}
+	var CHAT_CHANNEL_PATTERN = /^chatrooms\.(\d+)\.v2$/;
+	var CHAT_MESSAGE_EVENT = "App\\Events\\ChatMessageEvent";
+	var KickChatAdapter = class {
+		#sessions = new Map();
+		accept(event) {
+			if (event.type === "socketClosed") return this.#endSocketSessions(event.socketId, event.observedAt);
+			if (event.type !== "subscribing" && event.type !== "subscribed" && event.type !== "unsubscribing" && event.type !== "event") return [];
+			const match = CHAT_CHANNEL_PATTERN.exec(event.channelName);
+			if (!match) return [];
+			const chatroomId = match[1];
+			if (!chatroomId) return [];
+			const key = createSessionKey$1(event.socketId, event.channelName);
+			if (event.type === "subscribing") {
+				const existing = this.#sessions.get(key);
+				this.#sessions.set(key, {
+					channelName: event.channelName,
+					chatroomId,
+					confirmed: false,
+					socketId: event.socketId
+				});
+				return existing?.confirmed ? [createSessionEvent("sessionEnded", existing, event.observedAt)] : [];
+			}
+			if (event.type === "unsubscribing") {
+				const existing = this.#sessions.get(key);
+				this.#sessions.delete(key);
+				return existing?.confirmed ? [createSessionEvent("sessionEnded", existing, event.observedAt)] : [];
+			}
+			const session = this.#sessions.get(key);
+			if (!session) return [];
+			if (event.type === "subscribed") {
+				if (session.confirmed) return [];
+				const confirmed = {
+					...session,
+					confirmed: true
+				};
+				this.#sessions.set(key, confirmed);
+				return [createSessionEvent("sessionStarted", confirmed, event.observedAt)];
+			}
+			if (!session.confirmed || event.eventName !== CHAT_MESSAGE_EVENT) return [];
+			const message = decodeMessage(event.data, chatroomId);
+			if (!message) return [];
+			return [{
+				channelName: session.channelName,
+				chatroomId: session.chatroomId,
+				messageId: message.messageId,
+				messageType: message.messageType,
+				observedAt: event.observedAt,
+				senderId: message.senderId,
+				socketId: session.socketId,
+				type: "message"
+			}];
+		}
+		#endSocketSessions(socketId, observedAt) {
+			const ended = [];
+			for (const [key, session] of this.#sessions) {
+				if (session.socketId !== socketId) continue;
+				this.#sessions.delete(key);
+				if (session.confirmed) ended.push(createSessionEvent("sessionEnded", session, observedAt));
+			}
+			return ended;
+		}
+	};
+	function decodeMessage(data, chatroomId) {
+		if (!isRecord$3(data) || !isId(data.id)) return null;
+		if (!isId(data.chatroom_id) || String(data.chatroom_id) !== chatroomId || typeof data.type !== "string" || !isRecord$3(data.sender) || !isId(data.sender.id)) return null;
+		return {
+			messageId: String(data.id),
+			messageType: data.type,
+			senderId: String(data.sender.id)
+		};
+	}
+	function createSessionEvent(type, session, observedAt) {
+		return {
+			channelName: session.channelName,
+			chatroomId: session.chatroomId,
+			observedAt,
+			socketId: session.socketId,
+			type
+		};
+	}
+	function createSessionKey$1(socketId, channelName) {
+		return `${socketId}:${channelName}`;
+	}
+	function isId(value) {
+		return typeof value === "string" && value.length > 0 || typeof value === "number" && Number.isFinite(value);
+	}
+	function isRecord$3(value) {
+		return typeof value === "object" && value !== null;
+	}
+	function decodePusherEvent(event) {
+		if (event.type === "closed") return {
+			observedAt: event.observedAt,
+			socketId: event.socketId,
+			type: "socketClosed"
+		};
+		if (event.type !== "frame" || typeof event.data !== "string") return null;
+		const envelope = parseRecord(event.data);
+		if (!envelope || typeof envelope.event !== "string") return null;
+		const eventName = envelope.event;
+		if (eventName === "pusher:ping" || eventName === "pusher:pong") return {
+			direction: event.direction,
+			observedAt: event.observedAt,
+			socketId: event.socketId,
+			type: eventName === "pusher:ping" ? "ping" : "pong"
+		};
+		if (event.direction === "outgoing" && (eventName === "pusher:subscribe" || eventName === "pusher:unsubscribe")) {
+			const data = decodeData(envelope.data);
+			const channelName = isRecord$2(data) ? data.channel : void 0;
+			if (typeof channelName !== "string") return null;
+			return {
+				channelName,
+				observedAt: event.observedAt,
+				socketId: event.socketId,
+				type: eventName === "pusher:subscribe" ? "subscribing" : "unsubscribing"
+			};
+		}
+		const channelName = envelope.channel;
+		if (typeof channelName !== "string") return null;
+		if (event.direction === "incoming" && eventName === "pusher_internal:subscription_succeeded") return {
+			channelName,
+			observedAt: event.observedAt,
+			socketId: event.socketId,
+			type: "subscribed"
+		};
+		if (event.direction !== "incoming" || eventName.startsWith("pusher:")) return null;
+		return {
+			channelName,
+			data: decodeData(envelope.data),
+			eventName,
+			observedAt: event.observedAt,
+			socketId: event.socketId,
+			type: "event"
+		};
+	}
+	function decodeData(value) {
+		if (typeof value !== "string") return value;
+		try {
+			return JSON.parse(value);
+		} catch {
+			return value;
+		}
+	}
+	function parseRecord(value) {
+		try {
+			const parsed = JSON.parse(value);
+			return isRecord$2(parsed) ? parsed : null;
+		} catch {
+			return null;
+		}
+	}
+	function isRecord$2(value) {
+		return typeof value === "object" && value !== null;
+	}
+	var SocketRttTracker = class {
+		#pending = new Map();
+		accept(event) {
+			if (event.type === "socketClosed") {
+				this.#pending.delete(event.socketId);
+				return null;
+			}
+			if (event.type === "ping" && event.direction === "outgoing") {
+				if (!this.#pending.has(event.socketId)) this.#pending.set(event.socketId, event.observedAt);
+				return null;
+			}
+			if (event.type !== "pong" || event.direction !== "incoming") return null;
+			const pendingAt = this.#pending.get(event.socketId);
+			if (pendingAt === void 0) return null;
+			this.#pending.delete(event.socketId);
+			const rttMs = event.observedAt - pendingAt;
+			return Number.isFinite(rttMs) && rttMs >= 0 ? {
+				rttMs,
+				socketId: event.socketId
+			} : null;
+		}
+		canStart(socketId, now, timeoutMs) {
+			const pendingAt = this.#pending.get(socketId);
+			if (pendingAt === void 0) return true;
+			if (now - pendingAt <= timeoutMs) return false;
+			this.#pending.delete(socketId);
+			return true;
+		}
+	};
+	var CURRENT_WINDOW_MS = 6e4;
+	var RETAINED_WINDOW_MS = 12e4;
+	var RTT_SAMPLE_LIMIT = 20;
+	var ChatStatsStore = class {
+		#rttSamples = new Map();
+		#sessions = new Map();
+		accept(event) {
+			const key = createSessionKey(event.socketId, event.channelName);
+			if (event.type === "sessionStarted") {
+				this.#sessions.set(key, {
+					chatroomId: event.chatroomId,
+					confirmedAt: event.observedAt,
+					firstRecordIndex: 0,
+					peakMessagesPerMinute: 0,
+					records: [],
+					seenMessageIds: new Map(),
+					socketId: event.socketId,
+					totalMessages: 0
+				});
+				return;
+			}
+			if (event.type === "sessionEnded") {
+				this.#sessions.delete(key);
+				return;
+			}
+			if (event.type !== "message") return;
+			const session = this.#sessions.get(key);
+			if (!session || event.messageType !== "message" && event.messageType !== "reply") return;
+			pruneSession(session, event.observedAt);
+			if (session.seenMessageIds.has(event.messageId)) return;
+			session.records.push({
+				messageId: event.messageId,
+				receivedAt: event.observedAt,
+				senderId: event.senderId
+			});
+			session.seenMessageIds.set(event.messageId, event.observedAt);
+			session.totalMessages += 1;
+			const currentCount = countCurrentWindow(session, event.observedAt);
+			session.peakMessagesPerMinute = Math.max(session.peakMessagesPerMinute, currentCount);
+		}
+		addRttSample(socketId, rttMs) {
+			if (!Number.isFinite(rttMs) || rttMs < 0) return;
+			const samples = this.#rttSamples.get(socketId) ?? [];
+			samples.push(rttMs);
+			if (samples.length > RTT_SAMPLE_LIMIT) samples.splice(0, samples.length - RTT_SAMPLE_LIMIT);
+			this.#rttSamples.set(socketId, samples);
+		}
+		clearSocket(socketId) {
+			this.#rttSamples.delete(socketId);
+		}
+		getSelectedSocketId() {
+			return this.#sessions.size === 1 ? [...this.#sessions.values()][0]?.socketId ?? null : null;
+		}
+		getSnapshot(now) {
+			if (this.#sessions.size === 0) return { status: "pending" };
+			if (this.#sessions.size > 1) return {
+				reason: "multiple-sessions",
+				status: "unavailable"
+			};
+			const session = [...this.#sessions.values()][0];
+			if (!session) return { status: "pending" };
+			pruneSession(session, now);
+			const currentCount = countCurrentWindow(session, now);
+			session.peakMessagesPerMinute = Math.max(session.peakMessagesPerMinute, currentCount);
+			return {
+				activeChatters: countActiveChatters(session, now),
+				chatroomId: session.chatroomId,
+				messagesPerMinute: currentCount,
+				peakMessagesPerMinute: session.peakMessagesPerMinute,
+				socketRttMs: median(this.#rttSamples.get(session.socketId) ?? []),
+				status: "active",
+				totalMessages: session.totalMessages,
+				trendReadyAt: session.confirmedAt + CURRENT_WINDOW_MS,
+				trendPercent: calculateSessionTrend(session, now, currentCount)
+			};
+		}
+	};
+	function pruneSession(session, now) {
+		const cutoff = now - RETAINED_WINDOW_MS;
+		while (session.firstRecordIndex < session.records.length && (session.records[session.firstRecordIndex]?.receivedAt ?? Infinity) <= cutoff) {
+			const record = session.records[session.firstRecordIndex];
+			session.firstRecordIndex += 1;
+			if (record && session.seenMessageIds.get(record.messageId) === record.receivedAt) session.seenMessageIds.delete(record.messageId);
+		}
+		if (session.firstRecordIndex > 128 && session.firstRecordIndex * 2 > session.records.length) {
+			session.records = session.records.slice(session.firstRecordIndex);
+			session.firstRecordIndex = 0;
+		}
+	}
+	function countCurrentWindow(session, now) {
+		const cutoff = now - CURRENT_WINDOW_MS;
+		let count = 0;
+		for (let index = session.records.length - 1; index >= session.firstRecordIndex; index -= 1) {
+			const record = session.records[index];
+			if (!record || record.receivedAt <= cutoff) break;
+			count += 1;
+		}
+		return count;
+	}
+	function countWindow(session, lowerExclusive, upperInclusive) {
+		let count = 0;
+		for (let index = session.firstRecordIndex; index < session.records.length; index += 1) {
+			const receivedAt = session.records[index]?.receivedAt;
+			if (receivedAt === void 0 || receivedAt <= lowerExclusive) continue;
+			if (receivedAt > upperInclusive) break;
+			count += 1;
+		}
+		return count;
+	}
+	function countActiveChatters(session, now) {
+		const cutoff = now - CURRENT_WINDOW_MS;
+		const senders = new Set();
+		for (let index = session.records.length - 1; index >= session.firstRecordIndex; index -= 1) {
+			const record = session.records[index];
+			if (!record || record.receivedAt <= cutoff) break;
+			senders.add(record.senderId);
+		}
+		return senders.size;
+	}
+	function calculateSessionTrend(session, now, currentCount) {
+		const elapsed = Math.max(0, now - session.confirmedAt);
+		if (elapsed < CURRENT_WINDOW_MS) return null;
+		return calculateTrend(currentCount, elapsed < RETAINED_WINDOW_MS ? countWindow(session, session.confirmedAt, session.confirmedAt + CURRENT_WINDOW_MS) : countWindow(session, now - RETAINED_WINDOW_MS, now - CURRENT_WINDOW_MS));
+	}
+	function calculateTrend(current, previous) {
+		if (previous === 0) return current === 0 ? 0 : null;
+		return Math.round((current - previous) / previous * 100);
+	}
+	function median(samples) {
+		if (samples.length === 0) return null;
+		const sorted = [...samples].sort((left, right) => left - right);
+		const middle = Math.floor(sorted.length / 2);
+		const upper = sorted[middle];
+		if (upper === void 0) return null;
+		if (sorted.length % 2 === 1) return Math.round(upper);
+		const lower = sorted[middle - 1];
+		return lower === void 0 ? Math.round(upper) : Math.round((lower + upper) / 2);
+	}
+	function createSessionKey(socketId, channelName) {
+		return `${socketId}:${channelName}`;
+	}
+	var WEB_SOCKET_OPEN_STATE = 1;
+	var WebSocketTap = class {
+		#clock;
+		#host;
+		#listeners = new Set();
+		#sockets = new Map();
+		#installed = false;
+		#nextSocketId = 1;
+		#restoreConstructor;
+		constructor(host, clock = Date.now) {
+			this.#host = host;
+			this.#clock = clock;
+		}
+		install() {
+			if (this.#installed) return true;
+			try {
+				const NativeWebSocket = this.#host.WebSocket;
+				const descriptor = Object.getOwnPropertyDescriptor(this.#host, "WebSocket");
+				const proxy = new Proxy(NativeWebSocket, { construct: (target, argumentsList, newTarget) => {
+					const socket = Reflect.construct(target, argumentsList, newTarget);
+					try {
+						this.#captureSocket(socket);
+					} catch {}
+					return socket;
+				} });
+				Object.defineProperty(this.#host, "WebSocket", {
+					configurable: descriptor?.configurable ?? true,
+					enumerable: descriptor?.enumerable ?? true,
+					value: proxy,
+					writable: true
+				});
+				this.#restoreConstructor = () => {
+					if (this.#host.WebSocket !== proxy) return;
+					if (descriptor) Object.defineProperty(this.#host, "WebSocket", descriptor);
+					else Object.defineProperty(this.#host, "WebSocket", {
+						configurable: true,
+						enumerable: true,
+						value: NativeWebSocket,
+						writable: true
+					});
+				};
+				this.#installed = true;
+				return true;
+			} catch {
+				return false;
+			}
+		}
+		send(socketId, data) {
+			const captured = this.#sockets.get(socketId);
+			if (!captured || captured.socket.readyState !== WEB_SOCKET_OPEN_STATE) return false;
+			try {
+				captured.socket.send(data);
+				return true;
+			} catch {
+				return false;
+			}
+		}
+		subscribe(listener) {
+			this.#listeners.add(listener);
+			return () => {
+				this.#listeners.delete(listener);
+			};
+		}
+		dispose() {
+			this.#restoreConstructor?.();
+			this.#restoreConstructor = void 0;
+			for (const socketId of [...this.#sockets.keys()]) this.#releaseSocket(socketId);
+			this.#listeners.clear();
+			this.#installed = false;
+		}
+		#captureSocket(socket) {
+			const socketId = this.#nextSocketId;
+			this.#nextSocketId += 1;
+			const originalSend = socket.send;
+			const hookedSend = new Proxy(originalSend, { apply: (target, thisArgument, argumentsList) => {
+				const result = Reflect.apply(target, thisArgument, argumentsList);
+				this.#emit({
+					data: argumentsList[0],
+					direction: "outgoing",
+					observedAt: this.#clock(),
+					socketId,
+					type: "frame"
+				});
+				return result;
+			} });
+			const onMessage = (event) => {
+				this.#emit({
+					data: event.data,
+					direction: "incoming",
+					observedAt: this.#clock(),
+					socketId,
+					type: "frame"
+				});
+			};
+			const onError = () => {
+				this.#emit({
+					observedAt: this.#clock(),
+					socketId,
+					type: "error"
+				});
+			};
+			const onClose = () => {
+				this.#emit({
+					observedAt: this.#clock(),
+					socketId,
+					type: "closed"
+				});
+				this.#releaseSocket(socketId);
+			};
+			Object.defineProperty(socket, "send", {
+				configurable: true,
+				value: hookedSend,
+				writable: true
+			});
+			socket.addEventListener("message", onMessage);
+			socket.addEventListener("error", onError);
+			socket.addEventListener("close", onClose);
+			this.#sockets.set(socketId, {
+				hookedSend,
+				onClose,
+				onError,
+				onMessage,
+				originalSend,
+				socket
+			});
+		}
+		#emit(event) {
+			for (const listener of this.#listeners) try {
+				listener(event);
+			} catch {}
+		}
+		#releaseSocket(socketId) {
+			const captured = this.#sockets.get(socketId);
+			if (!captured) return;
+			this.#sockets.delete(socketId);
+			captured.socket.removeEventListener("message", captured.onMessage);
+			captured.socket.removeEventListener("error", captured.onError);
+			captured.socket.removeEventListener("close", captured.onClose);
+			if (captured.socket.send === captured.hookedSend) try {
+				Reflect.deleteProperty(captured.socket, "send");
+			} catch {
+				Object.defineProperty(captured.socket, "send", {
+					configurable: true,
+					value: captured.originalSend,
+					writable: true
+				});
+			}
+		}
+	};
+	var PING_TIMEOUT_MS = 15e3;
+	var SNAPSHOT_INTERVAL_MS = 5e3;
+	var PUSHER_PING_FRAME = JSON.stringify({
+		data: {},
+		event: "pusher:ping"
+	});
+	var log$8 = createLogger("chat-statistics");
+	var ChatStatisticsRuntime = class {
+		#chatAdapter = new KickChatAdapter();
+		#clock;
+		#listeners = new Set();
+		#rttTracker = new SocketRttTracker();
+		#statsStore = new ChatStatsStore();
+		#tap;
+		#captureFailed = false;
+		#connectionFailed = false;
+		#initialized = false;
+		#snapshotTimer;
+		#stopTapEvents;
+		constructor(tap = new WebSocketTap(_unsafeWindow), clock = Date.now) {
+			this.#tap = tap;
+			this.#clock = clock;
+		}
+		initialize() {
+			if (this.#initialized) return true;
+			this.#stopTapEvents = this.#tap.subscribe((event) => {
+				if (event.type === "error" && event.socketId === this.#statsStore.getSelectedSocketId()) this.#connectionFailed = true;
+				const pusherEvent = decodePusherEvent(event);
+				if (!pusherEvent) {
+					if (event.type === "error") this.#publish();
+					return;
+				}
+				const rttSample = this.#rttTracker.accept(pusherEvent);
+				if (rttSample) {
+					this.#statsStore.addRttSample(rttSample.socketId, rttSample.rttMs);
+					this.#publish();
+				}
+				const chatEvents = this.#chatAdapter.accept(pusherEvent);
+				let lifecycleChanged = false;
+				for (const chatEvent of chatEvents) {
+					this.#statsStore.accept(chatEvent);
+					if (chatEvent.type === "sessionStarted") this.#connectionFailed = false;
+					lifecycleChanged ||= chatEvent.type !== "message";
+				}
+				if (pusherEvent.type === "socketClosed") this.#statsStore.clearSocket(pusherEvent.socketId);
+				if (lifecycleChanged) this.#publish();
+			});
+			this.#initialized = this.#tap.install();
+			this.#captureFailed = !this.#initialized;
+			if (this.#initialized) log$8.info("Socket observation installed");
+			else {
+				this.#stopTapEvents();
+				this.#stopTapEvents = void 0;
+				log$8.warn("Socket observation unavailable");
+			}
+			return this.#initialized;
+		}
+		getSnapshot() {
+			const snapshot = this.#statsStore.getSnapshot(this.#clock());
+			if (snapshot.status !== "pending") return snapshot;
+			if (this.#captureFailed) return {
+				reason: "capture-failed",
+				status: "unavailable"
+			};
+			if (this.#connectionFailed) return {
+				reason: "connection-failed",
+				status: "unavailable"
+			};
+			return snapshot;
+		}
+		requestSocketRttSample() {
+			const socketId = this.#statsStore.getSelectedSocketId();
+			if (socketId === null) return false;
+			const now = this.#clock();
+			if (!this.#rttTracker.canStart(socketId, now, PING_TIMEOUT_MS)) return false;
+			return this.#tap.send(socketId, PUSHER_PING_FRAME);
+		}
+		subscribe(listener) {
+			this.#listeners.add(listener);
+			listener(this.getSnapshot());
+			if (!this.#snapshotTimer) this.#snapshotTimer = setInterval(() => {
+				this.#publish();
+			}, SNAPSHOT_INTERVAL_MS);
+			return () => {
+				this.#listeners.delete(listener);
+				if (this.#listeners.size === 0 && this.#snapshotTimer) {
+					clearInterval(this.#snapshotTimer);
+					this.#snapshotTimer = void 0;
+				}
+			};
+		}
+		#publish() {
+			if (this.#listeners.size === 0) return;
+			const snapshot = this.getSnapshot();
+			for (const listener of this.#listeners) listener(snapshot);
+		}
+	};
+	var runtime = new ChatStatisticsRuntime();
+	function initializeChatStatisticsCapture() {
+		return runtime.initialize();
+	}
+	function getChatStatisticsRuntime() {
+		return runtime;
+	}
+	var chatStatistics_default = ".ke-animated-number {\n  display: inline-flex;\n  align-items: center;\n  font-variant-numeric: tabular-nums;\n}\n\n.ke-animated-number__digit {\n  position: relative;\n  display: inline-block;\n  width: 1ch;\n  height: var(--ke-animated-number-height, 1.25rem);\n  overflow: hidden;\n}\n\n.ke-animated-number__reel {\n  position: absolute;\n  top: 0;\n  left: 0;\n  display: flex;\n  width: 100%;\n  flex-direction: column;\n  will-change: transform;\n}\n\n.ke-animated-number__cell {\n  display: flex;\n  width: 100%;\n  height: var(--ke-animated-number-height, 1.25rem);\n  flex: 0 0 var(--ke-animated-number-height, 1.25rem);\n  align-items: center;\n  justify-content: center;\n  line-height: var(--ke-animated-number-height, 1.25rem);\n}\n\n.ke-animated-number__separator {\n  display: inline-block;\n  height: var(--ke-animated-number-height, 1.25rem);\n  line-height: var(--ke-animated-number-height, 1.25rem);\n}\n\n[data-ke-native-chat-title] {\n  visibility: hidden;\n}\n\n#kick-enhancer-chat-statistics-title {\n  position: absolute;\n  left: 50%;\n  z-index: 1;\n  display: flex;\n  align-items: center;\n  transform: translateX(-50%);\n}\n\n.ke-chat-statistics-trigger .ke-animated-number,\n.ke-chat-statistics-card .ke-animated-number {\n  --ke-animated-number-height: 1em;\n  position: relative;\n  top: 0.18em;\n}\n\n.ke-chat-statistics-trigger {\n  display: inline-flex;\n  min-height: 1.75rem;\n  box-sizing: border-box;\n  align-items: center;\n  gap: 0.3rem;\n  padding: 0.25rem 0.4rem;\n  color: var(--neon-surface-onSurface, #fff);\n  cursor: pointer;\n  background: transparent;\n  border: 0;\n  border-radius: 0.25rem;\n  font: inherit;\n  font-size: 0.75rem;\n  font-weight: 700;\n  font-variant-numeric: tabular-nums;\n  line-height: 1;\n  white-space: nowrap;\n}\n.ke-chat-statistics-trigger:hover {\n  background: var(--neon-stateLayer-surfaceHover, rgba(240, 241, 242, 0.0392156863));\n}\n.ke-chat-statistics-trigger:focus-visible {\n  outline: 2px solid var(--neon-focusLight, #fff);\n  outline-offset: 1px;\n}\n.ke-chat-statistics-trigger__trend {\n  color: var(--neon-surface-onSurfacePositive, #53fc18);\n  font-size: 0.6875rem;\n}\n.ke-chat-statistics-trigger__trend[data-tone=negative] {\n  color: var(--neon-surface-onSurfaceNegative, #fd7272);\n}\n.ke-chat-statistics-trigger__trend[data-tone=neutral] {\n  color: var(--neon-surface-onSurfaceSecondary, #9fa6ad);\n}\n.ke-chat-statistics-trigger__trend-loader {\n  width: 0.875rem;\n  height: 0.875rem;\n  flex: 0 0 auto;\n  color: #ffc45c;\n  animation: ke-chat-statistics-spin 800ms linear infinite;\n}\n.ke-chat-statistics-trigger__unavailable {\n  display: grid;\n  width: 0.8rem;\n  height: 0.8rem;\n  box-sizing: border-box;\n  color: var(--neon-surface-onSurfaceNegative, #fd7272);\n  border: 1px solid currentcolor;\n  border-radius: 50%;\n  font-size: 0.6rem;\n  font-weight: 800;\n  line-height: 1;\n  place-items: center;\n}\n\n#kick-enhancer-chat-statistics-panel {\n  position: relative;\n  z-index: 1;\n  order: -1;\n  width: 100%;\n}\n\n.ke-chat-statistics-card {\n  width: 100%;\n  box-sizing: border-box;\n  padding: 0.4rem 0.55rem 0.45rem;\n  color: var(--neon-surface-onSurface, #fff);\n  background: rgba(11, 11, 12, 0.968627451);\n  backdrop-filter: blur(3px);\n  border: 2px solid var(--neon-outline-decorative, rgba(240, 241, 242, 0.1607843137));\n  border-radius: 0.25rem;\n  box-shadow: 0 0.0625rem 0.2rem rgba(0, 0, 0, 0.2666666667);\n  font-size: 0.75rem;\n  font-weight: 500;\n  font-variant-numeric: tabular-nums;\n  line-height: 1.25;\n  animation: ke-chat-statistics-enter 140ms ease-out;\n}\n.ke-chat-statistics-card__header, .ke-chat-statistics-card__primary {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n}\n.ke-chat-statistics-card__header {\n  min-height: 1.35rem;\n}\n.ke-chat-statistics-card__title {\n  display: inline-flex;\n  align-items: center;\n  gap: 0.35rem;\n  font-weight: 700;\n}\n.ke-chat-statistics-card__room-id {\n  color: var(--neon-surface-onSurfaceSecondary, #9fa6ad);\n  font-weight: 600;\n}\n.ke-chat-statistics-card__live-dot {\n  width: 0.4rem;\n  height: 0.4rem;\n  background: var(--neon-surface-onSurfacePositive, #53fc18);\n  border-radius: 50%;\n  box-shadow: 0 0 0 0.18rem rgba(83, 252, 24, 0.1490196078);\n}\n.ke-chat-statistics-card__live-dot[data-status=calibrating] {\n  background: #ffc45c;\n  box-shadow: 0 0 0 0.18rem rgba(255, 196, 92, 0.1490196078);\n}\n.ke-chat-statistics-card__live-dot[data-status=unavailable] {\n  background: var(--neon-surface-onSurfaceNegative, #fd7272);\n  box-shadow: 0 0 0 0.18rem rgba(253, 114, 114, 0.1490196078);\n}\n.ke-chat-statistics-card__close {\n  display: grid;\n  width: 1.35rem;\n  height: 1.35rem;\n  padding: 0;\n  color: var(--neon-surface-onSurfaceSecondary, #9fa6ad);\n  cursor: pointer;\n  background: transparent;\n  border: 0;\n  border-radius: 0.2rem;\n  font: inherit;\n  font-size: 1rem;\n  line-height: 1;\n  place-items: center;\n}\n.ke-chat-statistics-card__close:hover {\n  color: var(--neon-surface-onSurface, #fff);\n  background: var(--neon-stateLayer-surfaceHover, rgba(240, 241, 242, 0.0392156863));\n}\n.ke-chat-statistics-card__close:focus-visible {\n  outline: 2px solid var(--neon-focusLight, #fff);\n  outline-offset: 1px;\n}\n.ke-chat-statistics-card__primary {\n  padding: 0.1rem 0 0.25rem;\n}\n.ke-chat-statistics-card__rate {\n  font-size: 1.25rem;\n  font-weight: 800;\n  letter-spacing: -0.025em;\n  line-height: 1;\n}\n.ke-chat-statistics-card__rate small {\n  color: var(--neon-surface-onSurfaceSecondary, #9fa6ad);\n  font-size: 0.6875rem;\n  font-weight: 600;\n  letter-spacing: normal;\n}\n.ke-chat-statistics-card__trend {\n  color: var(--neon-surface-onSurfacePositive, #53fc18);\n  font-size: 0.75rem;\n  font-weight: 700;\n}\n.ke-chat-statistics-card__trend[data-tone=negative] {\n  color: var(--neon-surface-onSurfaceNegative, #fd7272);\n}\n.ke-chat-statistics-card__trend[data-tone=neutral] {\n  color: var(--neon-surface-onSurfaceSecondary, #9fa6ad);\n}\n.ke-chat-statistics-card__calibrating {\n  color: #ffc45c;\n  font-size: 0.6875rem;\n  font-weight: 600;\n}\n.ke-chat-statistics-card__details {\n  display: grid;\n  padding-top: 0.3rem;\n  border-top: 1px solid var(--neon-outline-decorative, rgba(240, 241, 242, 0.1607843137));\n  color: var(--neon-surface-onSurfaceSecondary, #9fa6ad);\n  gap: 0.25rem 0.6rem;\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n}\n.ke-chat-statistics-card__details strong {\n  color: var(--neon-surface-onSurface, #fff);\n  font-weight: 700;\n}\n.ke-chat-statistics-card__error {\n  margin: 0.25rem 0 0.15rem;\n  padding-top: 0.4rem;\n  border-top: 1px solid var(--neon-outline-decorative, rgba(240, 241, 242, 0.1607843137));\n  color: var(--neon-surface-onSurfaceSecondary, #9fa6ad);\n  line-height: 1.4;\n}\n\n@keyframes ke-chat-statistics-enter {\n  from {\n    opacity: 0;\n    transform: translateY(-0.35rem);\n  }\n  to {\n    opacity: 1;\n    transform: translateY(0);\n  }\n}\n@keyframes ke-chat-statistics-spin {\n  to {\n    transform: rotate(1turn);\n  }\n}\n@media (prefers-reduced-motion: reduce) {\n  .ke-chat-statistics-card,\n  .ke-chat-statistics-trigger__trend-loader {\n    animation: none;\n  }\n}";
+	var CHATROOM_SELECTOR = "#channel-chatroom";
+	var MESSAGES_SELECTOR = "#chatroom-messages";
+	var TITLE_POSITION_CLASSES = [
+		"absolute",
+		"left-1/2",
+		"-translate-x-1/2"
+	];
+	function findChatStatisticsAnchors(ownerDocument = document) {
+		const chatroom = ownerDocument.querySelector(CHATROOM_SELECTOR);
+		if (!chatroom) return null;
+		const title = Array.from(chatroom.querySelectorAll("span")).find((candidate) => TITLE_POSITION_CLASSES.every((className) => candidate.classList.contains(className)) && candidate.parentElement?.parentElement?.parentElement === chatroom);
+		if (!title) return null;
+		const stackRoot = chatroom.querySelector(MESSAGES_SELECTOR)?.previousElementSibling;
+		return {
+			eventStack: stackRoot?.classList.contains("absolute") && stackRoot.classList.contains("w-full") && stackRoot.firstElementChild ? stackRoot.firstElementChild : null,
+			title
+		};
+	}
+	var NATIVE_TITLE_ATTRIBUTE = "data-ke-native-chat-title";
+	var PANEL_HOST_ID = "kick-enhancer-chat-statistics-panel";
+	var STYLE_ID$8 = "kick-enhancer-chat-statistics-styles";
+	var TITLE_HOST_ID = "kick-enhancer-chat-statistics-title";
+	var stopActiveFeature$4;
+	function startChatStatistics() {
+		stopActiveFeature$4?.();
+		let stopUi;
+		const stopObserving = observeSetting((settings) => settings.chat.showChatStatistics, (enabled) => {
+			stopUi?.();
+			stopUi = enabled ? startStatisticsUi() : void 0;
+		});
+		let stopped = false;
+		const stop = () => {
+			if (stopped) return;
+			stopped = true;
+			stopObserving();
+			stopUi?.();
+			stopUi = void 0;
+			if (stopActiveFeature$4 === stop) stopActiveFeature$4 = void 0;
+		};
+		stopActiveFeature$4 = stop;
+		return stop;
+	}
+	function startStatisticsUi() {
+		installStyles$2();
+		const runtime = getChatStatisticsRuntime();
+		let anchors = null;
+		let panelHost = null;
+		let panelOpen = false;
+		let rttTimer;
+		let rttChatroomId = null;
+		let snapshot = runtime.getSnapshot();
+		let titleHost = null;
+		let reconcileScheduled = false;
+		let stopped = false;
+		const renderTrigger = () => {
+			if (!titleHost) return;
+			(0, preact.render)((0, preact_jsx_runtime.jsx)(ChatStatisticsTrigger, {
+				expanded: panelOpen && Boolean(panelHost),
+				onToggle: togglePanel,
+				snapshot
+			}), titleHost);
+		};
+		const removePanel = () => {
+			if (!panelHost) return;
+			(0, preact.render)(null, panelHost);
+			panelHost.remove();
+			panelHost = null;
+		};
+		const reconcilePanel = () => {
+			if (!panelOpen || !anchors?.eventStack?.isConnected) {
+				removePanel();
+				return;
+			}
+			if (!panelHost || !panelHost.isConnected || panelHost.parentElement !== anchors.eventStack) {
+				removePanel();
+				panelHost = document.createElement("div");
+				panelHost.id = PANEL_HOST_ID;
+				anchors.eventStack.append(panelHost);
+			}
+			(0, preact.render)((0, preact_jsx_runtime.jsx)(ChatStatisticsCard, {
+				onClose: closePanel,
+				snapshot
+			}), panelHost);
+		};
+		const removeTitle = () => {
+			if (titleHost) {
+				(0, preact.render)(null, titleHost);
+				titleHost.remove();
+				titleHost = null;
+			}
+			anchors?.title.removeAttribute(NATIVE_TITLE_ATTRIBUTE);
+		};
+		const reconcile = () => {
+			reconcileScheduled = false;
+			if (stopped) return;
+			const nextAnchors = findChatStatisticsAnchors();
+			if (nextAnchors?.title !== anchors?.title) {
+				removeTitle();
+				anchors = nextAnchors;
+				if (anchors) {
+					anchors.title.setAttribute(NATIVE_TITLE_ATTRIBUTE, "");
+					titleHost = document.createElement("span");
+					titleHost.id = TITLE_HOST_ID;
+					anchors.title.after(titleHost);
+				}
+			} else anchors = nextAnchors;
+			reconcilePanel();
+			renderTrigger();
+		};
+		const scheduleReconcile = () => {
+			if (stopped || reconcileScheduled) return;
+			reconcileScheduled = true;
+			queueMicrotask(reconcile);
+		};
+		const updateRttSampling = () => {
+			if (rttTimer) {
+				clearInterval(rttTimer);
+				rttTimer = void 0;
+			}
+			if (!panelOpen || snapshot.status !== "active") {
+				rttChatroomId = null;
+				return;
+			}
+			if (rttChatroomId !== snapshot.chatroomId) {
+				rttChatroomId = snapshot.chatroomId;
+				runtime.requestSocketRttSample();
+			}
+			rttTimer = setInterval(() => {
+				runtime.requestSocketRttSample();
+			}, 6e4);
+		};
+		function togglePanel() {
+			panelOpen = !panelOpen;
+			updateRttSampling();
+			reconcilePanel();
+			renderTrigger();
+		}
+		function closePanel() {
+			panelOpen = false;
+			updateRttSampling();
+			removePanel();
+			renderTrigger();
+		}
+		const applySnapshot = (nextSnapshot) => {
+			const previousChatroomId = snapshot.status === "active" ? snapshot.chatroomId : null;
+			const nextChatroomId = nextSnapshot.status === "active" ? nextSnapshot.chatroomId : null;
+			snapshot = nextSnapshot;
+			if (panelOpen && previousChatroomId !== nextChatroomId) {
+				rttChatroomId = null;
+				updateRttSampling();
+			}
+			renderTrigger();
+			reconcilePanel();
+		};
+		const stopSnapshots = runtime.subscribe(applySnapshot);
+		const observer = new MutationObserver((mutations) => {
+			if (anchors?.title.isConnected && titleHost?.isConnected && (!panelOpen || panelHost?.isConnected)) return;
+			if (mutations.some((mutation) => {
+				return !(mutation.target instanceof Element ? mutation.target : mutation.target.parentElement)?.closest("#chatroom-messages");
+			})) scheduleReconcile();
+		});
+		observer.observe(document.documentElement, {
+			childList: true,
+			subtree: true
+		});
+		reconcile();
+		return () => {
+			if (stopped) return;
+			stopped = true;
+			observer.disconnect();
+			stopSnapshots();
+			panelOpen = false;
+			updateRttSampling();
+			removePanel();
+			removeTitle();
+			anchors = null;
+			document.getElementById(STYLE_ID$8)?.remove();
+		};
+	}
+	function installStyles$2() {
+		if (document.getElementById(STYLE_ID$8)) return;
+		const style = document.createElement("style");
+		style.id = STYLE_ID$8;
+		style.textContent = chatStatistics_default;
+		document.documentElement.append(style);
+	}
+	function onDocumentElementReady(callback, ownerDocument = document, createObserver = (observerCallback) => new MutationObserver(observerCallback)) {
+		if (ownerDocument.documentElement) {
+			callback();
+			return () => void 0;
+		}
+		let active = true;
+		const observer = createObserver(() => {
+			if (!active || !ownerDocument.documentElement) return;
+			active = false;
+			observer.disconnect();
+			callback();
+		});
+		observer.observe(ownerDocument, { childList: true });
+		return () => {
+			active = false;
+			observer.disconnect();
+		};
+	}
+	var shared_ui_default = ".ke-confirmation-host {\n  position: relative;\n  width: 100%;\n  height: 100%;\n  min-width: 0;\n  min-height: 0;\n  overflow: hidden;\n}\n\n.ke-confirmation-layer {\n  position: absolute;\n  z-index: 10;\n  inset: 0;\n  display: grid;\n  padding: 1rem;\n  place-items: center;\n  background: rgba(0, 0, 0, 0.32);\n  backdrop-filter: blur(3px);\n}\n\n.ke-confirmation-dialog {\n  width: min(24rem, 100%);\n  padding: 1.1rem;\n  border: 1px solid #303030;\n  border-radius: 0.45rem;\n  background: #080808;\n  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.55);\n}\n\n.ke-confirmation-dialog__copy {\n  display: grid;\n  gap: 0.45rem;\n}\n\n.ke-confirmation-dialog__title {\n  margin: 0;\n  color: #f2f2f2;\n  font-size: 1rem;\n  font-weight: 700;\n  line-height: 1.3;\n}\n\n.ke-confirmation-dialog__description {\n  margin: 0;\n  color: #747474;\n  font-size: 0.825rem;\n  font-weight: 500;\n  line-height: 1.5;\n}\n\n.ke-confirmation-dialog__actions {\n  display: flex;\n  justify-content: flex-end;\n  gap: 0.65rem;\n  margin-top: 1rem;\n}\n\n.ke-button,\n.ke-text-field,\n.ke-select-box__input,\n.ke-track-bar {\n  box-sizing: border-box;\n  font: inherit;\n}\n\n.ke-button {\n  min-height: 2.35rem;\n  padding: 0 0.85rem;\n  border: 1px solid #1b1b1b;\n  border-radius: 0.45rem;\n  background: #0a0a0a;\n  color: #f2f2f2;\n  font-size: 0.875rem;\n  font-weight: 650;\n  line-height: 1;\n  cursor: pointer;\n  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;\n}\n.ke-button:hover:not(:disabled) {\n  border-color: #303030;\n  background: #101010;\n}\n.ke-button:focus-visible {\n  outline: 2px solid #53fc18;\n  outline-offset: 2px;\n}\n.ke-button:disabled {\n  cursor: not-allowed;\n  opacity: 0.45;\n}\n.ke-button--compact {\n  min-height: 2rem;\n  padding-inline: 0.65rem;\n}\n.ke-button--primary {\n  border-color: #53fc18;\n  background: #53fc18;\n  color: #071402;\n}\n.ke-button--primary:hover:not(:disabled) {\n  border-color: #7dff50;\n  background: #7dff50;\n}\n.ke-button--danger {\n  color: #ff6b6b;\n}\n\n.ke-form-field {\n  display: grid;\n  min-width: 0;\n  gap: 0.4rem;\n  color: #f2f2f2;\n}\n\n.ke-form-field__label {\n  display: block;\n  font-size: 0.875rem;\n  font-weight: 650;\n  line-height: 1.25;\n}\n\n.ke-form-field__description {\n  display: block;\n  color: #747474;\n  font-size: 0.78rem;\n  line-height: 1.4;\n  font-weight: 500;\n}\n\n.ke-text-field,\n.ke-select-box__input {\n  width: 100%;\n  min-height: 2.35rem;\n  border: 1px solid #1b1b1b;\n  border-radius: 0.45rem;\n  outline: none;\n  background: #0a0a0a;\n  color: #f2f2f2;\n  font-size: 0.875rem;\n  transition: background 140ms ease, border-color 140ms ease;\n}\n.ke-text-field:hover:not(:disabled),\n.ke-select-box__input:hover:not(:disabled) {\n  border-color: #303030;\n  background: #101010;\n}\n.ke-text-field:focus-visible,\n.ke-select-box__input:focus-visible {\n  border-color: #53fc18;\n  box-shadow: 0 0 0 1px #53fc18;\n}\n.ke-text-field:disabled,\n.ke-select-box__input:disabled {\n  cursor: not-allowed;\n  opacity: 0.45;\n}\n\n.ke-text-field {\n  padding: 0 0.72rem;\n  user-select: text;\n}\n.ke-text-field::placeholder {\n  color: #8c8c8c;\n}\n\n.ke-text-field-shell {\n  display: flex;\n  align-items: stretch;\n}\n\n.ke-text-field-shell .ke-text-field {\n  flex: 1 1 auto;\n  min-width: 0;\n  border-radius: 0.45rem 0 0 0.45rem;\n}\n\n.ke-text-field__suffix {\n  display: flex;\n  flex: 0 0 auto;\n  align-items: center;\n  padding-inline: 0.7rem;\n  border: 1px solid #1b1b1b;\n  border-left: 0;\n  border-radius: 0 0.45rem 0.45rem 0;\n  background: #080808;\n  color: #8c8c8c;\n  font-size: 0.875rem;\n}\n\n.ke-text-field-shell:focus-within .ke-text-field__suffix {\n  border-color: #53fc18;\n}\n\n.ke-select-box {\n  position: relative;\n  display: block;\n}\n\n.ke-select-box__input {\n  appearance: none;\n  padding: 0 2.2rem 0 0.72rem;\n  color-scheme: dark;\n  cursor: pointer;\n}\n\n.ke-select-box__chevron {\n  position: absolute;\n  top: 50%;\n  right: 0.85rem;\n  width: 0.45rem;\n  height: 0.45rem;\n  border-right: 1.5px solid #8c8c8c;\n  border-bottom: 1.5px solid #8c8c8c;\n  pointer-events: none;\n  transform: translateY(-70%) rotate(45deg);\n}\n\n.ke-toggle {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 1rem;\n  color: #f2f2f2;\n  cursor: pointer;\n}\n\n.ke-toggle__copy {\n  display: grid;\n  min-width: 0;\n  gap: 0.4rem;\n}\n\n.ke-toggle__control {\n  position: relative;\n  flex: 0 0 auto;\n}\n\n.ke-toggle__input {\n  position: absolute;\n  width: 1px;\n  height: 1px;\n  overflow: hidden;\n  opacity: 0;\n  pointer-events: none;\n}\n\n.ke-toggle__track {\n  position: relative;\n  display: block;\n  width: 2.4rem;\n  height: 1.35rem;\n  border: 1px solid #303030;\n  border-radius: 999px;\n  background: #0a0a0a;\n  transition: background 140ms ease, border-color 140ms ease;\n}\n\n.ke-toggle__thumb {\n  position: absolute;\n  top: 0.18rem;\n  left: 0.18rem;\n  width: 0.85rem;\n  height: 0.85rem;\n  border-radius: 50%;\n  background: #8c8c8c;\n  transition: background 140ms ease, transform 140ms ease;\n}\n\n.ke-toggle__input:checked + .ke-toggle__track {\n  border-color: #53fc18;\n  background: #53fc18;\n}\n\n.ke-toggle__input:checked + .ke-toggle__track .ke-toggle__thumb {\n  background: #071402;\n  transform: translateX(1.02rem);\n}\n\n.ke-toggle__input:focus-visible + .ke-toggle__track {\n  outline: 2px solid #53fc18;\n  outline-offset: 2px;\n}\n\n.ke-toggle__input:disabled + .ke-toggle__track {\n  opacity: 0.45;\n}\n\n.ke-track-bar__heading {\n  display: flex;\n  align-items: baseline;\n  justify-content: space-between;\n  gap: 1rem;\n}\n\n.ke-track-bar__value {\n  color: #8c8c8c;\n  font-size: 0.78rem;\n  font-variant-numeric: tabular-nums;\n}\n\n.ke-track-bar {\n  width: 100%;\n  height: 1.25rem;\n  margin: 0;\n  appearance: none;\n  outline: none;\n  background: transparent;\n  cursor: pointer;\n}\n.ke-track-bar::-webkit-slider-runnable-track {\n  height: 0.28rem;\n  border-radius: 999px;\n  background: linear-gradient(to right, #53fc18 0 var(--ke-track-progress), #1b1b1b var(--ke-track-progress) 100%);\n}\n.ke-track-bar::-moz-range-track {\n  height: 0.28rem;\n  border-radius: 999px;\n  background: #1b1b1b;\n}\n.ke-track-bar::-moz-range-progress {\n  height: 0.28rem;\n  border-radius: 999px;\n  background: #53fc18;\n}\n.ke-track-bar::-webkit-slider-thumb {\n  width: 1rem;\n  height: 1rem;\n  margin-top: -0.36rem;\n  appearance: none;\n  border: 2px solid #53fc18;\n  border-radius: 50%;\n  background: #050505;\n}\n.ke-track-bar::-moz-range-thumb {\n  width: 0.8rem;\n  height: 0.8rem;\n  border: 2px solid #53fc18;\n  border-radius: 50%;\n  background: #050505;\n}\n.ke-track-bar:focus-visible::-webkit-slider-thumb {\n  outline: 2px solid #53fc18;\n  outline-offset: 2px;\n}\n.ke-track-bar:focus-visible::-moz-range-thumb {\n  outline: 2px solid #53fc18;\n  outline-offset: 2px;\n}\n\n.ke-list-view {\n  --ke-list-view-scrollbar-gutter: 0.5rem;\n  min-width: 0;\n  min-height: 0;\n  display: grid;\n  grid-template-rows: 2rem minmax(0, 1fr);\n  overflow: hidden;\n  border: 1px solid #1b1b1b;\n  border-radius: 0.45rem;\n  background: #080808;\n  user-select: none;\n}\n\n.ke-list-view__header-group,\n.ke-list-view__scroll {\n  min-width: 0;\n  min-height: 0;\n  box-sizing: border-box;\n  padding-right: var(--ke-list-view-scrollbar-gutter);\n}\n\n.ke-list-view__scroll {\n  --ke-scroll-indicator-right: var(\n    --ke-list-view-scrollbar-gutter\n  );\n}\n\n.ke-list-view__header-group {\n  border-bottom: 1px solid #1b1b1b;\n  background: #0a0a0a;\n}\n\n.ke-list-view__header,\n.ke-list-view__row {\n  min-width: 0;\n  width: 100%;\n  display: grid;\n}\n\n.ke-list-view__header {\n  height: 100%;\n  color: #8c8c8c;\n  font-size: 0.72rem;\n  font-weight: 700;\n  letter-spacing: 0.04em;\n  text-transform: uppercase;\n}\n\n.ke-list-view__header-cell,\n.ke-list-view__cell {\n  min-width: 0;\n  display: flex;\n  align-items: center;\n  padding: 0.42rem 0.6rem;\n  overflow: hidden;\n}\n.ke-list-view__header-cell:not(:last-child),\n.ke-list-view__cell:not(:last-child) {\n  border-right: 1px solid #1b1b1b;\n}\n.ke-list-view__header-cell[data-align=center],\n.ke-list-view__cell[data-align=center] {\n  justify-content: center;\n  text-align: center;\n}\n.ke-list-view__header-cell[data-align=end],\n.ke-list-view__cell[data-align=end] {\n  justify-content: flex-end;\n  text-align: right;\n}\n\n.ke-list-view__header-label,\n.ke-list-view__cell-content {\n  min-width: 0;\n  max-width: 100%;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.ke-list-view__body {\n  position: relative;\n  min-width: 0;\n  min-height: 100%;\n}\n.ke-list-view__body[data-virtualized=true] {\n  contain: layout paint style;\n}\n\n.ke-list-view__row {\n  min-height: 2.125rem;\n  box-sizing: border-box;\n  border-bottom: 1px solid #1b1b1b;\n  color: #f2f2f2;\n  font-size: 0.76rem;\n}\n.ke-list-view__row[data-last-row=true] {\n  border-bottom: 0;\n}\n.ke-list-view__row[data-virtualized=true] {\n  position: absolute;\n  top: 0;\n  left: 0;\n  contain: layout paint style;\n}\n.ke-list-view__row:hover {\n  background: #101010;\n}\n.ke-list-view__row.is-interactive {\n  cursor: pointer;\n}\n.ke-list-view__row.is-interactive:focus-visible {\n  outline: 1px solid #53fc18;\n  outline-offset: -1px;\n}\n\n.ke-list-view__empty {\n  min-height: 4rem;\n  display: grid;\n  place-items: center;\n  padding: 1rem;\n  color: #8c8c8c;\n  font-size: 0.78rem;\n  text-align: center;\n}\n\n.ke-list-view__live-status {\n  position: absolute;\n  width: 1px;\n  height: 1px;\n  padding: 0;\n  overflow: hidden;\n  clip: rect(0 0 0 0);\n  clip-path: inset(50%);\n  border: 0;\n  white-space: nowrap;\n}\n\n.ke-modal {\n  width: min(36rem, 100vw - 2rem);\n  max-width: none;\n  max-height: calc(100vh - 2rem);\n  margin: auto;\n  padding: 0;\n  overflow: visible;\n  border: 1px solid #1b1b1b;\n  border-radius: 0.65rem;\n  outline: none;\n  background: transparent;\n  color: #f2f2f2;\n  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;\n  font-size: 16px;\n  line-height: 1.5;\n  box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.65);\n  user-select: none;\n}\n.ke-modal::backdrop {\n  background: rgba(0, 0, 0, 0.62);\n  backdrop-filter: blur(2px);\n}\n\n.ke-modal,\n.ke-modal * {\n  box-sizing: border-box;\n}\n\n.ke-modal ::selection {\n  background: #fff;\n  color: #000;\n}\n\n.ke-modal__surface {\n  display: grid;\n  max-height: calc(100vh - 2rem);\n  overflow: hidden;\n  border-radius: inherit;\n  background: #050505;\n  animation: ke-modal-enter 150ms ease-out;\n}\n\n.ke-modal__header {\n  display: flex;\n  align-items: flex-start;\n  justify-content: space-between;\n  gap: 1rem;\n  padding: 1.25rem 1.25rem 1rem;\n  border-bottom: 1px solid #1b1b1b;\n}\n\n.ke-modal__heading {\n  min-width: 0;\n}\n\n.ke-modal__identity {\n  min-width: 0;\n  display: flex;\n  align-items: center;\n  gap: 0.85rem;\n}\n\n.ke-modal__icon {\n  width: 2.75rem;\n  height: 2.75rem;\n  flex: 0 0 auto;\n  object-fit: contain;\n}\n\n.ke-modal__title {\n  margin: 0;\n  color: #f2f2f2;\n  font-size: 1.1rem;\n  font-weight: 750;\n  line-height: 1.25;\n}\n\n.ke-modal__description {\n  margin: 0.35rem 0 0;\n  color: #8c8c8c;\n  font-size: 0.8rem;\n  font-weight: 500;\n  line-height: 1.45;\n}\n\n.ke-modal__close {\n  display: grid;\n  width: 2rem;\n  min-width: 2rem;\n  min-height: 2rem;\n  padding: 0;\n  place-items: center;\n  font-size: 1.3rem;\n  font-weight: 400;\n}\n\n.ke-modal__body {\n  min-height: 0;\n  padding: 1.25rem;\n  overflow-y: auto;\n  scrollbar-color: #303030 transparent;\n}\n\n.ke-modal__footer {\n  display: flex;\n  justify-content: flex-end;\n  gap: 0.65rem;\n  padding: 1rem 1.25rem;\n  border-top: 1px solid #1b1b1b;\n  background: #080808;\n}\n\n.ke-settings {\n  display: grid;\n  gap: 1.35rem;\n}\n\n.ke-settings__actions {\n  display: flex;\n  justify-content: flex-end;\n}\n\n.ke-workspace-modal {\n  --ke-workspace-modal-gutter: clamp(1rem, 4vw, 2rem);\n  --ke-workspace-modal-height: 52rem;\n  --ke-workspace-modal-width: 52rem;\n  width: min(var(--ke-workspace-modal-width), 100vw - var(--ke-workspace-modal-gutter));\n  max-height: calc(100dvh - var(--ke-workspace-modal-gutter));\n}\n\n.ke-workspace-modal .ke-modal__surface {\n  height: min(var(--ke-workspace-modal-height), 100dvh - var(--ke-workspace-modal-gutter));\n  grid-template-rows: auto minmax(0, 1fr) auto;\n}\n\n.ke-workspace-modal .ke-modal__body {\n  padding: 0;\n  overflow: hidden;\n}\n\n.ke-settings-modal {\n  --ke-workspace-modal-height: 46rem;\n}\n\n.ke-settings-modal__tabs {\n  width: 100%;\n  height: 100%;\n}\n\n.ke-settings-modal__github {\n  display: inline-flex;\n  align-items: center;\n  gap: 0.45rem;\n  margin-right: auto;\n}\n.ke-settings-modal__github:hover:not(:disabled) {\n  background: #0a0a0a;\n  color: #53fc18;\n}\n\n.ke-settings-modal__github-icon {\n  width: 1.05rem;\n  height: 1.05rem;\n  flex: 0 0 auto;\n}\n\n@keyframes ke-modal-enter {\n  from {\n    opacity: 0;\n    transform: translateY(0.35rem) scale(0.985);\n  }\n  to {\n    opacity: 1;\n    transform: translateY(0) scale(1);\n  }\n}\n@media (prefers-reduced-motion: reduce) {\n  .ke-modal__surface {\n    animation: none;\n  }\n}\n.ke-scroll-area {\n  position: relative;\n  min-width: 0;\n  min-height: 0;\n  height: 100%;\n  overflow: hidden;\n}\n.ke-scroll-area[data-height=content] {\n  height: auto;\n}\n.ke-scroll-area[data-height=content] .ke-scroll-area__viewport {\n  height: auto;\n  max-height: inherit;\n}\n.ke-scroll-area[data-height=content] .ke-scroll-area__content {\n  min-height: 0;\n}\n\n.ke-scroll-area__viewport {\n  min-width: 0;\n  min-height: 0;\n  width: 100%;\n  height: 100%;\n  overflow: auto;\n  overscroll-behavior: contain;\n  scrollbar-width: none;\n}\n.ke-scroll-area__viewport::-webkit-scrollbar {\n  width: 0;\n  height: 0;\n}\n.ke-scroll-area__viewport:focus {\n  outline: none;\n}\n.ke-scroll-area__viewport:focus-visible {\n  outline: 1px solid #1b1b1b;\n  outline-offset: -1px;\n}\n\n.ke-scroll-area__content {\n  min-width: 100%;\n  min-height: 100%;\n}\n\n.ke-scroll-area[data-scroll-indicators=true]::before, .ke-scroll-area[data-scroll-indicators=true]::after {\n  position: absolute;\n  z-index: 1;\n  right: var(--ke-scroll-indicator-right, 0);\n  left: 0;\n  height: 0.75rem;\n  content: \"\";\n  pointer-events: none;\n}\n.ke-scroll-area[data-scroll-indicators=true][data-overflow-top]::before {\n  top: 0;\n  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent);\n}\n.ke-scroll-area[data-scroll-indicators=true][data-overflow-bottom]::after {\n  bottom: 0;\n  background: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent);\n}\n\n.ke-scroll-area__thumb {\n  position: absolute;\n  z-index: 2;\n  top: 0;\n  right: 0.25rem;\n  width: 0.25rem;\n  border-radius: 0.125rem;\n  background: #fff;\n  cursor: default;\n  opacity: 0;\n  pointer-events: none;\n  touch-action: none;\n  transition: background 140ms ease, opacity 140ms ease;\n}\n.ke-scroll-area__thumb:not([data-visible=true]) {\n  display: none;\n}\n\n.ke-scroll-area:hover > .ke-scroll-area__thumb[data-visible=true],\n.ke-scroll-area:focus-within > .ke-scroll-area__thumb[data-visible=true],\n.ke-scroll-area.is-dragging > .ke-scroll-area__thumb[data-visible=true] {\n  background: #fff;\n  opacity: 1;\n  pointer-events: auto;\n}\n\n.ke-scroll-area[data-scrollbar=compact] > .ke-scroll-area__thumb {\n  right: 0.15rem;\n  width: 0.1875rem;\n}\n\n.ke-scroll-area[data-scrollbar=overlay] > .ke-scroll-area__thumb {\n  right: 0.3rem;\n  width: 0.25rem;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .ke-scroll-area__thumb {\n    transition: none;\n  }\n}\n.ke-tabs {\n  width: 100%;\n  height: 100%;\n  min-width: 0;\n  min-height: 0;\n  display: grid;\n  grid-template-rows: auto minmax(0, 1fr);\n  overflow: hidden;\n}\n\n.ke-tabs__list {\n  display: flex;\n  min-width: 0;\n  min-height: 2.5rem;\n  align-items: stretch;\n  overflow: hidden;\n  border-bottom: 1px solid #1b1b1b;\n  background: #050505;\n}\n\n.ke-tabs__tab {\n  min-width: 0;\n  flex: 0 1 auto;\n  padding: 0.5rem 0.75rem;\n  overflow: hidden;\n  border: 0;\n  border-bottom: 0.125rem solid transparent;\n  outline: none;\n  background: transparent;\n  color: #8c8c8c;\n  font: inherit;\n  font-size: 0.875rem;\n  font-weight: 550;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  cursor: pointer;\n  user-select: none;\n  transition: background 140ms ease, color 140ms ease;\n}\n.ke-tabs__tab:hover:not(:disabled) {\n  background: #101010;\n  color: #f2f2f2;\n}\n.ke-tabs__tab:focus-visible {\n  outline: 1px solid #53fc18;\n  outline-offset: -1px;\n}\n.ke-tabs__tab[aria-selected=true] {\n  border-bottom-color: #f2f2f2;\n  color: #f2f2f2;\n}\n.ke-tabs__tab:disabled {\n  color: #747474;\n  cursor: default;\n  opacity: 0.45;\n}\n\n.ke-tabs__panel {\n  min-width: 0;\n  min-height: 0;\n  overflow: hidden;\n}\n.ke-tabs__panel[hidden] {\n  display: none;\n}\n\n.ke-tabs__scroll {\n  height: 100%;\n}\n\n.ke-tabs__panel-content {\n  padding: 1rem 1.25rem 1.25rem;\n}\n\n.ke-tabs__panel-content--centered {\n  display: grid;\n  align-items: safe center;\n  justify-items: center;\n}";
+	var STYLE_ID$7 = "kick-enhancer-shared-ui-styles";
+	function installSharedUiStyles() {
+		if (document.getElementById(STYLE_ID$7)) return;
+		const style = document.createElement("style");
+		style.id = STYLE_ID$7;
+		style.textContent = shared_ui_default;
+		document.documentElement.append(style);
 	}
 	var CLIP_CARD_SELECTOR = "[data-testid=\"livestream-results-card\"]";
 	var CLIP_MODAL_BUTTON_SELECTOR = "button[aria-label=\"Open clip modal\"]";
@@ -9765,95 +10764,6 @@
 		if (options.hideGamblingStreams && card.closest("[data-testid=\"followed-livestreams\"]") && card.querySelector("a[href=\"/category/slots\"]")) return true;
 		return Boolean(options.hideFollowingRecommendations && card.closest("[data-testid=\"following\"]") && !card.closest("[data-testid=\"followed-livestreams\"]"));
 	}
-	var DIGITS = Array.from({ length: 30 }, (_, index) => index % 10);
-	var states = new WeakMap();
-	function renderAnimatedNumber(container, value) {
-		const formatted = Math.abs(value).toLocaleString();
-		const existing = states.get(container);
-		if (existing?.value === formatted) return;
-		cancelState(existing);
-		if (prefersReducedMotion()) {
-			container.textContent = formatted;
-			states.set(container, {
-				animations: [],
-				value: formatted
-			});
-			return;
-		}
-		const fragment = document.createDocumentFragment();
-		const reels = [];
-		let digitIndex = 0;
-		for (const character of formatted) {
-			if (!/\d/.test(character)) {
-				const separator = document.createElement("span");
-				separator.className = "ke-animated-number__separator";
-				separator.textContent = character;
-				fragment.append(separator);
-				continue;
-			}
-			const viewport = document.createElement("span");
-			viewport.className = "ke-animated-number__digit";
-			const reel = document.createElement("span");
-			reel.className = "ke-animated-number__reel";
-			for (const digit of DIGITS) {
-				const cell = document.createElement("span");
-				cell.className = "ke-animated-number__cell";
-				cell.textContent = String(digit);
-				reel.append(cell);
-			}
-			viewport.append(reel);
-			fragment.append(viewport);
-			reels.push({
-				digit: Number(character),
-				element: reel,
-				index: digitIndex,
-				viewport
-			});
-			digitIndex += 1;
-		}
-		container.replaceChildren(fragment);
-		const state = {
-			animations: [],
-			value: formatted
-		};
-		states.set(container, state);
-		state.frame = window.requestAnimationFrame(() => {
-			state.frame = void 0;
-			if (states.get(container) !== state || !container.isConnected) return;
-			for (const reel of reels) {
-				const digitHeight = reel.viewport.getBoundingClientRect().height;
-				if (digitHeight <= 0) continue;
-				const target = -(20 + reel.digit) * digitHeight;
-				const animation = reel.element.animate([
-					{ transform: "translateY(0)" },
-					{
-						offset: .82,
-						transform: `translateY(${target - digitHeight * .3}px)`
-					},
-					{
-						offset: .93,
-						transform: `translateY(${target + digitHeight * .1}px)`
-					},
-					{ transform: `translateY(${target}px)` }
-				], {
-					delay: reel.index * 35,
-					duration: 520 + reel.index * 70,
-					easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
-					fill: "backwards"
-				});
-				reel.element.style.transform = `translateY(${target}px)`;
-				state.animations.push(animation);
-			}
-		});
-	}
-	function cancelState(state) {
-		if (!state) return;
-		if (state.frame !== void 0) window.cancelAnimationFrame(state.frame);
-		for (const animation of state.animations) animation.cancel();
-	}
-	function prefersReducedMotion() {
-		return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-	}
 	function renderChannelSurface(store, ownership, enabled) {
 		const targetSlugs = new Set();
 		const existing = document.querySelector(`${VIEWER_COUNT_SELECTOR}[data-ke-target="channel"]`);
@@ -10411,7 +11321,7 @@
 			...preserveHiddenState ? { showViewCount: false } : {}
 		};
 	}
-	var viewerCounts_default = "[data-ke-viewer-count],\n[data-ke-stream-uptime] {\n  box-sizing: border-box;\n  font-family: inherit;\n  white-space: nowrap;\n}\n\n.ke-viewer-count-card,\n.ke-stream-uptime-card {\n  position: absolute;\n  z-index: 20;\n  padding: 0 0.25rem;\n  color: var(--neon-surface-onSurface, #fff);\n  font-variant-numeric: tabular-nums;\n  line-height: 1.5rem;\n  pointer-events: none;\n  border-radius: 0.25rem;\n}\n\n.ke-viewer-count-card {\n  bottom: 0.375rem;\n  left: 0.375rem;\n  font-size: 0.875rem;\n  font-weight: 600;\n  background: var(--neon-surface-lowest, #0e0f12);\n}\n\n.ke-stream-uptime-card {\n  top: 0.375rem;\n  left: 0.375rem;\n  display: inline-flex;\n  align-items: center;\n  gap: 0.25rem;\n  font-size: 0.75rem;\n  font-weight: 500;\n  background: #0b0b0c;\n}\n.ke-stream-uptime-card::before {\n  width: 0.5rem;\n  height: 0.5rem;\n  flex: 0 0 auto;\n  content: \"\";\n  background: var(--neon-primary-base, #53fc18);\n  border-radius: 9999px;\n}\n\n.ke-viewer-count-sidebar,\n.ke-viewer-count-tooltip {\n  display: inline-flex;\n  flex: 0 0 auto;\n  align-items: center;\n  color: inherit;\n  font-size: 0.875rem;\n  font-weight: 600;\n  line-height: 1.25rem;\n}\n\n.ke-stream-uptime-tooltip {\n  position: absolute;\n  top: 100%;\n  right: 0;\n  color: var(--neon-surface-onSurfaceSecondary, #9fa6ad);\n  font-size: 0.6875rem;\n  font-variant-numeric: tabular-nums;\n  font-weight: 500;\n  line-height: 1rem;\n  pointer-events: none;\n  white-space: nowrap;\n}\n\n[data-ke-tooltip-uptime-container],\n[data-ke-sidebar-uptime-container] {\n  position: relative;\n}\n\n.ke-stream-uptime-sidebar {\n  position: absolute;\n  top: 100%;\n  right: 0;\n  color: var(--neon-surface-onSurfaceSecondary, #9fa6ad);\n  font-size: 0.6875rem;\n  font-variant-numeric: tabular-nums;\n  font-weight: 500;\n  line-height: 1rem;\n  pointer-events: none;\n  white-space: nowrap;\n}\n\n.ke-viewer-count-tooltip--standalone {\n  gap: 0.25rem;\n  margin-left: auto;\n}\n.ke-viewer-count-tooltip--standalone::before {\n  width: 0.5rem;\n  height: 0.5rem;\n  content: \"\";\n  background: var(--neon-primary-base, #53fc18);\n  border-radius: 9999px;\n}\n\n.ke-viewer-count-channel {\n  display: inline-flex;\n  align-items: center;\n  min-height: 1.375rem;\n  gap: 0.25rem;\n  color: var(--neon-surface-onSurface, #fff);\n  font-size: 0.875rem;\n  font-weight: 700;\n  line-height: 1.25rem;\n}\n.ke-viewer-count-channel svg {\n  width: 1rem;\n  height: 1rem;\n  flex: 0 0 auto;\n  fill: currentcolor;\n}\n\n.ke-viewer-count-channel__content {\n  display: inline-flex;\n  align-items: center;\n  gap: 0.25rem;\n  color: var(--neon-surface-onSurfaceSecondary, #9fa6ad);\n}\n\n.ke-viewer-count-channel__value {\n  color: var(--neon-primary-base, #53fc18);\n}\n\n.ke-animated-number {\n  display: inline-flex;\n  align-items: center;\n  font-variant-numeric: tabular-nums;\n}\n\n.ke-animated-number__digit {\n  position: relative;\n  display: inline-block;\n  width: 1ch;\n  height: 1.25rem;\n  overflow: hidden;\n}\n\n.ke-animated-number__reel {\n  position: absolute;\n  top: 0;\n  left: 0;\n  display: flex;\n  width: 100%;\n  flex-direction: column;\n  will-change: transform;\n}\n\n.ke-animated-number__cell {\n  display: flex;\n  width: 100%;\n  height: 1.25rem;\n  flex: 0 0 1.25rem;\n  align-items: center;\n  justify-content: center;\n  line-height: 1.25rem;\n}\n\n.ke-animated-number__separator {\n  display: inline-block;\n  height: 1.25rem;\n  line-height: 1.25rem;\n}\n\n[data-ke-native-live-hidden] {\n  display: none !important;\n}\n\n[data-ke-native-card-live-hidden] {\n  display: none !important;\n}";
+	var viewerCounts_default = "[data-ke-viewer-count],\n[data-ke-stream-uptime] {\n  box-sizing: border-box;\n  font-family: inherit;\n  white-space: nowrap;\n}\n\n.ke-viewer-count-card,\n.ke-stream-uptime-card {\n  position: absolute;\n  z-index: 20;\n  padding: 0 0.25rem;\n  color: var(--neon-surface-onSurface, #fff);\n  font-variant-numeric: tabular-nums;\n  line-height: 1.5rem;\n  pointer-events: none;\n  border-radius: 0.25rem;\n}\n\n.ke-viewer-count-card {\n  bottom: 0.375rem;\n  left: 0.375rem;\n  font-size: 0.875rem;\n  font-weight: 600;\n  background: var(--neon-surface-lowest, #0e0f12);\n}\n\n.ke-stream-uptime-card {\n  top: 0.375rem;\n  left: 0.375rem;\n  display: inline-flex;\n  align-items: center;\n  gap: 0.25rem;\n  font-size: 0.75rem;\n  font-weight: 500;\n  background: #0b0b0c;\n}\n.ke-stream-uptime-card::before {\n  width: 0.5rem;\n  height: 0.5rem;\n  flex: 0 0 auto;\n  content: \"\";\n  background: var(--neon-primary-base, #53fc18);\n  border-radius: 9999px;\n}\n\n.ke-viewer-count-sidebar,\n.ke-viewer-count-tooltip {\n  display: inline-flex;\n  flex: 0 0 auto;\n  align-items: center;\n  color: inherit;\n  font-size: 0.875rem;\n  font-weight: 600;\n  line-height: 1.25rem;\n}\n\n.ke-stream-uptime-tooltip {\n  position: absolute;\n  top: 100%;\n  right: 0;\n  color: var(--neon-surface-onSurfaceSecondary, #9fa6ad);\n  font-size: 0.6875rem;\n  font-variant-numeric: tabular-nums;\n  font-weight: 500;\n  line-height: 1rem;\n  pointer-events: none;\n  white-space: nowrap;\n}\n\n[data-ke-tooltip-uptime-container],\n[data-ke-sidebar-uptime-container] {\n  position: relative;\n}\n\n.ke-stream-uptime-sidebar {\n  position: absolute;\n  top: 100%;\n  right: 0;\n  color: var(--neon-surface-onSurfaceSecondary, #9fa6ad);\n  font-size: 0.6875rem;\n  font-variant-numeric: tabular-nums;\n  font-weight: 500;\n  line-height: 1rem;\n  pointer-events: none;\n  white-space: nowrap;\n}\n\n.ke-viewer-count-tooltip--standalone {\n  gap: 0.25rem;\n  margin-left: auto;\n}\n.ke-viewer-count-tooltip--standalone::before {\n  width: 0.5rem;\n  height: 0.5rem;\n  content: \"\";\n  background: var(--neon-primary-base, #53fc18);\n  border-radius: 9999px;\n}\n\n.ke-viewer-count-channel {\n  display: inline-flex;\n  align-items: center;\n  min-height: 1.375rem;\n  gap: 0.25rem;\n  color: var(--neon-surface-onSurface, #fff);\n  font-size: 0.875rem;\n  font-weight: 700;\n  line-height: 1.25rem;\n}\n.ke-viewer-count-channel svg {\n  width: 1rem;\n  height: 1rem;\n  flex: 0 0 auto;\n  fill: currentcolor;\n}\n\n.ke-viewer-count-channel__content {\n  display: inline-flex;\n  align-items: center;\n  gap: 0.25rem;\n  color: var(--neon-surface-onSurfaceSecondary, #9fa6ad);\n}\n\n.ke-viewer-count-channel__value {\n  color: var(--neon-primary-base, #53fc18);\n}\n\n.ke-animated-number {\n  display: inline-flex;\n  align-items: center;\n  font-variant-numeric: tabular-nums;\n}\n\n.ke-animated-number__digit {\n  position: relative;\n  display: inline-block;\n  width: 1ch;\n  height: var(--ke-animated-number-height, 1.25rem);\n  overflow: hidden;\n}\n\n.ke-animated-number__reel {\n  position: absolute;\n  top: 0;\n  left: 0;\n  display: flex;\n  width: 100%;\n  flex-direction: column;\n  will-change: transform;\n}\n\n.ke-animated-number__cell {\n  display: flex;\n  width: 100%;\n  height: var(--ke-animated-number-height, 1.25rem);\n  flex: 0 0 var(--ke-animated-number-height, 1.25rem);\n  align-items: center;\n  justify-content: center;\n  line-height: var(--ke-animated-number-height, 1.25rem);\n}\n\n.ke-animated-number__separator {\n  display: inline-block;\n  height: var(--ke-animated-number-height, 1.25rem);\n  line-height: var(--ke-animated-number-height, 1.25rem);\n}\n\n[data-ke-native-live-hidden] {\n  display: none !important;\n}\n\n[data-ke-native-card-live-hidden] {\n  display: none !important;\n}";
 	var STYLE_ID$1 = "kick-enhancer-viewer-count-styles";
 	var RENDER_DELAY_MS = 150;
 	var UPTIME_REFRESH_INTERVAL_MS = 60 * 1e3;
@@ -10831,7 +11741,7 @@
 			onImportRequest(result.settings, result.compatibilityWarning);
 		};
 		const exportSettings = () => {
-			triggerDownload(new Blob([serializeSettings(getSettings())], { type: "application/json;charset=utf-8" }), `kick-enhancer-settings-v5.json`);
+			triggerDownload(new Blob([serializeSettings(getSettings())], { type: "application/json;charset=utf-8" }), `kick-enhancer-settings-v6.json`);
 		};
 		return (0, preact_jsx_runtime.jsxs)("section", {
 			className: "ke-about",
@@ -11372,12 +12282,16 @@
 	function setChatMessageSpacing(value) {
 		return updateChatSetting("messageSpacing", value === null ? null : normalizeChatValue(value, 0, 12));
 	}
+	function setShowChatStatistics(visible) {
+		return updateChatSetting("showChatStatistics", visible);
+	}
 	function resetChatAppearance() {
 		return updateSettings((settings) => {
 			if (settings.chat.fontFamily === null && settings.chat.fontSize === null && settings.chat.fontWeight === null && !settings.chat.messageDividers && settings.chat.messageSpacing === null) return settings;
 			return {
 				...settings,
 				chat: {
+					...settings.chat,
 					fontFamily: null,
 					fontSize: null,
 					fontWeight: null,
@@ -11516,6 +12430,14 @@
 					label: "Message dividers",
 					onCheckedChange: (enabled) => {
 						setChatMessageDividers(enabled);
+					}
+				}),
+				(0, preact_jsx_runtime.jsx)(Toggle, {
+					checked: settings.showChatStatistics,
+					description: "Show live message activity, active chatters, socket RTT, and session totals in chat.",
+					label: "Show chat statistics",
+					onCheckedChange: (visible) => {
+						setShowChatStatistics(visible);
 					}
 				}),
 				(0, preact_jsx_runtime.jsx)("div", {
@@ -11863,11 +12785,12 @@
 	var log = createLogger("app");
 	var stopFeatures;
 	initializeViewerCountCapture();
+	initializeChatStatisticsCapture();
 	async function start() {
 		await initializeSettings();
 		stopFeatures?.();
-		stopFeatures = composeDisposers(startChatAppearance(), startClipDownloadActions(), startViewerEnhancements(), startFollowingRecommendationsVisibility(), startGamblingStreamsVisibility(), startHomepageCarouselVisibility(), startRecommendedChannelsVisibility(), startSidebarStateMemory(), startTopNavButton());
+		stopFeatures = composeDisposers(startChatAppearance(), startChatStatistics(), startClipDownloadActions(), startViewerEnhancements(), startFollowingRecommendationsVisibility(), startGamblingStreamsVisibility(), startHomepageCarouselVisibility(), startRecommendedChannelsVisibility(), startSidebarStateMemory(), startTopNavButton());
 		log.info("Ready");
 	}
 	start();
-})(preact, jsxRuntime, preactHooks, preactCompat);
+})(preact, preactHooks, jsxRuntime, preactCompat);

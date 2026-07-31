@@ -1,4 +1,4 @@
-export const SETTINGS_VERSION = 5
+export const SETTINGS_VERSION = 6
 
 export const CHAT_FONT_FAMILIES = [
   'arial',
@@ -32,6 +32,7 @@ export type Settings = Readonly<{
     fontWeight: ChatFontWeight | null
     messageDividers: boolean
     messageSpacing: number | null
+    showChatStatistics: boolean
   }>
   ui: Readonly<{
     hideFollowingRecommendations: boolean
@@ -74,6 +75,7 @@ export const DEFAULT_SETTINGS: Settings = {
     fontWeight: null,
     messageDividers: false,
     messageSpacing: null,
+    showChatStatistics: false,
   },
   ui: {
     hideFollowingRecommendations: false,
@@ -112,6 +114,7 @@ export function parseSettings(value: unknown): Settings {
         CHAT_MESSAGE_SPACING_MIN,
         CHAT_MESSAGE_SPACING_MAX,
       ),
+      showChatStatistics: chat.showChatStatistics === true,
     },
     ui: {
       hideFollowingRecommendations:
