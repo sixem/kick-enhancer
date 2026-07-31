@@ -2,6 +2,7 @@
 
 import { Transmuxer } from 'mux.js/cjs/mp4/transmuxer.js'
 
+import { toTransferableArrayBuffer } from './byteBuffers'
 import { createTransmuxerSession } from './transmuxerSession'
 import {
   type DownloadWorkerRequest,
@@ -36,9 +37,9 @@ worker.onmessage = (
     }
 
     const fragment = session.flush()
-    const data = toTransferBuffer(fragment.data)
+    const data = toTransferableArrayBuffer(fragment.data)
     const initSegment = fragment.initSegment
-      ? toTransferBuffer(fragment.initSegment)
+      ? toTransferableArrayBuffer(fragment.initSegment)
       : undefined
     respond(
       {
@@ -64,19 +65,4 @@ function respond(
   transfer: Transferable[] = [],
 ) {
   worker.postMessage(message, transfer)
-}
-
-function toTransferBuffer(bytes: Uint8Array) {
-  if (
-    bytes.byteOffset === 0 &&
-    bytes.byteLength === bytes.buffer.byteLength &&
-    bytes.buffer instanceof ArrayBuffer
-  ) {
-    return bytes.buffer
-  }
-
-  return bytes.buffer.slice(
-    bytes.byteOffset,
-    bytes.byteOffset + bytes.byteLength,
-  ) as ArrayBuffer
 }

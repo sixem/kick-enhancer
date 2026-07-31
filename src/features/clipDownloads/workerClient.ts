@@ -1,4 +1,5 @@
 import InlineDownloadWorker from './download.worker?worker&inline'
+import { toTransferableArrayBuffer } from './byteBuffers'
 import { ClipDownloadError } from './errors'
 import {
   type DownloadWorkerRequest,
@@ -62,10 +63,7 @@ export class TransmuxWorkerClient {
   }
 
   async push(bytes: Uint8Array) {
-    const buffer = bytes.buffer.slice(
-      bytes.byteOffset,
-      bytes.byteOffset + bytes.byteLength,
-    ) as ArrayBuffer
+    const buffer = toTransferableArrayBuffer(bytes)
     const response = await this.request(
       {
         bytes: buffer,

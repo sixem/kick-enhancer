@@ -1,3 +1,7 @@
+import {
+  copyBytesToArrayBuffer,
+  toWritableBufferSource,
+} from './byteBuffers.ts'
 import { ClipDownloadError } from './errors.ts'
 
 export type OutputSink = Readonly<{
@@ -10,7 +14,7 @@ export type OutputSink = Readonly<{
 type WritableFileStreamLike = Readonly<{
   abort: (reason?: unknown) => Promise<void>
   close: () => Promise<void>
-  write: (data: ArrayBuffer) => Promise<void>
+  write: (data: BufferSource) => Promise<void>
 }>
 
 export type FileHandleLike = Readonly<{
@@ -93,12 +97,7 @@ export async function createFileSystemSink(
     filename: handle.name,
     write: async (bytes) => {
       try {
-        await writable.write(
-          bytes.buffer.slice(
-            bytes.byteOffset,
-            bytes.byteOffset + bytes.byteLength,
-          ) as ArrayBuffer,
-        )
+        await writable.write(toWritableBufferSource(bytes))
       } catch {
         throw new ClipDownloadError(
           'file-write',
@@ -145,12 +144,7 @@ export function createBlobSink(
         )
       }
 
-      parts.push(
-        bytes.buffer.slice(
-          bytes.byteOffset,
-          bytes.byteOffset + bytes.byteLength,
-        ) as ArrayBuffer,
-      )
+      parts.push(copyBytesToArrayBuffer(bytes))
     },
   }
 }

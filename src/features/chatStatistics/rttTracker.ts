@@ -8,6 +8,10 @@ export type SocketRttSample = Readonly<{
 export class SocketRttTracker {
   readonly #pending = new Map<number, number>()
 
+  clear() {
+    this.#pending.clear()
+  }
+
   accept(event: PusherEvent): SocketRttSample | null {
     if (event.type === 'socketClosed') {
       this.#pending.delete(event.socketId)

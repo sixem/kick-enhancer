@@ -7,7 +7,7 @@ import { SocketRttTracker } from '../src/features/chatStatistics/rttTracker.ts'
 
 const CHANNEL = 'chatrooms.29191.v2'
 
-test('decodes Pusher subscription lifecycle and nested data', () => {
+test('decodes Pusher lifecycle while leaving event data lazy', () => {
   assert.deepEqual(
     decodePusherEvent(
       frame('outgoing', {
@@ -39,15 +39,16 @@ test('decodes Pusher subscription lifecycle and nested data', () => {
     },
   )
 
+  const nestedData = JSON.stringify({ id: 'message-1' })
   const decoded = decodePusherEvent(
     frame('incoming', {
       channel: CHANNEL,
-      data: JSON.stringify({ id: 'message-1' }),
+      data: nestedData,
       event: 'App\\Events\\ChatMessageEvent',
     }),
   )
 
-  assert.deepEqual(decoded?.data, { id: 'message-1' })
+  assert.equal(decoded?.data, nestedData)
 })
 
 test('rejects malformed, binary, and unsupported Pusher frames', () => {
@@ -125,6 +126,22 @@ test('requires subscribe confirmation and emits sanitized messages', () => {
   ])
   assert.equal('content' in events[0], false)
   assert.equal('username' in events[0], false)
+})
+
+test('tracks sessions without decoding messages while collection is disabled', () => {
+  const adapter = new KickChatAdapter()
+  const message = pusherMessage({
+    chatroom_id: 29191,
+    id: 'message-1',
+    sender: { id: 42 },
+    type: 'message',
+  })
+
+  adapter.accept(subscribing())
+  assert.equal(adapter.accept(subscribed())[0]?.type, 'sessionStarted')
+  assert.deepEqual(adapter.accept(message, false), [])
+  assert.equal(adapter.accept(message)[0]?.type, 'message')
+  assert.equal(adapter.accept(unsubscribing())[0]?.type, 'sessionEnded')
 })
 
 test('rejects changed message contracts and late events', () => {
@@ -277,7 +294,7 @@ function unsubscribing() {
 function pusherMessage(data) {
   return {
     channelName: CHANNEL,
-    data,
+    data: JSON.stringify(data),
     eventName: 'App\\Events\\ChatMessageEvent',
     observedAt: 300,
     socketId: 7,

@@ -123,11 +123,14 @@ export class ViewerCountStore {
     }
   }
 
-  getLivestreamIds(channelSlugs: ReadonlySet<string>) {
+  getLivestreamIds(
+    channelSlugs: ReadonlySet<string>,
+    now = Date.now(),
+  ) {
     const ids = new Set<number>()
 
     for (const slug of channelSlugs) {
-      const stream = this.get(slug)
+      const stream = this.get(slug, now)
 
       if (stream?.livestreamId !== undefined) {
         ids.add(stream.livestreamId)

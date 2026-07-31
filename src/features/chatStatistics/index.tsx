@@ -23,11 +23,14 @@ let stopActiveFeature: Dispose | undefined
 export function startChatStatistics(): Dispose {
   stopActiveFeature?.()
 
+  const runtime = getChatStatisticsRuntime()
   let stopUi: Dispose | undefined
   const stopObserving = observeSetting(
     (settings) => settings.chat.showChatStatistics,
     (enabled) => {
       stopUi?.()
+      stopUi = undefined
+      runtime.setCollectionEnabled(enabled)
       stopUi = enabled ? startStatisticsUi() : undefined
     },
   )
@@ -42,6 +45,7 @@ export function startChatStatistics(): Dispose {
     stopObserving()
     stopUi?.()
     stopUi = undefined
+    runtime.setCollectionEnabled(false)
 
     if (stopActiveFeature === stop) {
       stopActiveFeature = undefined

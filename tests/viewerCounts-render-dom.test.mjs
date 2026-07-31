@@ -201,6 +201,48 @@ test('renders sidebar and linked tooltip enhancements independently', (t) => {
   )
 })
 
+test('trusts a native LIVE label when sidebar privacy metadata is missing', (t) => {
+  const document = installDom(t, '/browse')
+  const store = createStore([
+    stream('sidebar-one', {
+      showViewCount: true,
+      viewerCount: 987,
+    }),
+  ])
+  document.body.innerHTML = `
+    <aside id="sidebar-wrapper">
+      <a
+        data-testid="sidebar-following-channel-sidebar-one"
+        href="/sidebar-one"
+      >
+        <div class="items-center">
+          <span class="bg-green-500"></span>
+          <span data-sidebar-native-live>LIVE</span>
+        </div>
+      </a>
+    </aside>
+  `
+
+  const result = renderViewerCounts(
+    store,
+    undefined,
+    DEFAULT_OPTIONS,
+  )
+
+  assert.equal(result.counts.sidebar, 1)
+  assert.equal(
+    document.querySelector(
+      '[data-ke-viewer-count][data-ke-target="sidebar"]',
+    )?.textContent,
+    '987',
+  )
+  assert.equal(
+    document.querySelector('[data-sidebar-native-live]')
+      ?.getAttribute('data-ke-native-live-hidden'),
+    'sidebar-one',
+  )
+})
+
 function installDom(t, pathname) {
   const browser = new Window({
     url: `https://kick.com${pathname}`,

@@ -38,6 +38,8 @@ export function renderSidebarSurface(
     const nativeCountVisible = isCompactCount(
       statusLabel?.textContent,
     )
+    // Sidebar payloads can omit show_view_count. The rendered label is the
+    // reliable surface-level signal for whether KICK withheld the count.
     const countEligible =
       canRender &&
       options.showHiddenViewerCounts &&
@@ -55,8 +57,7 @@ export function renderSidebarSurface(
       !slug ||
       !statusLabel ||
       !statusContainer ||
-      !stream ||
-      stream.showViewCount
+      !stream
     ) {
       ownership.removeCount(link, 'sidebar')
       ownership.restoreNativeLiveLabel(statusLabel)

@@ -188,6 +188,76 @@ test('ending a session resets its total and peak', () => {
   assert.equal(snapshot.trendReadyAt, 140_000)
 })
 
+test('resets statistics without losing the active session', () => {
+  const store = new ChatStatsStore()
+  store.accept(sessionEvent('sessionStarted', 0))
+  store.accept(message('one', 'sender-a', 'message', 1_000))
+  store.addRttSample(7, 100)
+
+  store.resetStatistics(10_000)
+
+  assert.deepEqual(store.getSnapshot(10_000), {
+    activeChatters: 0,
+    chatroomId: '29191',
+    messagesPerMinute: 0,
+    peakMessagesPerMinute: 0,
+    socketRttMs: null,
+    status: 'active',
+    totalMessages: 0,
+    trendReadyAt: 70_000,
+    trendPercent: null,
+  })
+
+  store.accept(message('one', 'sender-b', 'message', 11_000))
+  const resumed = store.getSnapshot(11_000)
+
+  assert.equal(resumed.status, 'active')
+  assert.equal(resumed.totalMessages, 1)
+  assert.equal(resumed.activeChatters, 1)
+})
+
+test('keeps rolling statistics exact during high-volume chat', () => {
+  const store = new ChatStatsStore()
+  const messageCount = 25_000
+  const senderCount = 500
+  store.accept(sessionEvent('sessionStarted', 0))
+
+  for (let index = 1; index <= messageCount; index += 1) {
+    store.accept(
+      message(
+        `burst-${index}`,
+        `sender-${index % senderCount}`,
+        'message',
+        index,
+      ),
+    )
+  }
+
+  const peak = store.getSnapshot(messageCount)
+
+  assert.equal(peak.status, 'active')
+  assert.equal(peak.messagesPerMinute, messageCount)
+  assert.equal(peak.activeChatters, senderCount)
+  assert.equal(peak.peakMessagesPerMinute, messageCount)
+  assert.equal(peak.totalMessages, messageCount)
+
+  const expired = store.getSnapshot(90_000)
+
+  assert.equal(expired.status, 'active')
+  assert.equal(expired.messagesPerMinute, 0)
+  assert.equal(expired.activeChatters, 0)
+  assert.equal(expired.peakMessagesPerMinute, messageCount)
+
+  store.getSnapshot(150_000)
+  store.accept(message('burst-1', 'sender-new', 'message', 150_001))
+  const reusedId = store.getSnapshot(150_001)
+
+  assert.equal(reusedId.status, 'active')
+  assert.equal(reusedId.totalMessages, messageCount + 1)
+  assert.equal(reusedId.messagesPerMinute, 1)
+  assert.equal(reusedId.activeChatters, 1)
+})
+
 function sessionEvent(
   type,
   observedAt,

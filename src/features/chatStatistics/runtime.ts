@@ -30,6 +30,7 @@ export class ChatStatisticsRuntime {
   readonly #statsStore = new ChatStatsStore()
   readonly #tap: WebSocketTap
   #captureFailed = false
+  #collectionEnabled = false
   #connectionFailed = false
   #initialized = false
   #snapshotTimer: ReturnType<typeof setInterval> | undefined
@@ -66,7 +67,9 @@ export class ChatStatisticsRuntime {
         return
       }
 
-      const rttSample = this.#rttTracker.accept(pusherEvent)
+      const rttSample = this.#collectionEnabled
+        ? this.#rttTracker.accept(pusherEvent)
+        : null
 
       if (rttSample) {
         this.#statsStore.addRttSample(
@@ -76,7 +79,10 @@ export class ChatStatisticsRuntime {
         this.#publish()
       }
 
-      const chatEvents = this.#chatAdapter.accept(pusherEvent)
+      const chatEvents = this.#chatAdapter.accept(
+        pusherEvent,
+        this.#collectionEnabled,
+      )
       let lifecycleChanged = false
 
       for (const chatEvent of chatEvents) {
@@ -134,7 +140,22 @@ export class ChatStatisticsRuntime {
     return snapshot
   }
 
+  setCollectionEnabled(enabled: boolean) {
+    if (this.#collectionEnabled === enabled) {
+      return
+    }
+
+    this.#collectionEnabled = enabled
+    this.#rttTracker.clear()
+    this.#statsStore.resetStatistics(this.#clock())
+    this.#publish()
+  }
+
   requestSocketRttSample() {
+    if (!this.#collectionEnabled) {
+      return false
+    }
+
     const socketId = this.#statsStore.getSelectedSocketId()
 
     if (socketId === null) {

@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import {
+  copyBytesToArrayBuffer,
+  toTransferableArrayBuffer,
+} from '../src/features/clipDownloads/byteBuffers.ts'
 import { createDownloadManager } from '../src/features/clipDownloads/downloadManagerCore.ts'
 import { ClipDownloadError } from '../src/features/clipDownloads/errors.ts'
 import {
@@ -462,6 +466,26 @@ test('validates exact media byte ranges and rejects ignored ranges', async () =>
   )
 })
 
+test('reuses owned buffers and copies partial views for transfer', () => {
+  const ownedBytes = Uint8Array.of(1, 2, 3)
+
+  assert.equal(
+    toTransferableArrayBuffer(ownedBytes),
+    ownedBytes.buffer,
+  )
+
+  const backingBytes = Uint8Array.of(9, 4, 5, 8)
+  const partialView = backingBytes.subarray(1, 3)
+  const transferred = toTransferableArrayBuffer(partialView)
+
+  assert.notEqual(transferred, backingBytes.buffer)
+  assert.deepEqual([...new Uint8Array(transferred)], [4, 5])
+
+  const copied = copyBytesToArrayBuffer(partialView)
+  backingBytes.fill(0)
+  assert.deepEqual([...new Uint8Array(copied)], [4, 5])
+})
+
 test('uses bounded file and Blob output sinks', async () => {
   const writableCalls = []
   let createCalls = 0
@@ -477,26 +501,34 @@ test('uses bounded file and Blob output sinks', async () => {
       return {
         abort: async () => undefined,
         close: async () => undefined,
-        write: async (data) => writableCalls.push(data.byteLength),
+        write: async (data) => writableCalls.push(data),
       }
     },
     name: 'selected.mp4',
   })
-  await fileSink.write(new Uint8Array(12))
+  const fileBacking = new Uint8Array(16)
+  const fileBytes = fileBacking.subarray(2, 14)
+  await fileSink.write(fileBytes)
   await fileSink.close()
   assert.equal(createCalls, 2)
-  assert.deepEqual(writableCalls, [12])
+  assert.equal(writableCalls[0], fileBytes)
 
   let triggered
   const blobSink = createBlobSink('fallback.mp4', (blob, filename) => {
     triggered = { blob, filename }
   })
-  await blobSink.write(new Uint8Array(5))
-  await blobSink.write(new Uint8Array(7))
+  const firstBlobBytes = Uint8Array.of(1, 2, 3, 4, 5)
+  await blobSink.write(firstBlobBytes)
+  firstBlobBytes.fill(0)
+  await blobSink.write(Uint8Array.of(6, 7, 8, 9, 10, 11, 12))
   await blobSink.close()
   assert.equal(triggered.filename, 'fallback.mp4')
   assert.equal(triggered.blob.size, 12)
   assert.equal(triggered.blob.type, 'video/mp4')
+  assert.deepEqual(
+    [...new Uint8Array(await triggered.blob.arrayBuffer())],
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  )
   await assert.rejects(
     blobSink.write(new Uint8Array(1)),
     /already closed/i,

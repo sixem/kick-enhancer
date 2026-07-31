@@ -16,7 +16,10 @@ type Session = Readonly<{
 export class KickChatAdapter {
   readonly #sessions = new Map<string, Session>()
 
-  accept(event: PusherEvent): readonly KickChatEvent[] {
+  accept(
+    event: PusherEvent,
+    collectMessages = true,
+  ): readonly KickChatEvent[] {
     if (event.type === 'socketClosed') {
       return this.#endSocketSessions(
         event.socketId,
@@ -98,12 +101,16 @@ export class KickChatAdapter {
 
     if (
       !session.confirmed ||
+      !collectMessages ||
       event.eventName !== CHAT_MESSAGE_EVENT
     ) {
       return []
     }
 
-    const message = decodeMessage(event.data, chatroomId)
+    const message = decodeMessage(
+      decodeEventData(event.data),
+      chatroomId,
+    )
 
     if (!message) {
       return []
@@ -141,6 +148,18 @@ export class KickChatAdapter {
     }
 
     return ended
+  }
+}
+
+function decodeEventData(value: unknown) {
+  if (typeof value !== 'string') {
+    return value
+  }
+
+  try {
+    return JSON.parse(value) as unknown
+  } catch {
+    return value
   }
 }
 

@@ -14,8 +14,10 @@ type MessageRecord = Readonly<{
 }>
 
 type SessionState = {
+  activeSenderCounts: Map<string, number>
   chatroomId: string
   confirmedAt: number
+  currentWindowStartIndex: number
   firstRecordIndex: number
   peakMessagesPerMinute: number
   records: MessageRecord[]
@@ -33,8 +35,10 @@ export class ChatStatsStore {
 
     if (event.type === 'sessionStarted') {
       this.#sessions.set(key, {
+        activeSenderCounts: new Map(),
         chatroomId: event.chatroomId,
         confirmedAt: event.observedAt,
+        currentWindowStartIndex: 0,
         firstRecordIndex: 0,
         peakMessagesPerMinute: 0,
         records: [],
@@ -79,12 +83,10 @@ export class ChatStatsStore {
       event.messageId,
       event.observedAt,
     )
+    incrementSenderCount(session, event.senderId)
     session.totalMessages += 1
 
-    const currentCount = countCurrentWindow(
-      session,
-      event.observedAt,
-    )
+    const currentCount = countCurrentWindow(session)
     session.peakMessagesPerMinute = Math.max(
       session.peakMessagesPerMinute,
       currentCount,
@@ -108,6 +110,14 @@ export class ChatStatsStore {
 
   clearSocket(socketId: number) {
     this.#rttSamples.delete(socketId)
+  }
+
+  resetStatistics(now: number) {
+    this.#rttSamples.clear()
+
+    for (const session of this.#sessions.values()) {
+      resetSessionStatistics(session, now)
+    }
   }
 
   getSelectedSocketId(): number | null {
@@ -140,7 +150,7 @@ export class ChatStatsStore {
 
     pruneSession(session, now)
 
-    const currentCount = countCurrentWindow(session, now)
+    const currentCount = countCurrentWindow(session)
 
     session.peakMessagesPerMinute = Math.max(
       session.peakMessagesPerMinute,
@@ -148,7 +158,7 @@ export class ChatStatsStore {
     )
 
     return {
-      activeChatters: countActiveChatters(session, now),
+      activeChatters: session.activeSenderCounts.size,
       chatroomId: session.chatroomId,
       messagesPerMinute: currentCount,
       peakMessagesPerMinute: session.peakMessagesPerMinute,
@@ -168,6 +178,7 @@ export class ChatStatsStore {
 }
 
 function pruneSession(session: SessionState, now: number) {
+  advanceCurrentWindow(session, now)
   const cutoff = now - RETAINED_WINDOW_MS
 
   while (
@@ -191,32 +202,41 @@ function pruneSession(session: SessionState, now: number) {
     session.firstRecordIndex > 128 &&
     session.firstRecordIndex * 2 > session.records.length
   ) {
+    const removedRecords = session.firstRecordIndex
     session.records = session.records.slice(
-      session.firstRecordIndex,
+      removedRecords,
     )
     session.firstRecordIndex = 0
+    session.currentWindowStartIndex = Math.max(
+      0,
+      session.currentWindowStartIndex - removedRecords,
+    )
   }
 }
 
-function countCurrentWindow(session: SessionState, now: number) {
+function advanceCurrentWindow(session: SessionState, now: number) {
   const cutoff = now - CURRENT_WINDOW_MS
-  let count = 0
+  session.currentWindowStartIndex = Math.max(
+    session.currentWindowStartIndex,
+    session.firstRecordIndex,
+  )
 
-  for (
-    let index = session.records.length - 1;
-    index >= session.firstRecordIndex;
-    index -= 1
+  while (
+    session.currentWindowStartIndex < session.records.length &&
+    (session.records[session.currentWindowStartIndex]?.receivedAt ??
+      Infinity) <= cutoff
   ) {
-    const record = session.records[index]
+    const record = session.records[session.currentWindowStartIndex]
+    session.currentWindowStartIndex += 1
 
-    if (!record || record.receivedAt <= cutoff) {
-      break
+    if (record) {
+      decrementSenderCount(session, record.senderId)
     }
-
-    count += 1
   }
+}
 
-  return count
+function countCurrentWindow(session: SessionState) {
+  return session.records.length - session.currentWindowStartIndex
 }
 
 function countWindow(
@@ -224,51 +244,40 @@ function countWindow(
   lowerExclusive: number,
   upperInclusive: number,
 ) {
-  let count = 0
+  const start = findFirstRecordAfter(
+    session.records,
+    session.firstRecordIndex,
+    lowerExclusive,
+  )
+  const end = findFirstRecordAfter(
+    session.records,
+    start,
+    upperInclusive,
+  )
 
-  for (
-    let index = session.firstRecordIndex;
-    index < session.records.length;
-    index += 1
-  ) {
-    const receivedAt = session.records[index]?.receivedAt
-
-    if (
-      receivedAt === undefined ||
-      receivedAt <= lowerExclusive
-    ) {
-      continue
-    }
-
-    if (receivedAt > upperInclusive) {
-      break
-    }
-
-    count += 1
-  }
-
-  return count
+  return end - start
 }
 
-function countActiveChatters(session: SessionState, now: number) {
-  const cutoff = now - CURRENT_WINDOW_MS
-  const senders = new Set<string>()
+function findFirstRecordAfter(
+  records: readonly MessageRecord[],
+  startIndex: number,
+  timestamp: number,
+) {
+  let lower = startIndex
+  let upper = records.length
 
-  for (
-    let index = session.records.length - 1;
-    index >= session.firstRecordIndex;
-    index -= 1
-  ) {
-    const record = session.records[index]
+  while (lower < upper) {
+    const middle = lower + Math.floor((upper - lower) / 2)
+    const receivedAt = records[middle]?.receivedAt ?? Infinity
 
-    if (!record || record.receivedAt <= cutoff) {
-      break
+    if (receivedAt <= timestamp) {
+      lower = middle + 1
+    } else {
+      upper = middle
     }
-
-    senders.add(record.senderId)
   }
 
-  return senders.size
+  return lower
 }
 
 function calculateSessionTrend(
@@ -328,6 +337,38 @@ function median(samples: readonly number[]) {
   return lower === undefined
     ? Math.round(upper)
     : Math.round((lower + upper) / 2)
+}
+
+function incrementSenderCount(session: SessionState, senderId: string) {
+  session.activeSenderCounts.set(
+    senderId,
+    (session.activeSenderCounts.get(senderId) ?? 0) + 1,
+  )
+}
+
+function decrementSenderCount(session: SessionState, senderId: string) {
+  const count = session.activeSenderCounts.get(senderId)
+
+  if (count === undefined) {
+    return
+  }
+
+  if (count === 1) {
+    session.activeSenderCounts.delete(senderId)
+  } else {
+    session.activeSenderCounts.set(senderId, count - 1)
+  }
+}
+
+function resetSessionStatistics(session: SessionState, now: number) {
+  session.activeSenderCounts.clear()
+  session.confirmedAt = now
+  session.currentWindowStartIndex = 0
+  session.firstRecordIndex = 0
+  session.peakMessagesPerMinute = 0
+  session.records = []
+  session.seenMessageIds.clear()
+  session.totalMessages = 0
 }
 
 function createSessionKey(socketId: number, channelName: string) {
