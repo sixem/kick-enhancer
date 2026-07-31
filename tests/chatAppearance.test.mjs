@@ -51,7 +51,7 @@ test('can override either chat appearance value independently', () => {
   )
 })
 
-test('adds message dividers without affecting virtualized row sizes', () => {
+test('adds message dividers with measured emotes and full-row hover', () => {
   assert.equal(
     createChatAppearanceStyles({
       fontFamily: null,
@@ -61,6 +61,17 @@ test('adds message dividers without affecting virtualized row sizes', () => {
       messageSpacing: null,
     }),
     [
+      '#chatroom-messages > div > [data-index] [data-emote-id] {',
+      '  height: calc(var(--chatroom-font-size)*28/13);',
+      '}',
+      '',
+      '#chatroom-messages > div > [data-index]::before {',
+      '  position: absolute;',
+      '  inset: 0;',
+      '  pointer-events: none;',
+      '  content: "";',
+      '}',
+      '',
       '#chatroom-messages > div > [data-index]::after {',
       '  position: absolute;',
       '  right: 0;',
@@ -70,6 +81,17 @@ test('adds message dividers without affecting virtualized row sizes', () => {
       '  pointer-events: none;',
       '  content: "";',
       '  background: #161616;',
+      '}',
+      '',
+      '@media (hover: hover) {',
+      '  #chatroom-messages > div > [data-index]:hover::before {',
+      '    background: var(--neon-surface-highest, #232629);',
+      '  }',
+      '',
+      '  #chatroom-messages > div > [data-index] [class~="betterhover:group-hover:bg-surface-highest"] {',
+      '    background: transparent !important;',
+      '    border-radius: 0;',
+      '  }',
       '}',
     ].join('\n'),
   )
