@@ -21,16 +21,32 @@ export function findChatStatisticsAnchors(
     return null
   }
 
-  const title = Array.from(
-    chatroom.querySelectorAll<HTMLElement>('span'),
-  ).find(
-    (candidate) =>
-      TITLE_POSITION_CLASSES.every((className) =>
-        candidate.classList.contains(className),
-      ) &&
-      candidate.parentElement?.parentElement?.parentElement ===
-        chatroom,
-  )
+  let title: HTMLElement | undefined
+
+  for (const candidate of chatroom.querySelectorAll<HTMLElement>(
+    'span',
+  )) {
+    if (
+      candidate.parentElement?.parentElement?.parentElement !==
+      chatroom
+    ) {
+      continue
+    }
+
+    let matchesPosition = true
+
+    for (const className of TITLE_POSITION_CLASSES) {
+      if (!candidate.classList.contains(className)) {
+        matchesPosition = false
+        break
+      }
+    }
+
+    if (matchesPosition) {
+      title = candidate
+      break
+    }
+  }
 
   if (!title) {
     return null

@@ -42,11 +42,10 @@ export function renderViewerCounts(
   options: ViewerCountRenderOptions,
 ): ViewerCountRenderResult {
   const ownership = new ViewerCountDomOwnership()
-  const sidebarLinks = [
-    ...document.querySelectorAll<HTMLAnchorElement>(
+  const sidebarLinks =
+    document.querySelectorAll<HTMLAnchorElement>(
       SIDEBAR_LINK_SELECTOR,
-    ),
-  ]
+    )
 
   try {
     const channel = renderSurface(

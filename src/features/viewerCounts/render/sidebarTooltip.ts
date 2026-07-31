@@ -22,7 +22,7 @@ export type SidebarTooltipRenderResult = Readonly<{
 export function renderSidebarTooltipSurface(
   store: ViewerCountStore,
   ownership: ViewerCountDomOwnership,
-  sidebarLinks: readonly HTMLAnchorElement[],
+  sidebarLinks: Iterable<HTMLAnchorElement>,
   target: SidebarHoverTarget | undefined,
   options: ViewerCountRenderOptions,
 ): SidebarTooltipRenderResult {
@@ -42,11 +42,17 @@ export function renderSidebarTooltipSurface(
     }
   }
 
-  const sourceLink = sidebarLinks.find(
-    (link) =>
+  let sourceLink: HTMLAnchorElement | undefined
+
+  for (const link of sidebarLinks) {
+    if (
       getChannelSlugFromHref(link.getAttribute('href')) ===
-      target.slug,
-  )
+      target.slug
+    ) {
+      sourceLink = link
+      break
+    }
+  }
 
   if (
     !sourceLink ||

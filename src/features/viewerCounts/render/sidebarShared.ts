@@ -52,9 +52,13 @@ export function findSidebarTooltip(
     }
   }
 
-  return [...candidates].find((candidate) =>
-    containsExactText(candidate, target.displayName),
-  )
+  for (const candidate of candidates) {
+    if (containsExactText(candidate, target.displayName)) {
+      return candidate
+    }
+  }
+
+  return undefined
 }
 
 export function findTooltipHeadingRow(

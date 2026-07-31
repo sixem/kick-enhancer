@@ -103,30 +103,42 @@ function scheduleSidebarScan() {
 function mutationsTouchGamblingSurfaces(
   records: readonly MutationRecord[],
 ) {
-  return records.some((record) => {
+  for (const record of records) {
     const target =
       record.target instanceof Element
         ? record.target
         : record.target.parentElement
 
     if (target?.closest(CHATROOM_MESSAGES_SELECTOR)) {
-      return false
+      continue
     }
 
     if (target?.closest(GAMBLING_SURFACE_SELECTOR)) {
       return true
     }
 
-    return [
-      ...record.addedNodes,
-      ...record.removedNodes,
-    ].some(
-      (node) =>
+    for (const node of record.addedNodes) {
+      if (
         node instanceof Element &&
         (node.matches(GAMBLING_SURFACE_SELECTOR) ||
-          Boolean(node.querySelector(GAMBLING_SURFACE_SELECTOR))),
-    )
-  })
+          node.querySelector(GAMBLING_SURFACE_SELECTOR))
+      ) {
+        return true
+      }
+    }
+
+    for (const node of record.removedNodes) {
+      if (
+        node instanceof Element &&
+        (node.matches(GAMBLING_SURFACE_SELECTOR) ||
+          node.querySelector(GAMBLING_SURFACE_SELECTOR))
+      ) {
+        return true
+      }
+    }
+  }
+
+  return false
 }
 
 export function startGamblingStreamsVisibility(): Dispose {

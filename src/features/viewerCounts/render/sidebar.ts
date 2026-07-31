@@ -18,7 +18,7 @@ export type SidebarRenderResult = Readonly<{
 export function renderSidebarSurface(
   store: ViewerCountStore,
   ownership: ViewerCountDomOwnership,
-  sidebarLinks: readonly HTMLAnchorElement[],
+  sidebarLinks: Iterable<HTMLAnchorElement>,
   options: ViewerCountRenderOptions,
 ): SidebarRenderResult {
   const targetSlugs = new Set<string>()
