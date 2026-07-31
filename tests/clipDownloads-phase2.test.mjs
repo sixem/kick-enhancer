@@ -341,6 +341,10 @@ test('normalizes API metadata and an observed HLS media plan', async () => {
   )
 
   assert.equal(requests.length, 3)
+  assert.equal(
+    requests[0].url,
+    'https://kick.com/api/v2/clips/clip_test/play',
+  )
   assert.equal(inspection.metadata.category, 'Just Chatting')
   assert.equal(inspection.metadata.channel, 'channel')
   assert.equal(inspection.metadata.creator, 'clipper')

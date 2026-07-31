@@ -1,6 +1,6 @@
 {
   "name": "kick-enhancer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Enhances KICK with viewer counts, stream uptime, content controls, and direct clip downloads.",
   "homepage": "https://github.com/sixem/kick-enhancer#readme",
