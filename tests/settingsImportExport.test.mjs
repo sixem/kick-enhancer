@@ -17,6 +17,22 @@ test('round-trips current settings without a compatibility warning', () => {
   assert.equal(result.compatibilityWarning, false)
 })
 
+test('round-trips the chat leaderboard preference', () => {
+  const settings = {
+    ...DEFAULT_SETTINGS,
+    ui: {
+      ...DEFAULT_SETTINGS.ui,
+      hideChatLeaderboard: true,
+    },
+  }
+  const result = expectSuccessful(
+    parseSettingsFile(serializeSettings(settings)),
+  )
+
+  assert.equal(result.settings.ui.hideChatLeaderboard, true)
+  assert.equal(result.compatibilityWarning, false)
+})
+
 test('imports older settings and defaults newer values', () => {
   const version4Chat = {
     ...DEFAULT_SETTINGS.chat,
@@ -29,6 +45,7 @@ test('imports older settings and defaults newer values', () => {
     rememberSidebarState: true,
     showHiddenViewerCounts: false,
   }
+  delete version4Ui.hideChatLeaderboard
   delete version4Ui.showClipDownloadButtons
 
   const result = expectSuccessful(
@@ -42,6 +59,7 @@ test('imports older settings and defaults newer values', () => {
   )
 
   assert.equal(result.compatibilityWarning, true)
+  assert.equal(result.settings.ui.hideChatLeaderboard, false)
   assert.equal(result.settings.ui.hideHomepageCarousel, true)
   assert.equal(result.settings.ui.showClipDownloadButtons, true)
   assert.equal(result.settings.chat.showChatStatistics, false)

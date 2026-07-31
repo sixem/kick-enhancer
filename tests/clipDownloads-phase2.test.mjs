@@ -694,6 +694,75 @@ test('clears inactive jobs while preserving in-progress work', async () => {
   await flushPromises()
 })
 
+test('caches published download and activity snapshots', async () => {
+  const downloadRun = deferred()
+  const manager = createDownloadManager(
+    createManagerDependencies({
+      downloadMediaPlan: async () => {
+        await downloadRun.promise
+      },
+    }),
+  )
+  const emptySnapshot = manager.getSnapshot()
+  const emptyActivity = manager.getActivitySummary()
+
+  assert.equal(manager.getSnapshot(), emptySnapshot)
+  assert.equal(manager.getActivitySummary(), emptyActivity)
+
+  const jobId = manager.inspectClip('clip_one', 'https://kick.com/a')
+  const inspectingSnapshot = manager.getSnapshot()
+  assert.notEqual(inspectingSnapshot, emptySnapshot)
+  assert.equal(manager.getSnapshot(), inspectingSnapshot)
+  assert.deepEqual(manager.getActivitySummary(), {
+    activeCount: 1,
+    attention: false,
+    error: false,
+    queuedCount: 0,
+    visible: true,
+  })
+
+  await flushPromises()
+  await flushPromises()
+  const readySnapshot = manager.getSnapshot()
+  const readyActivity = manager.getActivitySummary()
+  assert.notEqual(readySnapshot, inspectingSnapshot)
+  assert.equal(manager.getSnapshot(), readySnapshot)
+  assert.deepEqual(readyActivity, {
+    activeCount: 0,
+    attention: true,
+    error: false,
+    queuedCount: 0,
+    visible: true,
+  })
+
+  manager.updateBasename(jobId, 'renamed')
+  assert.notEqual(manager.getSnapshot(), readySnapshot)
+  assert.equal(manager.getActivitySummary(), readyActivity)
+  assert.equal(job(manager, jobId).basename, 'renamed')
+  assert.ok(
+    [
+      'abortController',
+      'generation',
+      'plan',
+      'progressTimer',
+      'sink',
+    ].every((key) => !(key in job(manager, jobId))),
+  )
+
+  manager.requestDownload(jobId, 'memory')
+  assert.notEqual(manager.getActivitySummary(), readyActivity)
+  assert.deepEqual(manager.getActivitySummary(), {
+    activeCount: 1,
+    attention: false,
+    error: false,
+    queuedCount: 0,
+    visible: true,
+  })
+
+  downloadRun.resolve()
+  await flushPromises()
+})
+
 function createManagerDependencies(overrides = {}) {
   return {
     createBlobSink: (filename) => createFakeSink(filename),

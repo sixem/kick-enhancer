@@ -103,6 +103,10 @@ export function setShowStreamUptime(visible: boolean) {
   return updateUiSetting('showStreamUptime', visible)
 }
 
+export function setHideChatLeaderboard(hidden: boolean) {
+  return updateUiSetting('hideChatLeaderboard', hidden)
+}
+
 export function setHideFollowingRecommendations(hidden: boolean) {
   return updateUiSetting('hideFollowingRecommendations', hidden)
 }

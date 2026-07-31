@@ -30,7 +30,7 @@ export type DownloadJobStatus =
 
 export type SaveStrategy = 'file-system' | 'memory'
 
-export type DownloadJobSnapshot = Readonly<{
+type DownloadJobData = {
   acknowledged: boolean
   basename: string
   category?: string
@@ -53,7 +53,6 @@ export type DownloadJobSnapshot = Readonly<{
   phase?: DownloadProgress['phase'] | 'inspecting'
   processedBytes: number
   publishedAt?: number
-  queuePosition?: number
   saveStrategy?: SaveStrategy
   startedAt?: number
   status: DownloadJobStatus
@@ -61,7 +60,13 @@ export type DownloadJobSnapshot = Readonly<{
   title?: string
   viewCount?: number
   writtenBytes: number
-}>
+}
+
+export type DownloadJobSnapshot = Readonly<
+  DownloadJobData & {
+    queuePosition?: number
+  }
+>
 
 export type DownloadSnapshot = Readonly<{
   jobs: readonly DownloadJobSnapshot[]
@@ -75,37 +80,7 @@ export type DownloadActivitySummary = Readonly<{
   visible: boolean
 }>
 
-type MutableJob = {
-  acknowledged: boolean
-  basename: string
-  category?: string
-  channel?: string
-  clipId: string
-  completedSegments: number
-  completedAt?: number
-  createdAt: number
-  creator?: string
-  error?: Readonly<{
-    code: string
-    message: string
-  }>
-  fetchedBytes: number
-  filename: string
-  id: string
-  likeCount?: number
-  media?: MediaSummary
-  pageUrl: string
-  phase?: DownloadJobSnapshot['phase']
-  processedBytes: number
-  publishedAt?: number
-  saveStrategy?: SaveStrategy
-  startedAt?: number
-  status: DownloadJobStatus
-  thumbnailUrl?: string
-  title?: string
-  viewCount?: number
-  writtenBytes: number
-}
+type MutableJob = DownloadJobData
 
 type JobRuntime = {
   abortController?: AbortController
@@ -161,6 +136,13 @@ const ATTENTION_STATUSES = new Set<DownloadJobStatus>([
 ])
 const MAX_INSPECTIONS = 2
 const PROGRESS_INTERVAL_MS = 100
+const EMPTY_ACTIVITY_SUMMARY: DownloadActivitySummary = {
+  activeCount: 0,
+  attention: false,
+  error: false,
+  queuedCount: 0,
+  visible: false,
+}
 let nextJobNumber = 1
 
 export function createDownloadManager(
@@ -172,24 +154,88 @@ export function createDownloadManager(
   const inspectionQueue: string[] = []
   const mediaQueue: string[] = []
   let activeInspections = 0
+  let activitySummary = EMPTY_ACTIVITY_SUMMARY
+  let snapshot: DownloadSnapshot = {
+    jobs: [],
+  }
   // Destination selection owns the same single slot as the media transfer.
   let reservedMediaJobId: string | undefined
 
   function publish() {
+    rebuildPublishedViews()
+
     for (const listener of listeners) {
       listener()
     }
   }
 
   function getSnapshot(): DownloadSnapshot {
-    return {
-      jobs: [...jobs.values()].map((job) => ({
+    return snapshot
+  }
+
+  function rebuildPublishedViews() {
+    const queuePositions = new Map<string, number>()
+    let activeCount = 0
+    let attention = false
+    let error = false
+    let queuedCount = 0
+
+    for (let index = 0; index < mediaQueue.length; index += 1) {
+      const jobId = mediaQueue[index]
+
+      if (jobId) {
+        queuePositions.set(jobId, index + 1)
+      }
+    }
+
+    const snapshotJobs = [...jobs.values()].map((job) => {
+      if (ACTIVE_STATUSES.has(job.status)) {
+        activeCount += 1
+      }
+
+      if (
+        job.status === 'queued' ||
+        job.status === 'awaiting-destination'
+      ) {
+        queuedCount += 1
+      }
+
+      if (
+        ATTENTION_STATUSES.has(job.status) ||
+        (TERMINAL_STATUSES.has(job.status) && !job.acknowledged)
+      ) {
+        attention = true
+      }
+
+      if (job.status === 'failed' && !job.acknowledged) {
+        error = true
+      }
+
+      return {
         ...job,
         queuePosition:
           job.status === 'queued'
-            ? mediaQueue.indexOf(job.id) + 1
+            ? queuePositions.get(job.id)
             : undefined,
-      })),
+      }
+    })
+    const nextActivitySummary: DownloadActivitySummary = {
+      activeCount,
+      attention,
+      error,
+      queuedCount,
+      visible:
+        activeCount > 0 ||
+        queuedCount > 0 ||
+        attention,
+    }
+
+    snapshot = {
+      jobs: snapshotJobs,
+    }
+
+    if (!activitySummariesEqual(activitySummary, nextActivitySummary)) {
+      activitySummary = nextActivitySummary
     }
   }
 
@@ -677,35 +723,7 @@ export function createDownloadManager(
   }
 
   function getActivitySummary(): DownloadActivitySummary {
-    const visibleJobs = [...jobs.values()]
-    const activeCount = visibleJobs.filter((job) =>
-      ACTIVE_STATUSES.has(job.status),
-    ).length
-    const queuedCount = visibleJobs.filter(
-      (job) =>
-        job.status === 'queued' ||
-        job.status === 'awaiting-destination',
-    ).length
-    const terminalAttention = visibleJobs.some(
-      (job) =>
-        TERMINAL_STATUSES.has(job.status) && !job.acknowledged,
-    )
-    const attention =
-      terminalAttention ||
-      visibleJobs.some((job) => ATTENTION_STATUSES.has(job.status))
-
-    return {
-      activeCount,
-      attention,
-      error: visibleJobs.some(
-        (job) => job.status === 'failed' && !job.acknowledged,
-      ),
-      queuedCount,
-      visible:
-        activeCount > 0 ||
-        queuedCount > 0 ||
-        attention,
-    }
+    return activitySummary
   }
 
   function releaseMediaSlot(jobId: string) {
@@ -816,4 +834,17 @@ function removeFromQueue(queue: string[], jobId: string) {
   if (index !== -1) {
     queue.splice(index, 1)
   }
+}
+
+function activitySummariesEqual(
+  left: DownloadActivitySummary,
+  right: DownloadActivitySummary,
+) {
+  return (
+    left.activeCount === right.activeCount &&
+    left.attention === right.attention &&
+    left.error === right.error &&
+    left.queuedCount === right.queuedCount &&
+    left.visible === right.visible
+  )
 }

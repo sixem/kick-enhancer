@@ -14,6 +14,7 @@ const GAMBLING_SURFACE_SELECTOR = [
   '[data-testid="followed-livestreams"]',
   '#sidebar-wrapper',
 ].join(', ')
+const CHATROOM_MESSAGES_SELECTOR = '#chatroom-messages'
 
 let gamblingStreamsHidden = false
 let featureActive = false
@@ -104,6 +105,10 @@ function mutationsTouchGamblingSurfaces(
         ? record.target
         : record.target.parentElement
 
+    if (target?.closest(CHATROOM_MESSAGES_SELECTOR)) {
+      return false
+    }
+
     if (target?.closest(GAMBLING_SURFACE_SELECTOR)) {
       return true
     }
@@ -133,19 +138,41 @@ export function startGamblingStreamsVisibility(): Dispose {
     }
   })
 
-  observer.observe(document.documentElement, {
-    characterData: true,
-    childList: true,
-    subtree: true,
-  })
+  function cancelSidebarScan() {
+    if (sidebarScanFrame === undefined) {
+      return
+    }
+
+    window.cancelAnimationFrame(sidebarScanFrame)
+    sidebarScanFrame = undefined
+  }
+
+  function setVisibility(hidden: boolean) {
+    if (gamblingStreamsHidden === hidden) {
+      return
+    }
+
+    gamblingStreamsHidden = hidden
+    applyGamblingStreamsVisibility(hidden)
+
+    if (hidden) {
+      observer.observe(document.documentElement, {
+        characterData: true,
+        childList: true,
+        subtree: true,
+      })
+      scheduleSidebarScan()
+      return
+    }
+
+    observer.disconnect()
+    cancelSidebarScan()
+    updateSidebarRows()
+  }
 
   const stopObserving = observeSetting(
     (settings) => settings.ui.hideGamblingStreams,
-    (hidden) => {
-      gamblingStreamsHidden = hidden
-      applyGamblingStreamsVisibility(gamblingStreamsHidden)
-      scheduleSidebarScan()
-    },
+    setVisibility,
   )
   let stopped = false
   const stop = () => {
@@ -157,12 +184,7 @@ export function startGamblingStreamsVisibility(): Dispose {
     featureActive = false
     observer.disconnect()
     stopObserving()
-
-    if (sidebarScanFrame !== undefined) {
-      window.cancelAnimationFrame(sidebarScanFrame)
-      sidebarScanFrame = undefined
-    }
-
+    cancelSidebarScan()
     gamblingStreamsHidden = false
     applyGamblingStreamsVisibility(false)
     updateSidebarRows()

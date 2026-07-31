@@ -13,6 +13,7 @@ import {
   setChatFontWeight,
   setChatMessageDividers,
   setChatMessageSpacing,
+  setHideChatLeaderboard,
   setHideFollowingRecommendations,
   setHideGamblingStreams,
   setHideHomepageCarousel,
@@ -203,6 +204,14 @@ export function ContentSettingsSection({
 }: Readonly<{ settings: Settings['ui'] }>) {
   return (
     <div className="ke-settings">
+      <Toggle
+        checked={settings.hideChatLeaderboard}
+        description="Remove the gift and KICKs leaderboard above chat."
+        label="Hide chat leaderboard"
+        onCheckedChange={(hidden) => {
+          void setHideChatLeaderboard(hidden)
+        }}
+      />
       <Toggle
         checked={settings.hideHomepageCarousel}
         description="Remove the featured autoplaying stream and chat from the homepage."

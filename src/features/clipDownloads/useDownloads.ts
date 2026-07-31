@@ -1,76 +1,49 @@
 import { useEffect, useState } from 'preact/hooks'
 
-import {
-  downloadManager,
-  type DownloadActivitySummary,
-  type DownloadSnapshot,
-} from './downloadManager'
+import { downloadManager } from './downloadManager'
 import {
   getDownloadCenterSnapshot,
   subscribeDownloadCenter,
-  type DownloadCenterSnapshot,
 } from './downloadCenterController'
 
 export function useDownloads() {
-  const [snapshot, setSnapshot] = useState<DownloadSnapshot>(
+  return useStoreSnapshot(
+    downloadManager.subscribe,
     downloadManager.getSnapshot,
   )
-
-  useEffect(
-    () =>
-      downloadManager.subscribe(() => {
-        setSnapshot(downloadManager.getSnapshot())
-      }),
-    [],
-  )
-
-  return snapshot
 }
 
 export function useDownloadActivity() {
-  const [summary, setSummary] = useState<DownloadActivitySummary>(
+  return useStoreSnapshot(
+    downloadManager.subscribe,
     downloadManager.getActivitySummary,
   )
-
-  useEffect(
-    () =>
-      downloadManager.subscribe(() => {
-        const next = downloadManager.getActivitySummary()
-        setSummary((current) =>
-          activityEquals(current, next) ? current : next,
-        )
-      }),
-    [],
-  )
-
-  return summary
 }
 
 export function useDownloadCenter() {
-  const [snapshot, setSnapshot] = useState<DownloadCenterSnapshot>(
+  return useStoreSnapshot(
+    subscribeDownloadCenter,
     getDownloadCenterSnapshot,
   )
-
-  useEffect(
-    () =>
-      subscribeDownloadCenter(() => {
-        setSnapshot(getDownloadCenterSnapshot())
-      }),
-    [],
-  )
-
-  return snapshot
 }
 
-function activityEquals(
-  left: DownloadActivitySummary,
-  right: DownloadActivitySummary,
+function useStoreSnapshot<Snapshot>(
+  subscribe: (listener: () => void) => () => void,
+  getSnapshot: () => Snapshot,
 ) {
-  return (
-    left.activeCount === right.activeCount &&
-    left.attention === right.attention &&
-    left.error === right.error &&
-    left.queuedCount === right.queuedCount &&
-    left.visible === right.visible
-  )
+  const [snapshot, setSnapshot] = useState(getSnapshot)
+
+  useEffect(() => {
+    const updateSnapshot = () => {
+      setSnapshot(getSnapshot())
+    }
+    const unsubscribe = subscribe(updateSnapshot)
+
+    // Close the render-to-subscription gap without pulling the React
+    // compatibility layer further into the document-start path.
+    updateSnapshot()
+    return unsubscribe
+  }, [getSnapshot, subscribe])
+
+  return snapshot
 }

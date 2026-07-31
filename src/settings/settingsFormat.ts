@@ -1,4 +1,4 @@
-export const SETTINGS_VERSION = 6
+export const SETTINGS_VERSION = 7
 
 export const CHAT_FONT_FAMILIES = [
   'arial',
@@ -35,6 +35,7 @@ export type Settings = Readonly<{
     showChatStatistics: boolean
   }>
   ui: Readonly<{
+    hideChatLeaderboard: boolean
     hideFollowingRecommendations: boolean
     hideGamblingStreams: boolean
     hideHomepageCarousel: boolean
@@ -78,6 +79,7 @@ export const DEFAULT_SETTINGS: Settings = {
     showChatStatistics: false,
   },
   ui: {
+    hideChatLeaderboard: false,
     hideFollowingRecommendations: false,
     hideGamblingStreams: false,
     hideHomepageCarousel: false,
@@ -117,6 +119,7 @@ export function parseSettings(value: unknown): Settings {
       showChatStatistics: chat.showChatStatistics === true,
     },
     ui: {
+      hideChatLeaderboard: ui.hideChatLeaderboard === true,
       hideFollowingRecommendations:
         ui.hideFollowingRecommendations === true,
       hideGamblingStreams: ui.hideGamblingStreams === true,

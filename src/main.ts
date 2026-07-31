@@ -1,4 +1,5 @@
 import { startChatAppearance } from './features/chatAppearance'
+import { startChatLeaderboardVisibility } from './features/chatLeaderboard'
 import { startChatStatistics } from './features/chatStatistics'
 import { initializeChatStatisticsCapture } from './features/chatStatistics/runtime'
 import { startClipDownloadActions } from './features/clipDownloads'
@@ -33,6 +34,7 @@ async function start() {
   stopFeatures?.()
   stopFeatures = composeDisposers(
     startChatAppearance(),
+    startChatLeaderboardVisibility(),
     startChatStatistics(),
     startClipDownloadActions(),
     startViewerEnhancements(),

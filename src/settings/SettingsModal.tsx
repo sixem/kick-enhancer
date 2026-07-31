@@ -188,7 +188,7 @@ export function SettingsModal({
                   <ContentSettingsSection settings={settings.ui} />
                 ),
                 id: 'content',
-                label: 'Content',
+                label: 'Visibility',
               },
               {
                 content: (
