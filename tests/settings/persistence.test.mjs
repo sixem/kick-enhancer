@@ -45,10 +45,7 @@ test('writes only the latest update received during an active write', async () =
   const firstBurst = persistence.schedule('settings-a')
 
   timers.runNext()
-  await waitFor(
-    () => writes.length === 1,
-    'the first settings write to start',
-  )
+  await waitFor(() => writes.length === 1, 'the first settings write to start')
   assert.deepEqual(
     writes.map(({ value }) => value),
     ['settings-a'],
@@ -67,10 +64,7 @@ test('writes only the latest update received during an active write', async () =
   assert.equal(timers.size(), 1)
 
   timers.runNext()
-  await waitFor(
-    () => writes.length === 2,
-    'the latest settings write to start',
-  )
+  await waitFor(() => writes.length === 2, 'the latest settings write to start')
   assert.deepEqual(
     writes.map(({ value }) => value),
     ['settings-a', 'settings-c'],
@@ -129,10 +123,7 @@ test('recovers from a failed settings write', async () => {
   const second = persistence.schedule('settings-recovered')
   timers.runNext()
   await second
-  assert.deepEqual(writes, [
-    'settings-failed',
-    'settings-recovered',
-  ])
+  assert.deepEqual(writes, ['settings-failed', 'settings-recovered'])
 })
 
 function createFakeTimers() {

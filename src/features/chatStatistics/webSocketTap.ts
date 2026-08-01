@@ -26,10 +26,7 @@ export class WebSocketTap {
   #nextSocketId = 1
   #restoreConstructor: Dispose | undefined
 
-  constructor(
-    host: WebSocketHost,
-    clock: () => number = Date.now,
-  ) {
+  constructor(host: WebSocketHost, clock: () => number = Date.now) {
     this.#host = host
     this.#clock = clock
   }
@@ -76,11 +73,7 @@ export class WebSocketTap {
         }
 
         if (descriptor) {
-          Object.defineProperty(
-            this.#host,
-            'WebSocket',
-            descriptor,
-          )
+          Object.defineProperty(this.#host, 'WebSocket', descriptor)
         } else {
           Object.defineProperty(this.#host, 'WebSocket', {
             configurable: true,
@@ -100,10 +93,7 @@ export class WebSocketTap {
   send(socketId: number, data: string): boolean {
     const captured = this.#sockets.get(socketId)
 
-    if (
-      !captured ||
-      captured.socket.readyState !== WEB_SOCKET_OPEN_STATE
-    ) {
+    if (!captured || captured.socket.readyState !== WEB_SOCKET_OPEN_STATE) {
       return false
     }
 
@@ -139,6 +129,9 @@ export class WebSocketTap {
     const socketId = this.#nextSocketId
     this.#nextSocketId += 1
 
+    // The original method is deliberately detached, then invoked with its
+    // socket through Reflect.apply and restored during cleanup.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const originalSend = socket.send
     const hookedSend = new Proxy(originalSend, {
       apply: (target, thisArgument, argumentsList) => {
@@ -146,10 +139,10 @@ export class WebSocketTap {
           target,
           thisArgument,
           argumentsList,
-        )
+        ) as unknown
 
         this.#emit({
-          data: argumentsList[0],
+          data: argumentsList[0] as unknown,
           direction: 'outgoing',
           observedAt: this.#clock(),
           socketId,
@@ -161,7 +154,7 @@ export class WebSocketTap {
     })
     const onMessage: EventListener = (event) => {
       this.#emit({
-        data: (event as MessageEvent).data,
+        data: (event as MessageEvent<unknown>).data,
         direction: 'incoming',
         observedAt: this.#clock(),
         socketId,
@@ -221,10 +214,7 @@ export class WebSocketTap {
     }
 
     this.#sockets.delete(socketId)
-    captured.socket.removeEventListener(
-      'message',
-      captured.onMessage,
-    )
+    captured.socket.removeEventListener('message', captured.onMessage)
     captured.socket.removeEventListener('error', captured.onError)
     captured.socket.removeEventListener('close', captured.onClose)
 

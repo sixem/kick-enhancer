@@ -16,9 +16,7 @@ const session = createTransmuxerSession(
   }),
 )
 
-worker.onmessage = (
-  event: MessageEvent<DownloadWorkerRequest>,
-) => {
+worker.onmessage = (event: MessageEvent<DownloadWorkerRequest>) => {
   const message = event.data
 
   try {
@@ -53,8 +51,7 @@ worker.onmessage = (
   } catch {
     respond({
       message: 'The clip could not be converted to MP4.',
-      requestId:
-        message.type === 'cancel' ? undefined : message.requestId,
+      requestId: message.type === 'cancel' ? undefined : message.requestId,
       type: 'error',
     })
   }

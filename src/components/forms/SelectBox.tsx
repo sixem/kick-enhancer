@@ -11,10 +11,11 @@ export type SelectBoxOption = {
 
 type SelectBoxProps = Omit<
   JSX.SelectHTMLAttributes<HTMLSelectElement>,
-  'className' | 'onChange'
+  'className' | 'id' | 'onChange'
 > & {
   className?: string
   description?: string
+  id?: string
   label: string
   onValueChange?: (value: string) => void
   options: readonly SelectBoxOption[]
@@ -47,9 +48,7 @@ export function SelectBox({
           aria-describedby={descriptionId}
           className={joinClassNames('ke-select-box__input', className)}
           id={selectId}
-          onChange={(event) =>
-            onValueChange?.(event.currentTarget.value)
-          }
+          onChange={(event) => onValueChange?.(event.currentTarget.value)}
         >
           {options.map((option) => (
             <option

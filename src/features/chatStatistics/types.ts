@@ -19,10 +19,7 @@ type PusherEventBase = Readonly<{
   socketId: number
 }>
 
-type PusherChannelLifecycleType =
-  | 'subscribed'
-  | 'subscribing'
-  | 'unsubscribing'
+type PusherChannelLifecycleType = 'subscribed' | 'subscribing' | 'unsubscribing'
 
 type PusherChannelLifecycleEvent = {
   [Type in PusherChannelLifecycleType]: PusherEventBase &
@@ -76,9 +73,7 @@ export type KickChatEvent =
       }>)
 
 export type ChatStatisticsUnavailableReason =
-  | 'capture-failed'
-  | 'connection-failed'
-  | 'multiple-sessions'
+  'capture-failed' | 'connection-failed' | 'multiple-sessions'
 
 export type ChatStatisticsSnapshot =
   | Readonly<{

@@ -116,12 +116,7 @@ export class ChannelDetailsScheduler {
     for (const slug of channelSlugs) {
       const stream = this.#store.get(slug, now)
 
-      if (
-        needsChannelDetails(
-          stream,
-          slug === activeChannelSlug,
-        )
-      ) {
+      if (needsChannelDetails(stream, slug === activeChannelSlug)) {
         this.#queue(slug)
       } else {
         this.#queuedSlugs.delete(slug)
@@ -144,10 +139,7 @@ export class ChannelDetailsScheduler {
   #queue(slug: string) {
     const now = this.#timing.now()
 
-    if (
-      this.#queuedSlugs.has(slug) ||
-      this.#inFlightSlugs.has(slug)
-    ) {
+    if (this.#queuedSlugs.has(slug) || this.#inFlightSlugs.has(slug)) {
       return
     }
 
@@ -167,9 +159,7 @@ export class ChannelDetailsScheduler {
       this.#activeFetches < CHANNEL_FETCH_CONCURRENCY &&
       this.#queuedSlugs.size > 0
     ) {
-      const slug = this.#queuedSlugs.values().next().value as
-        | string
-        | undefined
+      const slug = this.#queuedSlugs.values().next().value
 
       if (!slug) {
         return
@@ -180,10 +170,7 @@ export class ChannelDetailsScheduler {
 
       if (
         !this.#targetSlugs.has(slug) ||
-        !needsChannelDetails(
-          stream,
-          slug === this.#activeChannelSlug,
-        )
+        !needsChannelDetails(stream, slug === this.#activeChannelSlug)
       ) {
         continue
       }
@@ -281,10 +268,7 @@ export class ChannelDetailsScheduler {
   }
 
   #setRetryCooldown(slug: string) {
-    this.#retryAfterBySlug.set(
-      slug,
-      this.#timing.now() + RETRY_COOLDOWN_MS,
-    )
+    this.#retryAfterBySlug.set(slug, this.#timing.now() + RETRY_COOLDOWN_MS)
     this.#scheduleRetry(RETRY_COOLDOWN_MS)
   }
 
@@ -293,26 +277,24 @@ export class ChannelDetailsScheduler {
       return
     }
 
-    this.#retryTimer = this.#timing.scheduleTimeout(() => {
-      this.#retryTimer = undefined
+    this.#retryTimer = this.#timing.scheduleTimeout(
+      () => {
+        this.#retryTimer = undefined
 
-      for (const slug of this.#targetSlugs) {
-        const stream = this.#store.get(slug, this.#timing.now())
+        for (const slug of this.#targetSlugs) {
+          const stream = this.#store.get(slug, this.#timing.now())
 
-        if (
-          needsChannelDetails(
-            stream,
-            slug === this.#activeChannelSlug,
-          )
-        ) {
-          this.#queue(slug)
-        } else {
-          this.#queuedSlugs.delete(slug)
+          if (needsChannelDetails(stream, slug === this.#activeChannelSlug)) {
+            this.#queue(slug)
+          } else {
+            this.#queuedSlugs.delete(slug)
+          }
         }
-      }
 
-      this.#pumpQueue()
-    }, Math.max(250, delay))
+        this.#pumpQueue()
+      },
+      Math.max(250, delay),
+    )
   }
 }
 

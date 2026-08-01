@@ -69,8 +69,7 @@ export async function createFileSystemSink(
   } catch (error) {
     throw new ClipDownloadError(
       'file-access',
-      error instanceof DOMException &&
-        error.name === 'NotAllowedError'
+      error instanceof DOMException && error.name === 'NotAllowedError'
         ? 'Permission to write the selected file was denied.'
         : 'The selected file could not be opened for writing.',
     )
@@ -110,10 +109,7 @@ export async function createFileSystemSink(
 
 export function createBlobSink(
   filename: string,
-  triggerDownload: (
-    blob: Blob,
-    filename: string,
-  ) => void = triggerBlobDownload,
+  triggerDownload: (blob: Blob, filename: string) => void = triggerBlobDownload,
 ): OutputSink {
   let parts: BlobPart[] = []
   let closed = false

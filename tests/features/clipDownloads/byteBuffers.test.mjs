@@ -9,10 +9,7 @@ import {
 test('reuses owned buffers and copies partial views for transfer', () => {
   const ownedBytes = Uint8Array.of(1, 2, 3)
 
-  assert.equal(
-    toTransferableArrayBuffer(ownedBytes),
-    ownedBytes.buffer,
-  )
+  assert.equal(toTransferableArrayBuffer(ownedBytes), ownedBytes.buffer)
 
   const backingBytes = Uint8Array.of(9, 4, 5, 8)
   const partialView = backingBytes.subarray(1, 3)
@@ -25,4 +22,3 @@ test('reuses owned buffers and copies partial views for transfer', () => {
   backingBytes.fill(0)
   assert.deepEqual([...new Uint8Array(copied)], [4, 5])
 })
-

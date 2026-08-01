@@ -4,22 +4,17 @@ export type ResolvedClipCard<TCard, TContainer> = Readonly<{
   container: TContainer
 }>
 
-type ReconcilerOptions<TCard extends object, TContainer, TMount> =
-  Readonly<{
-    isCardConnected: (card: TCard) => boolean
-    isMountConnected: (mount: TMount) => boolean
-    mount: (
-      resolution: ResolvedClipCard<TCard, TContainer>,
-    ) => TMount
-    resolve: (
-      card: TCard,
-    ) => ResolvedClipCard<TCard, TContainer> | undefined
-    unmount: (mount: TMount) => void
-    update: (
-      mount: TMount,
-      resolution: ResolvedClipCard<TCard, TContainer>,
-    ) => void
-  }>
+type ReconcilerOptions<TCard extends object, TContainer, TMount> = Readonly<{
+  isCardConnected: (card: TCard) => boolean
+  isMountConnected: (mount: TMount) => boolean
+  mount: (resolution: ResolvedClipCard<TCard, TContainer>) => TMount
+  resolve: (card: TCard) => ResolvedClipCard<TCard, TContainer> | undefined
+  unmount: (mount: TMount) => void
+  update: (
+    mount: TMount,
+    resolution: ResolvedClipCard<TCard, TContainer>,
+  ) => void
+}>
 
 type MountedCard<TCard, TContainer, TMount> = {
   card: TCard
@@ -46,9 +41,7 @@ export function createClipCardReconciler<
     TCard,
     MountedCard<TCard, TContainer, TMount>
   >()
-  const mountedCards = new Set<
-    MountedCard<TCard, TContainer, TMount>
-  >()
+  const mountedCards = new Set<MountedCard<TCard, TContainer, TMount>>()
 
   function removeMountedCard(mounted: MountedCard<TCard, TContainer, TMount>) {
     unmount(mounted.mount)

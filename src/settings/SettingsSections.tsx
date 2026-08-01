@@ -1,11 +1,6 @@
 import { useMemo } from 'preact/hooks'
 
-import {
-  Button,
-  SelectBox,
-  Toggle,
-  TrackBar,
-} from '../components/forms'
+import { Button, SelectBox, Toggle, TrackBar } from '../components/forms'
 import {
   resetChatAppearance,
   setChatFontFamily,
@@ -79,8 +74,11 @@ export function ChatSettingsSection({
   open: boolean
   settings: Settings['chat']
 }>) {
-  const kickDefaults = useMemo(
-    () => ({
+  const kickDefaults = useMemo(() => {
+    // Re-read KICK's variables whenever the modal opens.
+    void open
+
+    return {
       fontSize: readKickChatValue(
         '--chatroom-font-size',
         CHAT_FONT_SIZE_DEFAULT,
@@ -93,9 +91,8 @@ export function ChatSettingsSection({
         CHAT_MESSAGE_SPACING_MIN,
         CHAT_MESSAGE_SPACING_MAX,
       ),
-    }),
-    [open],
-  )
+    }
+  }, [open])
 
   return (
     <div className="ke-settings">
@@ -104,9 +101,7 @@ export function ChatSettingsSection({
         label="Chat font"
         onValueChange={(value) => {
           void setChatFontFamily(
-            value === 'default'
-              ? null
-              : (value as ChatFontFamily),
+            value === 'default' ? null : (value as ChatFontFamily),
           )
         }}
         options={CHAT_FONT_FAMILY_OPTIONS}
@@ -158,9 +153,7 @@ export function ChatSettingsSection({
           void setChatMessageSpacing(value)
         }}
         step={1}
-        value={
-          settings.messageSpacing ?? kickDefaults.messageSpacing
-        }
+        value={settings.messageSpacing ?? kickDefaults.messageSpacing}
       />
       <Toggle
         checked={settings.messageDividers}
@@ -282,9 +275,7 @@ function readKickChatValue(
   max: number,
 ) {
   const value = Number.parseFloat(
-    getComputedStyle(document.documentElement).getPropertyValue(
-      property,
-    ),
+    getComputedStyle(document.documentElement).getPropertyValue(property),
   )
 
   return normalizeChatValue(value, min, max) ?? fallback

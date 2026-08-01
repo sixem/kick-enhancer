@@ -1,8 +1,4 @@
-export async function waitFor(
-  predicate,
-  description,
-  maximumAttempts = 25,
-) {
+export async function waitFor(predicate, description, maximumAttempts = 25) {
   for (let attempt = 0; attempt < maximumAttempts; attempt += 1) {
     const result = predicate()
 

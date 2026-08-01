@@ -2,10 +2,7 @@ import { useId } from 'preact/hooks'
 
 import icon from '../../assets/icon.png?inline'
 import { DownloadIcon } from '../../icons'
-import {
-  activateClipDownload,
-  type ClipSelectionHandler,
-} from './clipCards'
+import { activateClipDownload, type ClipSelectionHandler } from './clipCards'
 
 type DirectClipDownloadActionProps = Readonly<{
   clipId: string
@@ -26,9 +23,7 @@ export function DirectClipDownloadAction({
         aria-label={label}
         className="ke-direct-clip-download-action"
         data-ke-direct-clip-download
-        onClick={(event) =>
-          activateClipDownload(event, clipId, onSelectClip)
-        }
+        onClick={(event) => activateClipDownload(event, clipId, onSelectClip)}
         type="button"
       >
         <img

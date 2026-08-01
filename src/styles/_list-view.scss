@@ -23,9 +23,7 @@
 }
 
 .ke-list-view__scroll {
-  --ke-scroll-indicator-right: var(
-    --ke-list-view-scrollbar-gutter
-  );
+  --ke-scroll-indicator-right: var(--ke-list-view-scrollbar-gutter);
 }
 
 .ke-list-view__header-group {

@@ -1,10 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import {
-  formatLogEntry,
-  formatLogValue,
-} from '../../src/logging/format.ts'
+import { formatLogEntry, formatLogValue } from '../../src/logging/format.ts'
 
 test('safe log formatting redacts credentials and URL queries', () => {
   const formatted = formatLogEntry({
@@ -12,8 +9,7 @@ test('safe log formatting redacts credentials and URL queries', () => {
       'Request https://kick.com/current-viewers?ids[]=123&token=secret',
       {
         authorization: 'Bearer private',
-        playback_url:
-          'https://video.example/master.m3u8?signature=private',
+        playback_url: 'https://video.example/master.m3u8?signature=private',
         slug: 'channel',
       },
     ],

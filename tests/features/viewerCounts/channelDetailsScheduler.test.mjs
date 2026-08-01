@@ -84,10 +84,7 @@ test('drops queued channel details removed from the latest targets', async () =>
     store: new ViewerCountStore(),
     timing: timing.api,
   })
-  const slugs = Array.from(
-    { length: 6 },
-    (_, index) => `channel-${index}`,
-  )
+  const slugs = Array.from({ length: 6 }, (_, index) => `channel-${index}`)
 
   scheduler.start()
   scheduler.syncTargets(new Set(slugs), undefined)
@@ -112,9 +109,7 @@ test('drops queued channel details removed from the latest targets', async () =>
     'the retained channel detail requests to settle',
   )
   assert.equal(requests.length, 5)
-  assert.ok(
-    requests.every(({ url }) => !url.endsWith('/channel-5')),
-  )
+  assert.ok(requests.every(({ url }) => !url.endsWith('/channel-5')))
   scheduler.stop()
 })
 

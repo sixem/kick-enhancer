@@ -60,10 +60,7 @@ test('store resolves fresh current counts and removes changed livestream IDs', (
     },
   ])
 
-  assert.equal(
-    store.get('channel-one', now + 100)?.viewerCount,
-    200,
-  )
+  assert.equal(store.get('channel-one', now + 100)?.viewerCount, 200)
 
   store.upsertStreams([
     stream({
@@ -75,10 +72,7 @@ test('store resolves fresh current counts and removes changed livestream IDs', (
     }),
   ])
 
-  assert.equal(
-    store.get('channel-one', now + 200)?.viewerCount,
-    300,
-  )
+  assert.equal(store.get('channel-one', now + 200)?.viewerCount, 300)
   assert.equal(store.removeLivestreamIds([10]), 0)
   assert.equal(store.removeLivestreamIds([11]), 1)
   assert.equal(store.get('channel-one', now + 200), undefined)

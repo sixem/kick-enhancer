@@ -41,10 +41,7 @@ export type EndpointObservation = Readonly<{
 }>
 
 export type EndpointCheckStatus =
-  | 'degraded'
-  | 'failed'
-  | 'passed'
-  | 'unavailable'
+  'degraded' | 'failed' | 'passed' | 'unavailable'
 
 export type EndpointCheckResult = Readonly<{
   durationMs?: number
@@ -60,14 +57,9 @@ type ObservationListener = (
 
 const OBSERVATION_NOTIFY_INTERVAL_MS = 200
 const log = createLogger('diagnostics')
-const observations = new Map<
-  ViewerCountEndpoint,
-  EndpointObservation
->()
+const observations = new Map<ViewerCountEndpoint, EndpointObservation>()
 const observationListeners = new Set<ObservationListener>()
-let observationNotifyTimer:
-  | ReturnType<typeof setTimeout>
-  | undefined
+let observationNotifyTimer: ReturnType<typeof setTimeout> | undefined
 
 export function recordViewerEndpointObservation(
   endpoint: ViewerCountEndpoint,
@@ -75,8 +67,7 @@ export function recordViewerEndpointObservation(
   observedAt: number,
   source: EndpointObservation['source'],
 ) {
-  const streams =
-    normalized.kind === 'streams' ? normalized.streams : []
+  const streams = normalized.kind === 'streams' ? normalized.streams : []
   const records =
     normalized.kind === 'streams'
       ? streams.length
@@ -92,9 +83,8 @@ export function recordViewerEndpointObservation(
     observedAt,
     records,
     source,
-    startTimes: streams.filter(
-      (stream) => stream.startedAt !== undefined,
-    ).length,
+    startTimes: streams.filter((stream) => stream.startedAt !== undefined)
+      .length,
   }
 
   observations.set(endpoint, observation)
@@ -130,10 +120,7 @@ export function subscribeViewerEndpointObservations(
 }
 
 function scheduleObservationNotification() {
-  if (
-    observationListeners.size === 0 ||
-    observationNotifyTimer !== undefined
-  ) {
+  if (observationListeners.size === 0 || observationNotifyTimer !== undefined) {
     return
   }
 
@@ -233,8 +220,7 @@ export async function runViewerEndpointChecks(
     durationMs: channelResponse.durationMs,
     endpoint: 'CHANNEL_DETAILS',
     httpStatus: channelResponse.httpStatus,
-    status:
-      stream.livestreamId === undefined ? 'degraded' : 'passed',
+    status: stream.livestreamId === undefined ? 'degraded' : 'passed',
     summary: [
       `viewers=${stream.viewerCount.toLocaleString()}`,
       `count=${stream.showViewCount ? 'public' : 'hidden'}`,
@@ -252,14 +238,8 @@ export async function runViewerEndpointChecks(
     ]
   }
 
-  const viewersUrl = new URL(
-    '/current-viewers',
-    window.location.origin,
-  )
-  viewersUrl.searchParams.append(
-    'ids[]',
-    String(stream.livestreamId),
-  )
+  const viewersUrl = new URL('/current-viewers', window.location.origin)
+  viewersUrl.searchParams.append('ids[]', String(stream.livestreamId))
   const viewersResponse = await requestViewerJson(viewersUrl, signal)
 
   if (viewersResponse.kind === 'failed') {
@@ -288,8 +268,7 @@ export async function runViewerEndpointChecks(
   const entry =
     current.kind === 'current-viewers'
       ? current.currentViewers.find(
-          ({ livestreamId }) =>
-            livestreamId === stream.livestreamId,
+          ({ livestreamId }) => livestreamId === stream.livestreamId,
         )
       : undefined
   const currentCheck: EndpointCheckResult = {
@@ -324,9 +303,7 @@ function notifyObservationListeners() {
   }
 }
 
-function unavailableCurrentViewers(
-  summary: string,
-): EndpointCheckResult {
+function unavailableCurrentViewers(summary: string): EndpointCheckResult {
   return {
     endpoint: 'CURRENT_VIEWERS',
     status: 'unavailable',

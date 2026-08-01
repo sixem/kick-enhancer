@@ -10,7 +10,6 @@ export const SIDEBAR_LINK_SELECTOR = [
   '#sidebar-wrapper a[data-testid^="sidebar-recommended-channel-"]',
 ].join(', ')
 
-export const CARD_SELECTOR =
-  '[data-testid="livestream-results-card"]'
+export const CARD_SELECTOR = '[data-testid="livestream-results-card"]'
 export const CARD_THUMBNAIL_SELECTOR =
   'a[data-testid="media-card-thumbnail"][href]'

@@ -57,11 +57,7 @@ test('can override either chat appearance value independently', () => {
         messageDividers: false,
         messageSpacing,
       }),
-      [
-        '#channel-chatroom {',
-        `  ${declaration}`,
-        '}',
-      ].join('\n'),
+      ['#channel-chatroom {', `  ${declaration}`, '}'].join('\n'),
     )
   }
 })

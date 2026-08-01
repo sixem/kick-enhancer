@@ -22,10 +22,7 @@ export function updateCountElementState(
   setDatasetValue(element, 'keTarget', state.target)
   setDatasetValue(element, 'keViewerCount', '')
 
-  if (
-    state.text !== undefined &&
-    element.textContent !== state.text
-  ) {
+  if (state.text !== undefined && element.textContent !== state.text) {
     element.textContent = state.text
   }
 
@@ -44,11 +41,7 @@ function setClassName(element: HTMLElement, value: string) {
   }
 }
 
-function setDatasetValue(
-  element: HTMLElement,
-  key: string,
-  value: string,
-) {
+function setDatasetValue(element: HTMLElement, key: string, value: string) {
   if (element.dataset[key] !== value) {
     element.dataset[key] = value
   }

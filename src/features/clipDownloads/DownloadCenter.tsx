@@ -2,10 +2,7 @@ import type { ComponentChildren } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
 
 import icon from '../../assets/icon.png?inline'
-import {
-  ListView,
-  type ListViewColumn,
-} from '../../components/ListView'
+import { ListView, type ListViewColumn } from '../../components/ListView'
 import { Modal } from '../../components/Modal'
 import { Tabs } from '../../components/Tabs'
 import { Button, TextField } from '../../components/forms'
@@ -15,10 +12,7 @@ import {
   minimizeDownloadCenter,
 } from './downloadCenterController'
 import { estimateDownloadTransfer } from './downloadProgress'
-import {
-  downloadManager,
-  type DownloadJobSnapshot,
-} from './downloadManager'
+import { downloadManager, type DownloadJobSnapshot } from './downloadManager'
 import { getSaveFilePicker } from './outputSinks'
 import {
   useDownloadCenter,
@@ -66,10 +60,7 @@ const DOWNLOAD_COLUMNS: readonly ListViewColumn<DownloadJobSnapshot>[] = [
     header: 'Status',
     id: 'status',
     renderCell: (job) => (
-      <span
-        className="ke-download-queue__status"
-        data-status={job.status}
-      >
+      <span className="ke-download-queue__status" data-status={job.status}>
         {formatStatus(job)}
       </span>
     ),
@@ -87,9 +78,7 @@ const DOWNLOAD_COLUMNS: readonly ListViewColumn<DownloadJobSnapshot>[] = [
     header: 'Size',
     id: 'size',
     renderCell: (job) =>
-      job.media?.sourceBytes
-        ? formatBytes(job.media.sourceBytes)
-        : 'Unknown',
+      job.media?.sourceBytes ? formatBytes(job.media.sourceBytes) : 'Unknown',
     width: '6.5rem',
   },
 ]
@@ -117,8 +106,7 @@ export function DownloadCenter() {
   const [activeTab, setActiveTab] = useState('selected')
   const listedJobs = jobs.filter((job) => job.media !== undefined)
   const focusedJob =
-    jobs.find(({ id }) => id === center.focusedJobId) ??
-    jobs.at(-1)
+    jobs.find(({ id }) => id === center.focusedJobId) ?? jobs.at(-1)
 
   useEffect(() => {
     if (center.open && !focusedJob) {
@@ -127,18 +115,10 @@ export function DownloadCenter() {
   }, [center.open, focusedJob])
 
   useEffect(() => {
-    if (
-      center.open &&
-      focusedJob &&
-      focusedJob.id !== center.focusedJobId
-    ) {
+    if (center.open && focusedJob && focusedJob.id !== center.focusedJobId) {
       focusDownloadJob(focusedJob.id)
     }
-  }, [
-    center.focusedJobId,
-    center.open,
-    focusedJob,
-  ])
+  }, [center.focusedJobId, center.open, focusedJob])
 
   useEffect(() => {
     if (center.open && center.focusedJobId) {
@@ -147,9 +127,7 @@ export function DownloadCenter() {
   }, [center.focusedJobId, center.open])
 
   const hasInactive = jobs.some((job) =>
-    ['cancelled', 'completed', 'failed', 'ready'].includes(
-      job.status,
-    ),
+    ['cancelled', 'completed', 'failed', 'ready'].includes(job.status),
   )
 
   return (
@@ -159,10 +137,7 @@ export function DownloadCenter() {
       description="Manage clip downloads."
       footer={
         <>
-          <Button
-            disabled={!hasInactive}
-            onClick={clearInactiveDownloads}
-          >
+          <Button disabled={!hasInactive} onClick={clearInactiveDownloads}>
             Clear inactive
           </Button>
           <Button
@@ -191,8 +166,7 @@ export function DownloadCenter() {
                 No clip selected.
               </div>
             ),
-            contentClassName:
-              'ke-download-center__selected-panel',
+            contentClassName: 'ke-download-center__selected-panel',
             disabled: !focusedJob,
             id: 'selected',
             label: 'Selected',
@@ -209,8 +183,7 @@ export function DownloadCenter() {
                 }}
               />
             ),
-            contentClassName:
-              'ke-download-center__downloads-panel',
+            contentClassName: 'ke-download-center__downloads-panel',
             id: 'downloads',
             label: (
               <span className="ke-download-center__tab-label">
@@ -250,9 +223,7 @@ function DownloadQueue({
         `View ${job.title ?? job.clipId}, ${formatStatus(job)}`
       }
       getRowClassName={(job) =>
-        job.id === focusedJobId
-          ? 'ke-download-queue__row--selected'
-          : undefined
+        job.id === focusedJobId ? 'ke-download-queue__row--selected' : undefined
       }
       items={jobs}
       onItemActivate={(job) => onSelect(job.id)}
@@ -260,9 +231,7 @@ function DownloadQueue({
   )
 }
 
-function DownloadJobDetail({
-  job,
-}: Readonly<{ job: DownloadJobSnapshot }>) {
+function DownloadJobDetail({ job }: Readonly<{ job: DownloadJobSnapshot }>) {
   if (job.status === 'inspecting') {
     return (
       <section
@@ -304,11 +273,7 @@ function DownloadJobDetail({
                     </span>
                   ) : null}
                   {job.publishedAt ? (
-                    <time
-                      dateTime={new Date(
-                        job.publishedAt,
-                      ).toISOString()}
-                    >
+                    <time dateTime={new Date(job.publishedAt).toISOString()}>
                       {CLIP_DATE_FORMATTER.format(job.publishedAt)}
                     </time>
                   ) : null}
@@ -325,7 +290,7 @@ function DownloadJobDetail({
                     {job.title ?? 'KICK clip'}
                   </a>
                 ) : (
-                  job.title ?? 'KICK clip'
+                  (job.title ?? 'KICK clip')
                 )}
               </h3>
               <p className="ke-download-detail__metadata">
@@ -378,9 +343,7 @@ function DownloadJobDetail({
             job.queuePosition ? ` (position ${job.queuePosition})` : ''
           }.`}
         >
-          <Button onClick={() => downloadManager.cancel(job.id)}>
-            Cancel
-          </Button>
+          <Button onClick={() => downloadManager.cancel(job.id)}>Cancel</Button>
         </StatusPanel>
       ) : null}
 
@@ -394,17 +357,12 @@ function DownloadJobDetail({
           >
             Choose file and start
           </Button>
-          <Button onClick={() => downloadManager.cancel(job.id)}>
-            Cancel
-          </Button>
+          <Button onClick={() => downloadManager.cancel(job.id)}>Cancel</Button>
         </StatusPanel>
       ) : null}
 
       {job.status === 'choosing-destination' ? (
-        <StatusPanel
-          icon
-          message="Waiting for a file destination…"
-        />
+        <StatusPanel icon message="Waiting for a file destination…" />
       ) : null}
 
       {job.status === 'active' ? <ActiveView job={job} /> : null}
@@ -420,9 +378,7 @@ function DownloadJobDetail({
       {job.status === 'failed' ? (
         <TerminalView
           job={job}
-          message={
-            job.error?.message ?? 'The clip download failed.'
-          }
+          message={job.error?.message ?? 'The clip download failed.'}
           primaryLabel="Retry"
         />
       ) : null}
@@ -458,9 +414,7 @@ function ReadyView({ job }: Readonly<{ job: DownloadJobSnapshot }>) {
       <TextField
         label="Output filename"
         maxLength={180}
-        onValueChange={(value) =>
-          downloadManager.updateBasename(job.id, value)
-        }
+        onValueChange={(value) => downloadManager.updateBasename(job.id, value)}
         suffix=".mp4"
         value={job.basename}
       />
@@ -473,37 +427,30 @@ function ReadyView({ job }: Readonly<{ job: DownloadJobSnapshot }>) {
 
       {!hasFilePicker && isLargeFallback ? (
         <p className="ke-download-message is-warning">
-          This browser must keep the final MP4 in memory. The clip is
-          unusually large, so close memory-heavy tabs before continuing.
+          This browser must keep the final MP4 in memory. The clip is unusually
+          large, so close memory-heavy tabs before continuing.
         </p>
       ) : null}
 
       {hasFilePicker ? (
         <p className="ke-download-message">
-          If you select an existing file, the browser may clear it
-          before processing finishes.
+          If you select an existing file, the browser may clear it before
+          processing finishes.
         </p>
       ) : null}
 
       <div className="ke-download-actions">
-        <Button
-          className="ke-button--primary"
-          type="submit"
-        >
+        <Button className="ke-button--primary" type="submit">
           Download
         </Button>
         {hasFilePicker ? (
           <Button
-            onClick={() =>
-              downloadManager.requestDownload(job.id, 'memory')
-            }
+            onClick={() => downloadManager.requestDownload(job.id, 'memory')}
           >
             Use memory download
           </Button>
         ) : null}
-        <Button onClick={() => removeDownload(job.id)}>
-          Remove
-        </Button>
+        <Button onClick={() => removeDownload(job.id)}>Remove</Button>
       </div>
     </form>
   )
@@ -540,10 +487,7 @@ function ActiveView({ job }: Readonly<{ job: DownloadJobSnapshot }>) {
         />
       </div>
       <div className="ke-download-actions">
-        <Button
-          tone="danger"
-          onClick={() => downloadManager.cancel(job.id)}
-        >
+        <Button tone="danger" onClick={() => downloadManager.cancel(job.id)}>
           Cancel
         </Button>
       </div>
@@ -561,19 +505,14 @@ function TerminalView({
   primaryLabel: string
 }>) {
   return (
-    <StatusPanel
-      error={job.status === 'failed'}
-      message={message}
-    >
+    <StatusPanel error={job.status === 'failed'} message={message}>
       <Button
         className="ke-button--primary"
         onClick={() => downloadManager.retry(job.id)}
       >
         {primaryLabel}
       </Button>
-      <Button onClick={() => removeDownload(job.id)}>
-        Remove
-      </Button>
+      <Button onClick={() => removeDownload(job.id)}>Remove</Button>
     </StatusPanel>
   )
 }
@@ -594,16 +533,11 @@ function MediaFacts({ job }: Readonly<{ job: DownloadJobSnapshot }>) {
       <div>
         <dt>Download size</dt>
         <dd>
-          {media.sourceBytes
-            ? formatBytes(media.sourceBytes)
-            : 'Unknown'}
+          {media.sourceBytes ? formatBytes(media.sourceBytes) : 'Unknown'}
           <span className="ke-download-facts__secondary">
             {' '}
             ({media.logicalSegmentCount}{' '}
-            {media.logicalSegmentCount === 1
-              ? 'segment'
-              : 'segments'}
-            )
+            {media.logicalSegmentCount === 1 ? 'segment' : 'segments'})
           </span>
         </dd>
       </div>
@@ -640,14 +574,10 @@ function StatusPanel({
         className={`ke-download-message${error ? ' is-error' : ''}`}
         role={error ? 'alert' : 'status'}
       >
-        {icon ? (
-          <LoadingSpinnerIcon class="ke-icon ke-icon--spinner" />
-        ) : null}
+        {icon ? <LoadingSpinnerIcon class="ke-icon ke-icon--spinner" /> : null}
         <span>{message}</span>
       </p>
-      {children ? (
-        <div className="ke-download-actions">{children}</div>
-      ) : null}
+      {children ? <div className="ke-download-actions">{children}</div> : null}
     </section>
   )
 }
@@ -661,9 +591,7 @@ function formatStatus(job: DownloadJobSnapshot) {
     completed: 'Completed',
     failed: 'Failed',
     inspecting: 'Inspecting',
-    queued: job.queuePosition
-      ? `Queued ${job.queuePosition}`
-      : 'Queued',
+    queued: job.queuePosition ? `Queued ${job.queuePosition}` : 'Queued',
     ready: 'Ready',
   }
 
@@ -681,10 +609,7 @@ function formatPhase(phase: DownloadJobSnapshot['phase']) {
   return phase ? labels[phase] : 'Working'
 }
 
-function formatFetchingStatus(
-  job: DownloadJobSnapshot,
-  now: number,
-) {
+function formatFetchingStatus(job: DownloadJobSnapshot, now: number) {
   const segmentCount = job.media?.logicalSegmentCount
   const label =
     segmentCount && segmentCount > 1
@@ -707,9 +632,7 @@ function formatFetchingStatus(
   const remaining =
     estimate.remainingSeconds === undefined
       ? ''
-      : ` - ${formatRemainingTime(
-          estimate.remainingSeconds,
-        )} remaining`
+      : ` - ${formatRemainingTime(estimate.remainingSeconds)} remaining`
 
   return `${label}: ${formatBytes(estimate.bytesPerSecond)}/s${remaining}`
 }

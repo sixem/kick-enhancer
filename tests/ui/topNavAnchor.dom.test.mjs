@@ -36,10 +36,7 @@ test('prefers the logged-in anchor if both states are present', () => {
     </nav>
   `
 
-  assert.equal(
-    findTopNavActions(window.document)?.id,
-    'logged-in-actions',
-  )
+  assert.equal(findTopNavActions(window.document)?.id, 'logged-in-actions')
 })
 
 test('does not use login buttons outside the top navigation', () => {

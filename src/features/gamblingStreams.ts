@@ -1,13 +1,10 @@
 import { type Dispose } from '../lifecycle'
-import {
-  observeSetting,
-} from '../settings/settings'
+import { observeSetting } from '../settings/settings'
 import styles from './gamblingStreams.scss?inline'
 import { applyStyleToggle } from './styleToggle'
 
 const STYLE_ID = 'kick-enhancer-hide-gambling-streams'
-const SIDEBAR_GAMBLING_ATTRIBUTE =
-  'data-kick-enhancer-gambling-stream'
+const SIDEBAR_GAMBLING_ATTRIBUTE = 'data-kick-enhancer-gambling-stream'
 const SIDEBAR_FOLLOWING_SELECTOR =
   'a[data-testid^="sidebar-following-channel-"]'
 const GAMBLING_SURFACE_SELECTOR = [
@@ -33,10 +30,9 @@ function getFollowedGamblingChannelPaths() {
       '[data-testid="livestream-results-card"]' +
       ':has(a[href="/category/slots"])',
   )) {
-    const channelLink =
-      card.querySelector<HTMLAnchorElement>(
-        'a[data-testid="media-card-thumbnail"]',
-      )
+    const channelLink = card.querySelector<HTMLAnchorElement>(
+      'a[data-testid="media-card-thumbnail"]',
+    )
     const path = channelLink?.getAttribute('href')
 
     if (path) {
@@ -100,9 +96,7 @@ function scheduleSidebarScan() {
   sidebarScanFrame = window.requestAnimationFrame(updateSidebarRows)
 }
 
-function mutationsTouchGamblingSurfaces(
-  records: readonly MutationRecord[],
-) {
+function mutationsTouchGamblingSurfaces(records: readonly MutationRecord[]) {
   for (const record of records) {
     const target =
       record.target instanceof Element
@@ -146,10 +140,7 @@ export function startGamblingStreamsVisibility(): Dispose {
   featureActive = true
 
   const observer = new MutationObserver((records) => {
-    if (
-      gamblingStreamsHidden &&
-      mutationsTouchGamblingSurfaces(records)
-    ) {
+    if (gamblingStreamsHidden && mutationsTouchGamblingSurfaces(records)) {
       scheduleSidebarScan()
     }
   })

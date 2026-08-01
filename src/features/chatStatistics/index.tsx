@@ -2,16 +2,10 @@ import { render } from 'preact'
 
 import { type Dispose } from '../../lifecycle'
 import { observeSetting } from '../../settings/settings'
-import {
-  ChatStatisticsCard,
-  ChatStatisticsTrigger,
-} from './ChatStatisticsView'
+import { ChatStatisticsCard, ChatStatisticsTrigger } from './ChatStatisticsView'
 import { getChatStatisticsRuntime } from './runtime.ts'
 import styles from './chatStatistics.scss?inline'
-import {
-  findChatStatisticsAnchors,
-  type ChatStatisticsAnchors,
-} from './dom'
+import { findChatStatisticsAnchors, type ChatStatisticsAnchors } from './dom'
 
 const NATIVE_TITLE_ATTRIBUTE = 'data-ke-native-chat-title'
 const PANEL_HOST_ID = 'kick-enhancer-chat-statistics-panel'
@@ -113,10 +107,7 @@ function startStatisticsUi(): Dispose {
     }
 
     render(
-      <ChatStatisticsCard
-        onClose={closePanel}
-        snapshot={snapshot}
-      />,
+      <ChatStatisticsCard onClose={closePanel} snapshot={snapshot} />,
       panelHost,
     )
   }
@@ -208,9 +199,7 @@ function startStatisticsUi(): Dispose {
     const previousChatroomId =
       snapshot.status === 'active' ? snapshot.chatroomId : null
     const nextChatroomId =
-      nextSnapshot.status === 'active'
-        ? nextSnapshot.chatroomId
-        : null
+      nextSnapshot.status === 'active' ? nextSnapshot.chatroomId : null
 
     snapshot = nextSnapshot
 

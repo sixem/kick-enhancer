@@ -3,10 +3,7 @@ import { unsafeWindow } from '$'
 import { onDocumentElementReady } from '../../dom/onDocumentElementReady'
 import { type Dispose } from '../../lifecycle'
 import { createLogger } from '../../logging/logger'
-import {
-  getSettings,
-  subscribeSettings,
-} from '../../settings/settings'
+import { getSettings, subscribeSettings } from '../../settings/settings'
 import { applyStyleToggle } from '../styleToggle'
 import { ViewerCountAcquisition } from './acquisition'
 import { installViewerCountCaptureBridge } from './capture'
@@ -154,11 +151,7 @@ function cancelFeatureActivation() {
 }
 
 function activateFeatureDom() {
-  if (
-    !featureEnabled ||
-    domFeatureActive ||
-    !document.documentElement
-  ) {
+  if (!featureEnabled || domFeatureActive || !document.documentElement) {
     return
   }
 
@@ -191,22 +184,10 @@ function deactivateFeatureDom() {
   observer?.disconnect()
   observer = undefined
   uninstallRouteObserver()
-  document.removeEventListener(
-    'pointerover',
-    handleSidebarHover,
-    true,
-  )
-  document.removeEventListener(
-    'pointerout',
-    handleSidebarHoverEnd,
-    true,
-  )
+  document.removeEventListener('pointerover', handleSidebarHover, true)
+  document.removeEventListener('pointerout', handleSidebarHoverEnd, true)
   document.removeEventListener('focusin', handleSidebarHover, true)
-  document.removeEventListener(
-    'focusout',
-    handleSidebarHoverEnd,
-    true,
-  )
+  document.removeEventListener('focusout', handleSidebarHoverEnd, true)
 
   if (renderTimer !== undefined) {
     window.clearTimeout(renderTimer)
@@ -285,9 +266,7 @@ function handleCaptureMessage(event: MessageEvent<unknown>) {
     normalized.kind === 'streams' ? normalized.streams.length : 0
   const hiddenStreamCount =
     normalized.kind === 'streams'
-      ? normalized.streams.filter(
-          (stream) => !stream.showViewCount,
-        ).length
+      ? normalized.streams.filter((stream) => !stream.showViewCount).length
       : 0
   const updated =
     normalized.kind === 'streams'
@@ -295,8 +274,7 @@ function handleCaptureMessage(event: MessageEvent<unknown>) {
       : store.upsertCurrentViewers(normalized.currentViewers)
 
   if (
-    message.endpoint ===
-      'PAGINATED_RECOMMENDED_LIVESTREAMS' &&
+    message.endpoint === 'PAGINATED_RECOMMENDED_LIVESTREAMS' &&
     featureEnabled &&
     hiddenStreamCount > 0
   ) {
@@ -356,10 +334,7 @@ function scheduleRender(reason: string, delay = RENDER_DELAY_MS) {
 
   // Keep the earliest deadline so route and hover renders can preempt the
   // normal mutation debounce.
-  if (
-    renderTimer !== undefined &&
-    deadline >= renderDeadline
-  ) {
+  if (renderTimer !== undefined && deadline >= renderDeadline) {
     return
   }
 
@@ -369,13 +344,16 @@ function scheduleRender(reason: string, delay = RENDER_DELAY_MS) {
 
   renderDeadline = deadline
   renderReason = reason
-  renderTimer = window.setTimeout(() => {
-    const scheduledReason = renderReason
-    renderTimer = undefined
-    renderDeadline = Number.POSITIVE_INFINITY
-    renderReason = ''
-    runRender(scheduledReason)
-  }, Math.max(0, deadline - performance.now()))
+  renderTimer = window.setTimeout(
+    () => {
+      const scheduledReason = renderReason
+      renderTimer = undefined
+      renderDeadline = Number.POSITIVE_INFINITY
+      renderReason = ''
+      runRender(scheduledReason)
+    },
+    Math.max(0, deadline - performance.now()),
+  )
 }
 
 function runRender(reason: string) {
@@ -383,16 +361,9 @@ function runRender(reason: string) {
     return
   }
 
-  const result = renderViewerCounts(
-    store,
-    sidebarHoverTarget,
-    getSettings().ui,
-  )
+  const result = renderViewerCounts(store, sidebarHoverTarget, getSettings().ui)
 
-  acquisition.syncTargets(
-    result.targetSlugs,
-    result.activeChannelSlug,
-  )
+  acquisition.syncTargets(result.targetSlugs, result.activeChannelSlug)
 
   if (!areRenderCountsEqual(result.counts, lastLogCounts)) {
     lastLogCounts = result.counts
@@ -439,9 +410,7 @@ function handleSidebarHover(event: Event) {
     return
   }
 
-  const link = event.target.closest<HTMLAnchorElement>(
-    SIDEBAR_LINK_SELECTOR,
-  )
+  const link = event.target.closest<HTMLAnchorElement>(SIDEBAR_LINK_SELECTOR)
   const slug = getChannelSlugFromHref(link?.getAttribute('href'))
 
   if (!link || !slug) {
@@ -468,9 +437,7 @@ function handleSidebarHoverEnd(event: Event) {
     return
   }
 
-  const link = event.target.closest<HTMLAnchorElement>(
-    SIDEBAR_LINK_SELECTOR,
-  )
+  const link = event.target.closest<HTMLAnchorElement>(SIDEBAR_LINK_SELECTOR)
   const slug = getChannelSlugFromHref(link?.getAttribute('href'))
 
   if (!link || !slug || sidebarHoverTarget?.slug !== slug) {
@@ -479,10 +446,7 @@ function handleSidebarHoverEnd(event: Event) {
 
   const relatedTarget = (event as FocusEvent).relatedTarget
 
-  if (
-    relatedTarget instanceof Node &&
-    link.contains(relatedTarget)
-  ) {
+  if (relatedTarget instanceof Node && link.contains(relatedTarget)) {
     return
   }
 
@@ -511,18 +475,18 @@ function installRouteObserver() {
     return
   }
 
+  // These methods are stored for restoration and invoked with their History
+  // receiver through Reflect.apply inside the wrappers below.
+  // eslint-disable-next-line @typescript-eslint/unbound-method
   historyPushState = window.history.pushState
+  // eslint-disable-next-line @typescript-eslint/unbound-method
   historyReplaceState = window.history.replaceState
 
   historyPushStateWrapper = function (
     this: History,
     ...argumentsList: Parameters<History['pushState']>
   ) {
-    Reflect.apply(
-      historyPushState as History['pushState'],
-      this,
-      argumentsList,
-    )
+    Reflect.apply(historyPushState as History['pushState'], this, argumentsList)
     handleRouteChange()
   }
 
@@ -595,23 +559,16 @@ function isIgnoredMutation(mutation: MutationRecord) {
     return true
   }
 
-  const changedNodes = [
-    ...mutation.addedNodes,
-    ...mutation.removedNodes,
-  ]
+  const changedNodes = [...mutation.addedNodes, ...mutation.removedNodes]
 
   return (
     changedNodes.length > 0 &&
     changedNodes.every(
       (node) =>
         node instanceof Element &&
-        (node.matches(
-          '[data-ke-viewer-count], [data-ke-stream-uptime]',
-        ) ||
+        (node.matches('[data-ke-viewer-count], [data-ke-stream-uptime]') ||
           Boolean(
-            node.closest(
-              '[data-ke-viewer-count], [data-ke-stream-uptime]',
-            ),
+            node.closest('[data-ke-viewer-count], [data-ke-stream-uptime]'),
           )),
     )
   )

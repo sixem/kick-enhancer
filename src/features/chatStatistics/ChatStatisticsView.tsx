@@ -15,8 +15,7 @@ export function ChatStatisticsTrigger({
 }: ChatStatisticsTriggerProps) {
   const calibrating =
     snapshot.status === 'pending' ||
-    (snapshot.status === 'active' &&
-      Date.now() < snapshot.trendReadyAt)
+    (snapshot.status === 'active' && Date.now() < snapshot.trendReadyAt)
   const unavailable = snapshot.status === 'unavailable'
   const trend =
     snapshot.status === 'active' && !calibrating
@@ -28,9 +27,7 @@ export function ChatStatisticsTrigger({
       aria-controls="kick-enhancer-chat-statistics-card"
       aria-expanded={expanded}
       aria-label={
-        unavailable
-          ? 'Chat statistics unavailable'
-          : 'Toggle chat statistics'
+        unavailable ? 'Chat statistics unavailable' : 'Toggle chat statistics'
       }
       className="ke-chat-statistics-trigger"
       onClick={onToggle}
@@ -42,9 +39,7 @@ export function ChatStatisticsTrigger({
         <span>
           <AnimatedNumber
             value={
-              snapshot.status === 'active'
-                ? snapshot.messagesPerMinute
-                : 0
+              snapshot.status === 'active' ? snapshot.messagesPerMinute : 0
             }
           />
           /min
@@ -81,12 +76,9 @@ export function ChatStatisticsCard({
 }>) {
   const calibrating =
     snapshot.status === 'pending' ||
-    (snapshot.status === 'active' &&
-      Date.now() < snapshot.trendReadyAt)
+    (snapshot.status === 'active' && Date.now() < snapshot.trendReadyAt)
   const trend =
-    snapshot.status === 'active'
-      ? formatTrend(snapshot.trendPercent)
-      : null
+    snapshot.status === 'active' ? formatTrend(snapshot.trendPercent) : null
 
   return (
     <section
@@ -99,21 +91,19 @@ export function ChatStatisticsCard({
           <span
             aria-hidden="true"
             className="ke-chat-statistics-card__live-dot"
-            data-status={
-              calibrating ? 'calibrating' : snapshot.status
-            }
+            data-status={calibrating ? 'calibrating' : snapshot.status}
           />
-          {snapshot.status === 'active'
-            ? (
-                <span>
-                  Chat Statistics (ID:{' '}
-                  <span className="ke-chat-statistics-card__room-id">
-                    {snapshot.chatroomId}
-                  </span>
-                  {')'}
-                </span>
-              )
-            : 'Chat Statistics'}
+          {snapshot.status === 'active' ? (
+            <span>
+              Chat Statistics (ID:{' '}
+              <span className="ke-chat-statistics-card__room-id">
+                {snapshot.chatroomId}
+              </span>
+              {')'}
+            </span>
+          ) : (
+            'Chat Statistics'
+          )}
         </span>
         <button
           aria-label="Close chat statistics"
@@ -139,9 +129,7 @@ export function ChatStatisticsCard({
             <span className="ke-chat-statistics-card__rate">
               <AnimatedNumber
                 value={
-                  snapshot.status === 'active'
-                    ? snapshot.messagesPerMinute
-                    : 0
+                  snapshot.status === 'active' ? snapshot.messagesPerMinute : 0
                 }
               />{' '}
               <small>msg/min</small>
@@ -155,8 +143,7 @@ export function ChatStatisticsCard({
                 className="ke-chat-statistics-card__trend"
                 data-tone={trend.tone}
               >
-                {trend.direction}{' '}
-                <AnimatedNumber value={trend.value} />%
+                {trend.direction} <AnimatedNumber value={trend.value} />%
               </span>
             ) : null}
           </div>
@@ -166,9 +153,7 @@ export function ChatStatisticsCard({
               <strong>
                 <AnimatedNumber
                   value={
-                    snapshot.status === 'active'
-                      ? snapshot.activeChatters
-                      : 0
+                    snapshot.status === 'active' ? snapshot.activeChatters : 0
                   }
                 />
               </strong>{' '}
@@ -177,16 +162,13 @@ export function ChatStatisticsCard({
             <span>
               <strong>
                 {snapshot.status !== 'active' ||
-                snapshot.socketRttMs === null
-                  ? '—'
-                  : (
-                      <>
-                        <AnimatedNumber
-                          value={snapshot.socketRttMs}
-                        />{' '}
-                        ms
-                      </>
-                    )}
+                snapshot.socketRttMs === null ? (
+                  '—'
+                ) : (
+                  <>
+                    <AnimatedNumber value={snapshot.socketRttMs} /> ms
+                  </>
+                )}
               </strong>{' '}
               socket RTT
             </span>
@@ -207,9 +189,7 @@ export function ChatStatisticsCard({
               <strong>
                 <AnimatedNumber
                   value={
-                    snapshot.status === 'active'
-                      ? snapshot.totalMessages
-                      : 0
+                    snapshot.status === 'active' ? snapshot.totalMessages : 0
                   }
                 />
               </strong>{' '}

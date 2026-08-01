@@ -32,4 +32,3 @@ test('identifies H.264, AAC, and timed ID3 from a bounded TS probe', () => {
     /unsupported transport-stream codecs/i,
   )
 })
-

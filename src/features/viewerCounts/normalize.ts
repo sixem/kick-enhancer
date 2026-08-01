@@ -42,7 +42,7 @@ export function normalizeViewerCountPayload(
   }
 
   const source = SOURCE_BY_ENDPOINT[endpoint]
-  let values: readonly unknown[] = []
+  let values: readonly unknown[]
 
   if (
     endpoint === 'SIDEBAR_LIVESTREAMS' ||
@@ -61,12 +61,8 @@ export function normalizeViewerCountPayload(
   }
 
   const streams = values
-    .map((value) =>
-      normalizeStream(endpoint, source, value, capturedAt),
-    )
-    .filter(
-      (stream): stream is ViewerCountRecord => stream !== undefined,
-    )
+    .map((value) => normalizeStream(endpoint, source, value, capturedAt))
+    .filter((stream): stream is ViewerCountRecord => stream !== undefined)
 
   return {
     kind: 'streams',
@@ -116,8 +112,7 @@ function normalizeChannelDetails(
     normalizeChannelSlug(channel.slug) ??
     normalizeChannelSlug(livestreamChannel?.slug)
   const viewerCount =
-    readCount(livestream.viewer_count) ??
-    readCount(livestream.viewers)
+    readCount(livestream.viewer_count) ?? readCount(livestream.viewers)
   const startedAt = readStreamStartedAt(livestream)
 
   if (!channelSlug || viewerCount === undefined) {
@@ -126,13 +121,9 @@ function normalizeChannelDetails(
 
   return createRecord({
     capturedAt,
-    channelId:
-      readId(channel.id) ?? readId(livestream.channel_id),
+    channelId: readId(channel.id) ?? readId(livestream.channel_id),
     channelSlug,
-    isLive: readBoolean(
-      livestream.is_live ?? channel.is_live,
-      true,
-    ),
+    isLive: readBoolean(livestream.is_live ?? channel.is_live, true),
     livestreamId: readId(livestream.id),
     showViewCount: readBoolean(
       livestream.show_view_count ?? channel.show_view_count,
@@ -174,13 +165,10 @@ function normalizeUserLivestream(
   source: ViewerCountSource,
   capturedAt: number,
 ) {
-  const channel = isRecord(livestream.channel)
-    ? livestream.channel
-    : undefined
+  const channel = isRecord(livestream.channel) ? livestream.channel : undefined
   const channelSlug = normalizeChannelSlug(channel?.slug)
   const viewerCount =
-    readCount(livestream.viewer_count) ??
-    readCount(livestream.viewers)
+    readCount(livestream.viewer_count) ?? readCount(livestream.viewers)
   const isLive = readBoolean(livestream.is_live, false)
   const startedAt = readStreamStartedAt(livestream)
 
@@ -190,15 +178,11 @@ function normalizeUserLivestream(
 
   return createRecord({
     capturedAt,
-    channelId:
-      readId(channel?.id) ?? readId(livestream.channel_id),
+    channelId: readId(channel?.id) ?? readId(livestream.channel_id),
     channelSlug,
     isLive,
     livestreamId: readId(livestream.id),
-    showViewCount: readBoolean(
-      livestream.show_view_count,
-      true,
-    ),
+    showViewCount: readBoolean(livestream.show_view_count, true),
     source,
     ...(startedAt === undefined ? {} : { startedAt }),
     viewerCount,
@@ -210,9 +194,7 @@ function normalizeRecommendation(
   source: ViewerCountSource,
   capturedAt: number,
 ) {
-  const channel = isRecord(livestream.channel)
-    ? livestream.channel
-    : undefined
+  const channel = isRecord(livestream.channel) ? livestream.channel : undefined
   const channelSlug = normalizeChannelSlug(channel?.slug)
   const viewerCount = readCount(livestream.viewer_count)
   const startedAt = readStreamStartedAt(livestream)
@@ -227,10 +209,7 @@ function normalizeRecommendation(
     channelSlug,
     isLive: true,
     livestreamId: readId(livestream.id),
-    showViewCount: readBoolean(
-      livestream.show_view_count,
-      true,
-    ),
+    showViewCount: readBoolean(livestream.show_view_count, true),
     source,
     ...(startedAt === undefined ? {} : { startedAt }),
     viewerCount,
@@ -245,10 +224,7 @@ function readStreamStartedAt(stream: Record<string, unknown>) {
   )
 }
 
-function normalizeCurrentViewers(
-  payload: unknown,
-  capturedAt: number,
-) {
+function normalizeCurrentViewers(payload: unknown, capturedAt: number) {
   if (!Array.isArray(payload)) {
     return []
   }
@@ -262,10 +238,7 @@ function normalizeCurrentViewers(
       const livestreamId = readId(value.livestream_id)
       const viewerCount = readCount(value.viewers)
 
-      if (
-        livestreamId === undefined ||
-        viewerCount === undefined
-      ) {
+      if (livestreamId === undefined || viewerCount === undefined) {
         return undefined
       }
 
@@ -277,20 +250,14 @@ function normalizeCurrentViewers(
       return {
         capturedAt,
         livestreamId,
-        ...(showViewCount === undefined
-          ? {}
-          : { showViewCount }),
+        ...(showViewCount === undefined ? {} : { showViewCount }),
         viewerCount,
       }
     })
-    .filter(
-      (entry): entry is CurrentViewerRecord => entry !== undefined,
-    )
+    .filter((entry): entry is CurrentViewerRecord => entry !== undefined)
 }
 
-function createRecord(
-  record: ViewerCountRecord,
-): ViewerCountRecord {
+function createRecord(record: ViewerCountRecord): ViewerCountRecord {
   return record
 }
 
@@ -312,11 +279,7 @@ function readNestedArray(
 }
 
 function readCount(value: unknown) {
-  if (
-    typeof value !== 'number' ||
-    !Number.isFinite(value) ||
-    value < 0
-  ) {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
     return undefined
   }
 

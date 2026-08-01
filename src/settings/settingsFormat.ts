@@ -12,15 +12,7 @@ export const CHAT_FONT_FAMILIES = [
 export type ChatFontFamily = (typeof CHAT_FONT_FAMILIES)[number]
 
 export const CHAT_FONT_WEIGHTS = [
-  100,
-  200,
-  300,
-  400,
-  500,
-  600,
-  700,
-  800,
-  900,
+  100, 200, 300, 400, 500, 600, 700, 800, 900,
 ] as const
 
 export type ChatFontWeight = (typeof CHAT_FONT_WEIGHTS)[number]
@@ -120,8 +112,7 @@ export function parseSettings(value: unknown): Settings {
     },
     ui: {
       hideChatLeaderboard: ui.hideChatLeaderboard === true,
-      hideFollowingRecommendations:
-        ui.hideFollowingRecommendations === true,
+      hideFollowingRecommendations: ui.hideFollowingRecommendations === true,
       hideGamblingStreams: ui.hideGamblingStreams === true,
       hideHomepageCarousel: ui.hideHomepageCarousel === true,
       hideRecommendedChannels: ui.hideRecommendedChannels === true,
@@ -165,29 +156,21 @@ export function serializeSettings(settings: Settings) {
   return `${JSON.stringify(settings, null, 2)}\n`
 }
 
-export function normalizeChatFontFamily(
-  value: unknown,
-): ChatFontFamily | null {
+export function normalizeChatFontFamily(value: unknown): ChatFontFamily | null {
   return typeof value === 'string' &&
     (CHAT_FONT_FAMILIES as readonly string[]).includes(value)
     ? (value as ChatFontFamily)
     : null
 }
 
-export function normalizeChatFontWeight(
-  value: unknown,
-): ChatFontWeight | null {
+export function normalizeChatFontWeight(value: unknown): ChatFontWeight | null {
   return typeof value === 'number' &&
     (CHAT_FONT_WEIGHTS as readonly number[]).includes(value)
     ? (value as ChatFontWeight)
     : null
 }
 
-export function normalizeChatValue(
-  value: unknown,
-  min: number,
-  max: number,
-) {
+export function normalizeChatValue(value: unknown, min: number, max: number) {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     return null
   }
@@ -237,9 +220,5 @@ function matchesCanonicalValue(value: unknown, expected: unknown): boolean {
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return (
-    value !== null &&
-    typeof value === 'object' &&
-    !Array.isArray(value)
-  )
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
 }

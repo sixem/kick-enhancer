@@ -1,11 +1,5 @@
-export function applyStyleToggle(
-  id: string,
-  styles: string,
-  enabled: boolean,
-) {
-  const existingStyle = document.getElementById(
-    id,
-  ) as HTMLStyleElement | null
+export function applyStyleToggle(id: string, styles: string, enabled: boolean) {
+  const existingStyle = document.getElementById(id) as HTMLStyleElement | null
 
   if (!enabled) {
     existingStyle?.remove()

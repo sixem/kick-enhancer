@@ -1,7 +1,4 @@
-import {
-  type KickChatEvent,
-  type PusherEvent,
-} from './types.ts'
+import { type KickChatEvent, type PusherEvent } from './types.ts'
 
 const CHAT_CHANNEL_PATTERN = /^chatrooms\.(\d+)\.v2$/
 const CHAT_MESSAGE_EVENT = 'App\\Events\\ChatMessageEvent'
@@ -16,15 +13,9 @@ type Session = Readonly<{
 export class KickChatAdapter {
   readonly #sessions = new Map<string, Session>()
 
-  accept(
-    event: PusherEvent,
-    collectMessages = true,
-  ): readonly KickChatEvent[] {
+  accept(event: PusherEvent, collectMessages = true): readonly KickChatEvent[] {
     if (event.type === 'socketClosed') {
-      return this.#endSocketSessions(
-        event.socketId,
-        event.observedAt,
-      )
+      return this.#endSocketSessions(event.socketId, event.observedAt)
     }
 
     if (
@@ -90,13 +81,7 @@ export class KickChatAdapter {
       }
       this.#sessions.set(key, confirmed)
 
-      return [
-        createSessionEvent(
-          'sessionStarted',
-          confirmed,
-          event.observedAt,
-        ),
-      ]
+      return [createSessionEvent('sessionStarted', confirmed, event.observedAt)]
     }
 
     if (
@@ -107,10 +92,7 @@ export class KickChatAdapter {
       return []
     }
 
-    const message = decodeMessage(
-      decodeEventData(event.data),
-      chatroomId,
-    )
+    const message = decodeMessage(decodeEventData(event.data), chatroomId)
 
     if (!message) {
       return []
@@ -141,9 +123,7 @@ export class KickChatAdapter {
       this.#sessions.delete(key)
 
       if (session.confirmed) {
-        ended.push(
-          createSessionEvent('sessionEnded', session, observedAt),
-        )
+        ended.push(createSessionEvent('sessionEnded', session, observedAt))
       }
     }
 

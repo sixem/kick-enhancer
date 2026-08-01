@@ -9,12 +9,9 @@ import {
   VIEWER_COUNT_SELECTOR,
 } from './selectors.ts'
 
-const SIDEBAR_UPTIME_CONTAINER_SELECTOR =
-  '[data-ke-sidebar-uptime-container]'
-const TOOLTIP_UPTIME_CONTAINER_SELECTOR =
-  '[data-ke-tooltip-uptime-container]'
-const NATIVE_CARD_LIVE_HIDDEN_SELECTOR =
-  '[data-ke-native-card-live-hidden]'
+const SIDEBAR_UPTIME_CONTAINER_SELECTOR = '[data-ke-sidebar-uptime-container]'
+const TOOLTIP_UPTIME_CONTAINER_SELECTOR = '[data-ke-tooltip-uptime-container]'
+const NATIVE_CARD_LIVE_HIDDEN_SELECTOR = '[data-ke-native-card-live-hidden]'
 
 type UptimeElementState = Readonly<{
   className: string
@@ -101,11 +98,7 @@ export class ViewerCountDomOwnership {
     }
 
     setDatasetValue(element, 'keSlug', state.slug)
-    setDatasetValue(
-      element,
-      'keStartedAt',
-      String(state.startedAt),
-    )
+    setDatasetValue(element, 'keStartedAt', String(state.startedAt))
     setDatasetValue(element, 'keTarget', state.target)
     setDatasetValue(element, 'keStreamUptime', '')
 
@@ -132,9 +125,7 @@ export class ViewerCountDomOwnership {
 }
 
 export function cleanupViewerCountDom() {
-  for (const element of document.querySelectorAll(
-    RENDER_ELEMENT_SELECTOR,
-  )) {
+  for (const element of document.querySelectorAll(RENDER_ELEMENT_SELECTOR)) {
     element.remove()
   }
 
@@ -151,21 +142,16 @@ export function cleanupViewerCountDom() {
   }
 
   for (const element of document.querySelectorAll(
-    [
-      SIDEBAR_UPTIME_CONTAINER_SELECTOR,
-      TOOLTIP_UPTIME_CONTAINER_SELECTOR,
-    ].join(', '),
+    [SIDEBAR_UPTIME_CONTAINER_SELECTOR, TOOLTIP_UPTIME_CONTAINER_SELECTOR].join(
+      ', ',
+    ),
   )) {
     element.removeAttribute('data-ke-sidebar-uptime-container')
     element.removeAttribute('data-ke-tooltip-uptime-container')
   }
 }
 
-function setDatasetValue(
-  element: HTMLElement,
-  key: string,
-  value: string,
-) {
+function setDatasetValue(element: HTMLElement, key: string, value: string) {
   if (element.dataset[key] !== value) {
     element.dataset[key] = value
   }
@@ -191,9 +177,7 @@ function restoreUnusedNativeCardLiveBadges() {
   for (const badge of document.querySelectorAll<HTMLElement>(
     NATIVE_CARD_LIVE_HIDDEN_SELECTOR,
   )) {
-    const thumbnail = badge.closest<HTMLElement>(
-      CARD_THUMBNAIL_SELECTOR,
-    )
+    const thumbnail = badge.closest<HTMLElement>(CARD_THUMBNAIL_SELECTOR)
     const uptime = thumbnail?.querySelector<HTMLElement>(
       `${STREAM_UPTIME_SELECTOR}[data-ke-target="card"]`,
     )
@@ -223,9 +207,7 @@ function restoreUptimeContainers(
   attribute: string,
   target: string,
 ) {
-  for (const container of document.querySelectorAll<HTMLElement>(
-    selector,
-  )) {
+  for (const container of document.querySelectorAll<HTMLElement>(selector)) {
     const uptime = container.querySelector<HTMLElement>(
       `${STREAM_UPTIME_SELECTOR}[data-ke-target="${target}"]`,
     )

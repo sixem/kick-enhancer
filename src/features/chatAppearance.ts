@@ -1,8 +1,5 @@
 import { type Dispose } from '../lifecycle'
-import {
-  observeSetting,
-  type Settings,
-} from '../settings/settings'
+import { observeSetting, type Settings } from '../settings/settings'
 import { createChatAppearanceStyles } from './chatAppearanceStyles'
 
 const STYLE_ID = 'kick-enhancer-chat-appearance'

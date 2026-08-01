@@ -11,9 +11,7 @@ export function createBrowserAcquisitionTiming(): ViewerCountAcquisitionTiming {
     cancelInterval: (handle) => window.clearInterval(handle),
     cancelTimeout: (handle) => window.clearTimeout(handle),
     now: Date.now,
-    scheduleInterval: (callback, delay) =>
-      window.setInterval(callback, delay),
-    scheduleTimeout: (callback, delay) =>
-      window.setTimeout(callback, delay),
+    scheduleInterval: (callback, delay) => window.setInterval(callback, delay),
+    scheduleTimeout: (callback, delay) => window.setTimeout(callback, delay),
   }
 }

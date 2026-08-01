@@ -6,10 +6,7 @@ import {
   fetchInitialMediaProbe,
   parseContentRange,
 } from '../../../src/features/clipDownloads/network.ts'
-import {
-  rangeResponse,
-  responseWithUrl,
-} from './_support/mediaFixtures.mjs'
+import { rangeResponse, responseWithUrl } from './_support/mediaFixtures.mjs'
 
 test('validates exact media byte ranges and rejects ignored ranges', async () => {
   assert.deepEqual(parseContentRange('bytes 10-19/100'), {
@@ -69,4 +66,3 @@ test('validates exact media byte ranges and rejects ignored ranges', async () =>
     /ignored the bounded inspection/i,
   )
 })
-

@@ -1,8 +1,7 @@
 export function createManagerDependencies(overrides = {}) {
   return {
     createBlobSink: (filename) => createFakeSink(filename),
-    createFileSystemSink: async (handle) =>
-      createFakeSink(handle.name),
+    createFileSystemSink: async (handle) => createFakeSink(handle.name),
     downloadMediaPlan: async (_plan, _sink, _signal, { onProgress }) => {
       onProgress({
         completedSegments: 1,

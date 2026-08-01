@@ -14,8 +14,7 @@ const TITLE_POSITION_CLASSES = [
 export function findChatStatisticsAnchors(
   ownerDocument: Document = document,
 ): ChatStatisticsAnchors | null {
-  const chatroom =
-    ownerDocument.querySelector<HTMLElement>(CHATROOM_SELECTOR)
+  const chatroom = ownerDocument.querySelector<HTMLElement>(CHATROOM_SELECTOR)
 
   if (!chatroom) {
     return null
@@ -23,13 +22,8 @@ export function findChatStatisticsAnchors(
 
   let title: HTMLElement | undefined
 
-  for (const candidate of chatroom.querySelectorAll<HTMLElement>(
-    'span',
-  )) {
-    if (
-      candidate.parentElement?.parentElement?.parentElement !==
-      chatroom
-    ) {
+  for (const candidate of chatroom.querySelectorAll<HTMLElement>('span')) {
+    if (candidate.parentElement?.parentElement?.parentElement !== chatroom) {
       continue
     }
 
@@ -52,8 +46,7 @@ export function findChatStatisticsAnchors(
     return null
   }
 
-  const messages =
-    chatroom.querySelector<HTMLElement>(MESSAGES_SELECTOR)
+  const messages = chatroom.querySelector<HTMLElement>(MESSAGES_SELECTOR)
   const stackRoot = messages?.previousElementSibling
   const eventStack =
     stackRoot?.classList.contains('absolute') &&

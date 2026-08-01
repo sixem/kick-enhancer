@@ -18,10 +18,7 @@ export class SocketRttTracker {
       return null
     }
 
-    if (
-      event.type === 'ping' &&
-      event.direction === 'outgoing'
-    ) {
+    if (event.type === 'ping' && event.direction === 'outgoing') {
       if (!this.#pending.has(event.socketId)) {
         this.#pending.set(event.socketId, event.observedAt)
       }

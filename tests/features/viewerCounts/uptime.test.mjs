@@ -24,21 +24,12 @@ test('formats compact stream uptimes for thumbnail badges', () => {
   assert.equal(formatStreamUptime(now - 30_000, now), '<1m')
   assert.equal(formatStreamUptime(now - 59 * 60_000, now), '59m')
   assert.equal(formatStreamUptime(now - 60 * 60_000, now), '1h')
-  assert.equal(
-    formatStreamUptime(now - 65 * 60_000, now),
-    '1h 5m',
-  )
-  assert.equal(
-    formatStreamUptime(now - 51 * 60 * 60_000, now),
-    '2d 3h',
-  )
+  assert.equal(formatStreamUptime(now - 65 * 60_000, now), '1h 5m')
+  assert.equal(formatStreamUptime(now - 51 * 60 * 60_000, now), '2d 3h')
 })
 
 test('rejects implausible future start times', () => {
   const now = Date.UTC(2026, 6, 28, 12)
 
-  assert.equal(
-    formatStreamUptime(now + 5 * 60_000 + 1, now),
-    undefined,
-  )
+  assert.equal(formatStreamUptime(now + 5 * 60_000 + 1, now), undefined)
 })

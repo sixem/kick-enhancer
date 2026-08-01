@@ -28,29 +28,30 @@ export function responseWithUrl(response, url) {
 
 export function createPatSection() {
   return Uint8Array.from([
-    0x00, 0xb0, 0x0d,
-    0x00, 0x01, 0xc1, 0x00, 0x00,
-    0x00, 0x01, 0xe1, 0x00,
-    0, 0, 0, 0,
+    0x00, 0xb0, 0x0d, 0x00, 0x01, 0xc1, 0x00, 0x00, 0x00, 0x01, 0xe1, 0x00, 0,
+    0, 0, 0,
   ])
 }
 
 export function createPmtSection(streamTypes) {
   const sectionLength = 9 + streamTypes.length * 5 + 4
   const bytes = [
-    0x02, 0xb0 | ((sectionLength >> 8) & 0x0f), sectionLength & 0xff,
-    0x00, 0x01, 0xc1, 0x00, 0x00,
-    0xe1, 0x00, 0xf0, 0x00,
+    0x02,
+    0xb0 | ((sectionLength >> 8) & 0x0f),
+    sectionLength & 0xff,
+    0x00,
+    0x01,
+    0xc1,
+    0x00,
+    0x00,
+    0xe1,
+    0x00,
+    0xf0,
+    0x00,
   ]
 
   for (const [index, streamType] of streamTypes.entries()) {
-    bytes.push(
-      streamType,
-      0xe1,
-      index + 1,
-      0xf0,
-      0x00,
-    )
+    bytes.push(streamType, 0xe1, index + 1, 0xf0, 0x00)
   }
 
   bytes.push(0, 0, 0, 0)
@@ -79,4 +80,3 @@ export function concatBytes(...values) {
 
   return bytes
 }
-

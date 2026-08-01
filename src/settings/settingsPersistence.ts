@@ -14,10 +14,7 @@ type SettingsPersistenceOptions = Readonly<{
   cancelTimer?: (handle: TimerHandle) => void
   delayMs?: number
   onError: (error: unknown) => void
-  scheduleTimer?: (
-    callback: () => void,
-    delayMs: number,
-  ) => TimerHandle
+  scheduleTimer?: (callback: () => void, delayMs: number) => TimerHandle
   write: (value: string) => Promise<void>
 }>
 
@@ -62,11 +59,7 @@ export function createSettingsPersistence({
   }
 
   function settlePendingBurst() {
-    if (
-      timer !== undefined ||
-      inFlight ||
-      latestValue !== undefined
-    ) {
+    if (timer !== undefined || inFlight || latestValue !== undefined) {
       return
     }
 
@@ -77,16 +70,16 @@ export function createSettingsPersistence({
 
   function schedulePendingTimer() {
     cancelPendingTimer()
-    timer = scheduleTimer(() => {
-      timer = undefined
-      startWrite()
-    }, Math.max(0, delayMs))
+    timer = scheduleTimer(
+      () => {
+        timer = undefined
+        startWrite()
+      },
+      Math.max(0, delayMs),
+    )
   }
 
-  function completeWrite(
-    completedWrite: InFlightWrite,
-    succeeded: boolean,
-  ) {
+  function completeWrite(completedWrite: InFlightWrite, succeeded: boolean) {
     if (inFlight !== completedWrite) {
       return
     }

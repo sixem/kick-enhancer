@@ -93,10 +93,8 @@
   }
 }
 
-.ke-direct-clip-download-host:hover
-  .ke-direct-clip-download-tooltip,
-.ke-direct-clip-download-host:focus-within
-  .ke-direct-clip-download-tooltip {
+.ke-direct-clip-download-host:hover .ke-direct-clip-download-tooltip,
+.ke-direct-clip-download-host:focus-within .ke-direct-clip-download-tooltip {
   visibility: visible;
   opacity: 1;
 }

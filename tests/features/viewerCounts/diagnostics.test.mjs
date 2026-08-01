@@ -40,17 +40,14 @@ test('records passive endpoint summaries without retaining payloads', () => {
     source: 'captured',
     startTimes: 1,
   })
-  assert.equal(
-    'payload' in getViewerEndpointObservations()[0],
-    false,
-  )
+  assert.equal('payload' in getViewerEndpointObservations()[0], false)
 })
 
 test('batches passive endpoint observation notifications', (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] })
   const snapshots = []
-  const unsubscribe = subscribeViewerEndpointObservations(
-    (observations) => snapshots.push(observations),
+  const unsubscribe = subscribeViewerEndpointObservations((observations) =>
+    snapshots.push(observations),
   )
   t.after(() => {
     unsubscribe()
@@ -67,27 +64,16 @@ test('batches passive endpoint observation notifications', (t) => {
     3_000,
   )
 
-  recordViewerEndpointObservation(
-    'CURRENT_VIEWERS',
-    first,
-    2_000,
-    'captured',
-  )
-  recordViewerEndpointObservation(
-    'CURRENT_VIEWERS',
-    second,
-    3_000,
-    'captured',
-  )
+  recordViewerEndpointObservation('CURRENT_VIEWERS', first, 2_000, 'captured')
+  recordViewerEndpointObservation('CURRENT_VIEWERS', second, 3_000, 'captured')
 
   assert.equal(snapshots.length, 0)
   t.mock.timers.tick(200)
 
   assert.equal(snapshots.length, 1)
   assert.equal(
-    snapshots[0].find(
-      ({ endpoint }) => endpoint === 'CURRENT_VIEWERS',
-    ).observedAt,
+    snapshots[0].find(({ endpoint }) => endpoint === 'CURRENT_VIEWERS')
+      .observedAt,
     3_000,
   )
 })
@@ -125,14 +111,8 @@ test('checks channel details before current viewers', async (t) => {
   )
 
   assert.equal(requests.length, 2)
-  assert.equal(
-    requests[0],
-    'https://kick.com/api/v2/channels/channel-one',
-  )
-  assert.equal(
-    requests[1],
-    'https://kick.com/current-viewers?ids%5B%5D=100',
-  )
+  assert.equal(requests[0], 'https://kick.com/api/v2/channels/channel-one')
+  assert.equal(requests[1], 'https://kick.com/current-viewers?ids%5B%5D=100')
   assert.deepEqual(
     results.map(({ endpoint, httpStatus, status }) => ({
       endpoint,

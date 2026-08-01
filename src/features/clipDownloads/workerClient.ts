@@ -22,16 +22,11 @@ export class TransmuxWorkerClient {
   private readonly pending = new Map<number, PendingRequest>()
 
   constructor() {
-    this.worker.onmessage = (
-      event: MessageEvent<DownloadWorkerResponse>,
-    ) => {
+    this.worker.onmessage = (event: MessageEvent<DownloadWorkerResponse>) => {
       const message = event.data
 
       if (message.type === 'error') {
-        const error = new ClipDownloadError(
-          'transmuxing',
-          message.message,
-        )
+        const error = new ClipDownloadError('transmuxing', message.message)
 
         if (message.requestId !== undefined) {
           this.rejectRequest(message.requestId, error)
@@ -104,9 +99,7 @@ export class TransmuxWorkerClient {
     }
     this.worker.postMessage(message)
     this.worker.terminate()
-    this.rejectAll(
-      new ClipDownloadError('cancelled', reason),
-    )
+    this.rejectAll(new ClipDownloadError('cancelled', reason))
   }
 
   private request(

@@ -1,7 +1,4 @@
-import type {
-  ChatFontFamily,
-  ChatFontWeight,
-} from '../settings/settings'
+import type { ChatFontFamily, ChatFontWeight } from '../settings/settings'
 
 type ChatAppearanceValues = Readonly<{
   fontFamily: ChatFontFamily | null
@@ -22,23 +19,16 @@ export function createChatAppearanceStyles({
     fontFamily === null
       ? undefined
       : `font-family: ${FONT_FAMILY_STACKS[fontFamily]};`,
-    fontSize === null
-      ? undefined
-      : `--chatroom-font-size: ${fontSize}px;`,
+    fontSize === null ? undefined : `--chatroom-font-size: ${fontSize}px;`,
     messageSpacing === null
       ? undefined
       : `--chatroom-message-spacing: ${messageSpacing}px;`,
-  ].filter(
-    (declaration): declaration is string =>
-      declaration !== undefined,
-  )
+  ].filter((declaration): declaration is string => declaration !== undefined)
 
   const rules = []
 
   if (declarations.length > 0) {
-    rules.push(
-      `#channel-chatroom {\n  ${declarations.join('\n  ')}\n}`,
-    )
+    rules.push(`#channel-chatroom {\n  ${declarations.join('\n  ')}\n}`)
   }
 
   if (messageDividers) {

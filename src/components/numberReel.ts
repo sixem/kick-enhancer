@@ -12,10 +12,7 @@ type AnimationState = {
 
 const states = new WeakMap<HTMLElement, AnimationState>()
 
-export function renderAnimatedNumber(
-  container: HTMLElement,
-  value: number,
-) {
+export function renderAnimatedNumber(container: HTMLElement, value: number) {
   const formatted = formatNumber(value)
   const existing = states.get(container)
 
@@ -87,10 +84,7 @@ export function renderAnimatedNumber(
   state.frame = window.requestAnimationFrame(() => {
     state.frame = undefined
 
-    if (
-      states.get(container) !== state ||
-      !container.isConnected
-    ) {
+    if (states.get(container) !== state || !container.isConnected) {
       return
     }
 
@@ -101,8 +95,7 @@ export function renderAnimatedNumber(
         continue
       }
 
-      const target =
-        -(20 + reel.digit) * digitHeight
+      const target = -(20 + reel.digit) * digitHeight
       const animation = reel.element.animate(
         [
           { transform: 'translateY(0)' },
@@ -149,7 +142,5 @@ function cancelState(state: AnimationState | undefined) {
 }
 
 function prefersReducedMotion() {
-  return window.matchMedia(
-    '(prefers-reduced-motion: reduce)',
-  ).matches
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }

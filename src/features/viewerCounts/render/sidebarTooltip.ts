@@ -32,8 +32,7 @@ export function renderSidebarTooltipSurface(
 
   if (
     !target ||
-    (!options.showHiddenViewerCounts &&
-      !options.showStreamUptime)
+    (!options.showHiddenViewerCounts && !options.showStreamUptime)
   ) {
     return {
       targetSlugs,
@@ -45,19 +44,13 @@ export function renderSidebarTooltipSurface(
   let sourceLink: HTMLAnchorElement | undefined
 
   for (const link of sidebarLinks) {
-    if (
-      getChannelSlugFromHref(link.getAttribute('href')) ===
-      target.slug
-    ) {
+    if (getChannelSlugFromHref(link.getAttribute('href')) === target.slug) {
       sourceLink = link
       break
     }
   }
 
-  if (
-    !sourceLink ||
-    isSidebarLinkHiddenByEnhancer(sourceLink, options)
-  ) {
+  if (!sourceLink || isSidebarLinkHiddenByEnhancer(sourceLink, options)) {
     return {
       targetSlugs,
       uptimes,
@@ -76,15 +69,10 @@ export function renderSidebarTooltipSurface(
     }
   }
 
-  const countEligible =
-    options.showHiddenViewerCounts && !stream.showViewCount
-  const startedAt = options.showStreamUptime
-    ? stream.startedAt
-    : undefined
+  const countEligible = options.showHiddenViewerCounts && !stream.showViewCount
+  const startedAt = options.showStreamUptime ? stream.startedAt : undefined
   const uptime =
-    startedAt === undefined
-      ? undefined
-      : formatStreamUptime(startedAt)
+    startedAt === undefined ? undefined : formatStreamUptime(startedAt)
 
   if (!countEligible && !uptime) {
     return {
@@ -126,14 +114,11 @@ export function renderSidebarTooltipSurface(
     }
 
     const countElement =
-      ownership.findCount(tooltip, 'tooltip') ??
-      document.createElement('span')
+      ownership.findCount(tooltip, 'tooltip') ?? document.createElement('span')
     ownership.updateCount(countElement, {
       className: [
         'ke-viewer-count-tooltip',
-        statusLabel
-          ? ''
-          : 'ke-viewer-count-tooltip--standalone',
+        statusLabel ? '' : 'ke-viewer-count-tooltip--standalone',
       ]
         .filter(Boolean)
         .join(' '),
@@ -152,8 +137,7 @@ export function renderSidebarTooltipSurface(
 
   if (uptime && startedAt !== undefined) {
     const uptimeElement =
-      ownership.findUptime(tooltip, 'tooltip') ??
-      document.createElement('span')
+      ownership.findUptime(tooltip, 'tooltip') ?? document.createElement('span')
 
     ownership.updateUptime(uptimeElement, {
       className: 'ke-stream-uptime-tooltip',
@@ -163,11 +147,7 @@ export function renderSidebarTooltipSurface(
       target: 'tooltip',
       text: uptime,
     })
-    ownership.markUptimeContainer(
-      statusContainer,
-      'tooltip',
-      target.slug,
-    )
+    ownership.markUptimeContainer(statusContainer, 'tooltip', target.slug)
 
     if (uptimeElement.parentElement !== statusContainer) {
       statusContainer.append(uptimeElement)

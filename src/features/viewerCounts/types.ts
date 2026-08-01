@@ -47,8 +47,7 @@ export type CapturedViewerCountMessage = Readonly<{
 
 export const VIEWER_COUNT_MESSAGE_SOURCE =
   'kick-enhancer-viewer-counts' as const
-export const VIEWER_COUNT_MESSAGE_TYPE =
-  'KICK_ENHANCER_API_RESPONSE' as const
+export const VIEWER_COUNT_MESSAGE_TYPE = 'KICK_ENHANCER_API_RESPONSE' as const
 
 export function isViewerCountEndpoint(
   value: unknown,

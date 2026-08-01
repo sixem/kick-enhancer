@@ -1,22 +1,13 @@
 import { createLogger } from '../../../logging/logger.ts'
 import { type ViewerCountStore } from '../store.ts'
-import {
-  renderCardSurfaces,
-  type CardRenderResult,
-} from './cards.ts'
-import {
-  renderChannelSurface,
-  type ChannelRenderResult,
-} from './channel.ts'
+import { renderCardSurfaces, type CardRenderResult } from './cards.ts'
+import { renderChannelSurface, type ChannelRenderResult } from './channel.ts'
 import {
   cleanupViewerCountDom,
   ViewerCountDomOwnership,
 } from './domOwnership.ts'
 import { SIDEBAR_LINK_SELECTOR } from './selectors.ts'
-import {
-  renderSidebarSurface,
-  type SidebarRenderResult,
-} from './sidebar.ts'
+import { renderSidebarSurface, type SidebarRenderResult } from './sidebar.ts'
 import {
   renderSidebarTooltipSurface,
   type SidebarTooltipRenderResult,
@@ -42,20 +33,15 @@ export function renderViewerCounts(
   options: ViewerCountRenderOptions,
 ): ViewerCountRenderResult {
   const ownership = new ViewerCountDomOwnership()
-  const sidebarLinks =
-    document.querySelectorAll<HTMLAnchorElement>(
-      SIDEBAR_LINK_SELECTOR,
-    )
+  const sidebarLinks = document.querySelectorAll<HTMLAnchorElement>(
+    SIDEBAR_LINK_SELECTOR,
+  )
 
   try {
     const channel = renderSurface(
       'channel',
       () =>
-        renderChannelSurface(
-          store,
-          ownership,
-          options.showHiddenViewerCounts,
-        ),
+        renderChannelSurface(store, ownership, options.showHiddenViewerCounts),
       emptyChannelResult,
     )
     const cards = renderSurface(
@@ -65,13 +51,7 @@ export function renderViewerCounts(
     )
     const sidebar = renderSurface(
       'sidebar',
-      () =>
-        renderSidebarSurface(
-          store,
-          ownership,
-          sidebarLinks,
-          options,
-        ),
+      () => renderSidebarSurface(store, ownership, sidebarLinks, options),
       emptySurfaceResult,
     )
     const tooltip = renderSurface(
@@ -98,12 +78,7 @@ export function renderViewerCounts(
         tooltipUptimes: tooltip.uptimes,
         tooltips: tooltip.viewerCounts,
       },
-      targetSlugs: collectTargetSlugs(
-        channel,
-        cards,
-        sidebar,
-        tooltip,
-      ),
+      targetSlugs: collectTargetSlugs(channel, cards, sidebar, tooltip),
     }
   } finally {
     ownership.finalize()
@@ -134,9 +109,7 @@ function emptyChannelResult(): ChannelRenderResult {
 }
 
 function emptySurfaceResult():
-  | CardRenderResult
-  | SidebarRenderResult
-  | SidebarTooltipRenderResult {
+  CardRenderResult | SidebarRenderResult | SidebarTooltipRenderResult {
   return {
     targetSlugs: new Set<string>(),
     uptimes: 0,

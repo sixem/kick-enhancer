@@ -45,11 +45,7 @@ test('reconciles mounts, reused IDs, invalid cards, and teardown', () => {
 
   card.id = 'clip_two'
   reconciler.reconcile(card)
-  assert.deepEqual(calls.at(-1), [
-    'update',
-    'clip_one',
-    'clip_two',
-  ])
+  assert.deepEqual(calls.at(-1), ['update', 'clip_one', 'clip_two'])
 
   card.container = { id: 'container-two' }
   reconciler.reconcile(card)

@@ -6,9 +6,7 @@ import { KickChatAdapter } from './kickChatAdapter.ts'
 import { decodePusherEvent } from './pusherAdapter.ts'
 import { SocketRttTracker } from './rttTracker.ts'
 import { ChatStatsStore } from './statsStore.ts'
-import {
-  type ChatStatisticsSnapshot,
-} from './types.ts'
+import { type ChatStatisticsSnapshot } from './types.ts'
 import { WebSocketTap } from './webSocketTap.ts'
 
 const PING_TIMEOUT_MS = 15_000
@@ -52,8 +50,7 @@ export class ChatStatisticsRuntime {
     this.#stopTapEvents = this.#tap.subscribe((event) => {
       if (
         event.type === 'error' &&
-        event.socketId ===
-          this.#statsStore.getSelectedSocketId()
+        event.socketId === this.#statsStore.getSelectedSocketId()
       ) {
         this.#connectionFailed = true
       }
@@ -72,10 +69,7 @@ export class ChatStatisticsRuntime {
         : null
 
       if (rttSample) {
-        this.#statsStore.addRttSample(
-          rttSample.socketId,
-          rttSample.rttMs,
-        )
+        this.#statsStore.addRttSample(rttSample.socketId, rttSample.rttMs)
         this.#publish()
       }
 
@@ -164,13 +158,7 @@ export class ChatStatisticsRuntime {
 
     const now = this.#clock()
 
-    if (
-      !this.#rttTracker.canStart(
-        socketId,
-        now,
-        PING_TIMEOUT_MS,
-      )
-    ) {
+    if (!this.#rttTracker.canStart(socketId, now, PING_TIMEOUT_MS)) {
       return false
     }
 

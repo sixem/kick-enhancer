@@ -12,10 +12,7 @@ import {
   initializeViewerCountCapture,
   startViewerEnhancements,
 } from './features/viewerCounts'
-import {
-  composeDisposers,
-  type Dispose,
-} from './lifecycle'
+import { composeDisposers, type Dispose } from './lifecycle'
 import { createLogger } from './logging/logger'
 import { initializeSettings } from './settings/settings'
 import { startTopNavButton } from './ui/App'

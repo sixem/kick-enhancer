@@ -1,7 +1,4 @@
-import {
-  type PusherEvent,
-  type WebSocketTapEvent,
-} from './types.ts'
+import { type PusherEvent, type WebSocketTapEvent } from './types.ts'
 
 export function decodePusherEvent(
   event: WebSocketTapEvent,
@@ -37,8 +34,7 @@ export function decodePusherEvent(
 
   if (
     event.direction === 'outgoing' &&
-    (eventName === 'pusher:subscribe' ||
-      eventName === 'pusher:unsubscribe')
+    (eventName === 'pusher:subscribe' || eventName === 'pusher:unsubscribe')
   ) {
     const data = decodeData(envelope.data)
     const channelName = isRecord(data) ? data.channel : undefined
@@ -51,10 +47,7 @@ export function decodePusherEvent(
       channelName,
       observedAt: event.observedAt,
       socketId: event.socketId,
-      type:
-        eventName === 'pusher:subscribe'
-          ? 'subscribing'
-          : 'unsubscribing',
+      type: eventName === 'pusher:subscribe' ? 'subscribing' : 'unsubscribing',
     }
   }
 
@@ -76,10 +69,7 @@ export function decodePusherEvent(
     }
   }
 
-  if (
-    event.direction !== 'incoming' ||
-    eventName.startsWith('pusher:')
-  ) {
+  if (event.direction !== 'incoming' || eventName.startsWith('pusher:')) {
     return null
   }
 

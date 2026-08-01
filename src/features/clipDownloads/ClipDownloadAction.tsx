@@ -1,10 +1,7 @@
 import { type JSX } from 'preact'
 
 import { DownloadIcon } from '../../icons'
-import {
-  activateClipDownload,
-  type ClipSelectionHandler,
-} from './clipCards'
+import { activateClipDownload, type ClipSelectionHandler } from './clipCards'
 
 type ClipDownloadActionProps = Readonly<{
   clipId: string
@@ -28,9 +25,7 @@ export function ClipDownloadAction({
       aria-label="Download source clip"
       class="ke-clip-download-action"
       data-ke-clip-download
-      onClick={(event) =>
-        activateClipDownload(event, clipId, onSelectClip)
-      }
+      onClick={(event) => activateClipDownload(event, clipId, onSelectClip)}
       onMouseDown={stopPointerPropagation}
       onPointerDown={stopPointerPropagation}
       type="button"

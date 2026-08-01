@@ -11,8 +11,7 @@ import {
   rangeResponse,
 } from './_support/mediaFixtures.mjs'
 
-const PLAYLIST_URL =
-  'https://clips.kick.com/clips/42/clip_test/playlist.m3u8'
+const PLAYLIST_URL = 'https://clips.kick.com/clips/42/clip_test/playlist.m3u8'
 
 test('normalizes API metadata and an observed HLS media plan', async () => {
   const tsProbe = concatBytes(
@@ -73,10 +72,7 @@ test('normalizes API metadata and an observed HLS media plan', async () => {
   )
 
   assert.equal(requests.length, 3)
-  assert.equal(
-    requests[0].url,
-    'https://kick.com/api/v2/clips/clip_test/play',
-  )
+  assert.equal(requests[0].url, 'https://kick.com/api/v2/clips/clip_test/play')
   assert.equal(inspection.metadata.category, 'Just Chatting')
   assert.equal(inspection.metadata.channel, 'channel')
   assert.equal(inspection.metadata.creator, 'clipper')
@@ -96,10 +92,7 @@ test('normalizes API metadata and an observed HLS media plan', async () => {
 test('accepts a bounded compatible direct MP4 response', async () => {
   const mp4 = concatBytes(
     createBox('ftyp', new TextEncoder().encode('isom0000')),
-    createBox(
-      'moov',
-      concatBytes(createBox('avc1'), createBox('mp4a')),
-    ),
+    createBox('moov', concatBytes(createBox('avc1'), createBox('mp4a'))),
     new Uint8Array(24),
   )
   const responses = [
@@ -112,12 +105,7 @@ test('accepts a bounded compatible direct MP4 response', async () => {
       }),
       { status: 200 },
     ),
-    rangeResponse(
-      mp4,
-      'https://clips.kick.com/direct.mp4',
-      0,
-      mp4.byteLength,
-    ),
+    rangeResponse(mp4, 'https://clips.kick.com/direct.mp4', 0, mp4.byteLength),
   ]
   const inspection = await inspectClip(
     'clip_direct',
@@ -134,4 +122,3 @@ test('accepts a bounded compatible direct MP4 response', async () => {
     url: 'https://clips.kick.com/direct.mp4',
   })
 })
-

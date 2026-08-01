@@ -3,10 +3,8 @@ import { createStyleSettingFeature } from './styleSettingFeature'
 
 const STYLE_ID = 'kick-enhancer-hide-recommended-channels'
 
-export const startRecommendedChannelsVisibility =
-  createStyleSettingFeature({
-    id: STYLE_ID,
-    selectEnabled: (settings) =>
-      settings.ui.hideRecommendedChannels,
-    styles,
-  })
+export const startRecommendedChannelsVisibility = createStyleSettingFeature({
+  id: STYLE_ID,
+  selectEnabled: (settings) => settings.ui.hideRecommendedChannels,
+  styles,
+})

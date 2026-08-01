@@ -30,11 +30,7 @@ test('renders a hidden channel count beside the stream title', (t) => {
     </main>
   `
 
-  const result = renderViewerCounts(
-    store,
-    undefined,
-    DEFAULT_OPTIONS,
-  )
+  const result = renderViewerCounts(store, undefined, DEFAULT_OPTIONS)
   const count = document.querySelector(
     '[data-ke-viewer-count][data-ke-target="channel"]',
   )
@@ -44,8 +40,7 @@ test('renders a hidden channel count beside the stream title', (t) => {
   assert.deepEqual([...result.targetSlugs], ['channel-one'])
   assert.equal(count?.getAttribute('aria-label'), '1,234 viewers')
   assert.equal(
-    count?.querySelector('.ke-viewer-count-channel__value')
-      ?.textContent,
+    count?.querySelector('.ke-viewer-count-channel__value')?.textContent,
     '1,234',
   )
 })
@@ -66,25 +61,19 @@ test('renders and reconciles card count and uptime elements', (t) => {
     </article>
   `
 
-  const firstResult = renderViewerCounts(
-    store,
-    undefined,
-    DEFAULT_OPTIONS,
-  )
+  const firstResult = renderViewerCounts(store, undefined, DEFAULT_OPTIONS)
   const nativeLive = document.querySelector('[data-native-live]')
 
   assert.equal(firstResult.counts.cards, 1)
   assert.equal(firstResult.counts.cardUptimes, 1)
   assert.match(
-    document.querySelector(
-      '[data-ke-viewer-count][data-ke-target="card"]',
-    )?.textContent ?? '',
+    document.querySelector('[data-ke-viewer-count][data-ke-target="card"]')
+      ?.textContent ?? '',
     /^1\.2K watching$/,
   )
   assert.equal(
-    document.querySelector(
-      '[data-ke-stream-uptime][data-ke-target="card"]',
-    )?.textContent,
+    document.querySelector('[data-ke-stream-uptime][data-ke-target="card"]')
+      ?.textContent,
     '1h 5m',
   )
   assert.equal(
@@ -93,22 +82,12 @@ test('renders and reconciles card count and uptime elements', (t) => {
   )
 
   store.clear()
-  const secondResult = renderViewerCounts(
-    store,
-    undefined,
-    DEFAULT_OPTIONS,
-  )
+  const secondResult = renderViewerCounts(store, undefined, DEFAULT_OPTIONS)
 
   assert.equal(secondResult.counts.cards, 0)
   assert.equal(secondResult.counts.cardUptimes, 0)
-  assert.equal(
-    document.querySelector('[data-ke-viewer-count]'),
-    null,
-  )
-  assert.equal(
-    document.querySelector('[data-ke-stream-uptime]'),
-    null,
-  )
+  assert.equal(document.querySelector('[data-ke-viewer-count]'), null)
+  assert.equal(document.querySelector('[data-ke-stream-uptime]'), null)
   assert.equal(
     nativeLive?.hasAttribute('data-ke-native-card-live-hidden'),
     false,
@@ -160,37 +139,25 @@ test('renders sidebar and linked tooltip enhancements independently', (t) => {
   assert.equal(result.counts.tooltips, 1)
   assert.equal(result.counts.tooltipUptimes, 1)
   assert.equal(
-    document.querySelector(
-      '[data-ke-viewer-count][data-ke-target="sidebar"]',
-    )?.textContent,
+    document.querySelector('[data-ke-viewer-count][data-ke-target="sidebar"]')
+      ?.textContent,
     '987',
   )
   assert.equal(
-    document.querySelector(
-      '[data-ke-viewer-count][data-ke-target="tooltip"]',
-    )?.textContent,
+    document.querySelector('[data-ke-viewer-count][data-ke-target="tooltip"]')
+      ?.textContent,
     '987',
   )
   assert.equal(
-    document.querySelectorAll('[data-ke-native-live-hidden]')
-      .length,
+    document.querySelectorAll('[data-ke-native-live-hidden]').length,
     2,
   )
 
   cleanupViewerCountDom()
 
-  assert.equal(
-    document.querySelector('[data-ke-viewer-count]'),
-    null,
-  )
-  assert.equal(
-    document.querySelector('[data-ke-stream-uptime]'),
-    null,
-  )
-  assert.equal(
-    document.querySelector('[data-ke-native-live-hidden]'),
-    null,
-  )
+  assert.equal(document.querySelector('[data-ke-viewer-count]'), null)
+  assert.equal(document.querySelector('[data-ke-stream-uptime]'), null)
+  assert.equal(document.querySelector('[data-ke-native-live-hidden]'), null)
   assert.equal(
     document.querySelector('[data-ke-sidebar-uptime-container]'),
     null,
@@ -223,21 +190,17 @@ test('trusts a native LIVE label when sidebar privacy metadata is missing', (t) 
     </aside>
   `
 
-  const result = renderViewerCounts(
-    store,
-    undefined,
-    DEFAULT_OPTIONS,
-  )
+  const result = renderViewerCounts(store, undefined, DEFAULT_OPTIONS)
 
   assert.equal(result.counts.sidebar, 1)
   assert.equal(
-    document.querySelector(
-      '[data-ke-viewer-count][data-ke-target="sidebar"]',
-    )?.textContent,
+    document.querySelector('[data-ke-viewer-count][data-ke-target="sidebar"]')
+      ?.textContent,
     '987',
   )
   assert.equal(
-    document.querySelector('[data-sidebar-native-live]')
+    document
+      .querySelector('[data-sidebar-native-live]')
       ?.getAttribute('data-ke-native-live-hidden'),
     'sidebar-one',
   )

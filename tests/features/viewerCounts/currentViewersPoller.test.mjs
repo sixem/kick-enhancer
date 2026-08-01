@@ -17,9 +17,7 @@ test('current-viewers polling owns visibility, intervals, and cancellation', () 
   let hidden = true
   let visibilityListener
 
-  store.upsertStreams([
-    stream('active-channel', 42, timing.api.now()),
-  ])
+  store.upsertStreams([stream('active-channel', 42, timing.api.now())])
 
   const poller = new CurrentViewersPoller({
     getOrigin: () => 'https://kick.com',
@@ -104,10 +102,7 @@ test('queues uncovered list targets behind the active-channel poll', async () =>
     kind: 'passed',
     payload: [{ livestream_id: 1, viewers: 101 }],
   })
-  await waitFor(
-    () => requests.length === 2,
-    'the queued sidebar poll',
-  )
+  await waitFor(() => requests.length === 2, 'the queued sidebar poll')
 
   assert.deepEqual(readIds(requests[1].url), ['2'])
   pendingRequests[1].resolve({
@@ -116,10 +111,7 @@ test('queues uncovered list targets behind the active-channel poll', async () =>
     kind: 'passed',
     payload: [{ livestream_id: 2, viewers: 202 }],
   })
-  await waitFor(
-    () => dataCalls === 2,
-    'both current-viewers polls to settle',
-  )
+  await waitFor(() => dataCalls === 2, 'both current-viewers polls to settle')
   poller.stop()
 })
 

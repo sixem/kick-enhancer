@@ -22,8 +22,7 @@ export function renderSidebarSurface(
   options: ViewerCountRenderOptions,
 ): SidebarRenderResult {
   const targetSlugs = new Set<string>()
-  const uptimeEnabled =
-    options.showStreamUptime && isSidebarExpanded()
+  const uptimeEnabled = options.showStreamUptime && isSidebarExpanded()
   let uptimes = 0
   let viewerCounts = 0
 
@@ -32,18 +31,12 @@ export function renderSidebarSurface(
     const slug = getChannelSlugFromHref(link.getAttribute('href'))
     const statusLabel = findStatusLabel(link)
     const statusContainer = statusLabel?.parentElement
-    const canRender = Boolean(
-      !hidden && slug && statusLabel && statusContainer,
-    )
-    const nativeCountVisible = isCompactCount(
-      statusLabel?.textContent,
-    )
+    const canRender = Boolean(!hidden && slug && statusLabel && statusContainer)
+    const nativeCountVisible = isCompactCount(statusLabel?.textContent)
     // Sidebar payloads can omit show_view_count. The rendered label is the
     // reliable surface-level signal for whether KICK withheld the count.
     const countEligible =
-      canRender &&
-      options.showHiddenViewerCounts &&
-      !nativeCountVisible
+      canRender && options.showHiddenViewerCounts && !nativeCountVisible
     const uptimeEligible = canRender && uptimeEnabled
     let stream: ReturnType<ViewerCountStore['get']>
 
@@ -109,8 +102,7 @@ function renderSidebarCount(
   ownership.hideNativeLiveLabel(statusLabel, slug)
 
   const element =
-    ownership.findCount(link, 'sidebar') ??
-    document.createElement('span')
+    ownership.findCount(link, 'sidebar') ?? document.createElement('span')
   ownership.updateCount(element, {
     className: 'ke-viewer-count-sidebar',
     count: viewerCount,
@@ -139,8 +131,7 @@ function renderSidebarUptime(
   }
 
   const element =
-    ownership.findUptime(link, 'sidebar') ??
-    document.createElement('span')
+    ownership.findUptime(link, 'sidebar') ?? document.createElement('span')
 
   ownership.updateUptime(element, {
     className: 'ke-stream-uptime-sidebar',
@@ -150,11 +141,7 @@ function renderSidebarUptime(
     target: 'sidebar',
     text: uptime,
   })
-  ownership.markUptimeContainer(
-    statusContainer,
-    'sidebar',
-    slug,
-  )
+  ownership.markUptimeContainer(statusContainer, 'sidebar', slug)
 
   if (element.parentElement !== statusContainer) {
     statusContainer.append(element)

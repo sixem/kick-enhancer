@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-control-regex -- Control characters are invalid in filenames.
 const INVALID_FILENAME_CHARACTERS = /[\u0000-\u001f<>:"/\\|?*]/g
 const RESERVED_WINDOWS_NAME =
   /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/i
@@ -52,9 +53,7 @@ export function sanitizeBasename(value: string, fallback: string) {
   }
 
   if (!basename) {
-    basename = fallback
-      .replace(INVALID_FILENAME_CHARACTERS, ' ')
-      .trim()
+    basename = fallback.replace(INVALID_FILENAME_CHARACTERS, ' ').trim()
   }
 
   return basename || 'kick-clip'

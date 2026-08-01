@@ -3,9 +3,7 @@ import { useState } from 'preact/hooks'
 
 import icon from '../assets/icon.png?inline'
 import { type Dispose } from '../lifecycle'
-import {
-  openDownloadCenter,
-} from '../features/clipDownloads/downloadCenterController'
+import { openDownloadCenter } from '../features/clipDownloads/downloadCenterController'
 import { useDownloadActivity } from '../features/clipDownloads/useDownloads'
 import { DownloadIcon, LoadingSpinnerIcon } from '../icons'
 import { SettingsModal } from '../settings/SettingsModal'
@@ -127,11 +125,7 @@ export function startTopNavButton(): Dispose {
   let stopped = false
 
   const observer = new MutationObserver(() => {
-    if (
-      stopped ||
-      mountScheduled ||
-      document.getElementById(HOST_ID)
-    ) {
+    if (stopped || mountScheduled || document.getElementById(HOST_ID)) {
       return
     }
 
@@ -161,8 +155,7 @@ export function startTopNavButton(): Dispose {
     stopped = true
     observer.disconnect()
 
-    const host =
-      mountedHost ?? document.getElementById(HOST_ID)
+    const host = mountedHost ?? document.getElementById(HOST_ID)
 
     if (host) {
       render(null, host)

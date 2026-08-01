@@ -68,8 +68,7 @@ test('keeps unchanged animated numbers structurally stable', () => {
     frame()
 
     assert.equal(
-      container.querySelectorAll('.ke-animated-number__digit')
-        .length,
+      container.querySelectorAll('.ke-animated-number__digit').length,
       3,
     )
     assert.equal(animations.length, 3)
@@ -78,8 +77,7 @@ test('keeps unchanged animated numbers structurally stable', () => {
 
     assert.equal(animations.length, 3)
     assert.equal(
-      container.querySelectorAll('.ke-animated-number__digit')
-        .length,
+      container.querySelectorAll('.ke-animated-number__digit').length,
       3,
     )
 
@@ -87,13 +85,11 @@ test('keeps unchanged animated numbers structurally stable', () => {
     frame()
 
     assert.equal(
-      container.querySelectorAll('.ke-animated-number__digit')
-        .length,
+      container.querySelectorAll('.ke-animated-number__digit').length,
       2,
     )
     assert.equal(
-      container.querySelector('.ke-animated-number__separator')
-        ?.textContent,
+      container.querySelector('.ke-animated-number__separator')?.textContent,
       '-',
     )
   } finally {

@@ -11,11 +11,7 @@ import { Button } from '../components/forms'
 import { GitHubIcon } from '../icons'
 import { AboutTab } from './AboutTab'
 import { DiagnosticsTab } from './DiagnosticsTab'
-import {
-  replaceSettings,
-  resetSettings,
-  type Settings,
-} from './settings'
+import { replaceSettings, resetSettings, type Settings } from './settings'
 import {
   ChatSettingsSection,
   ContentSettingsSection,
@@ -111,11 +107,7 @@ export function SettingsModal({
             className="ke-settings-modal__github"
             disabled={dialogOpen}
             onClick={() => {
-              window.open(
-                PROJECT_URL,
-                '_blank',
-                'noopener,noreferrer',
-              )
+              window.open(PROJECT_URL, '_blank', 'noopener,noreferrer')
             }}
           >
             <GitHubIcon class="ke-settings-modal__github-icon" />
@@ -159,41 +151,31 @@ export function SettingsModal({
                     onImportRequest={showImportConfirmation}
                   />
                 ),
-                contentClassName:
-                  'ke-tabs__panel-content--centered',
+                contentClassName: 'ke-tabs__panel-content--centered',
                 id: 'about',
                 label: 'About',
               },
               {
                 content: (
-                  <StreamAndClipSettingsSection
-                    settings={settings.ui}
-                  />
+                  <StreamAndClipSettingsSection settings={settings.ui} />
                 ),
                 id: 'streams',
                 label: 'Streams / Clips',
               },
               {
                 content: (
-                  <ChatSettingsSection
-                    open={open}
-                    settings={settings.chat}
-                  />
+                  <ChatSettingsSection open={open} settings={settings.chat} />
                 ),
                 id: 'chat',
                 label: 'Chat',
               },
               {
-                content: (
-                  <ContentSettingsSection settings={settings.ui} />
-                ),
+                content: <ContentSettingsSection settings={settings.ui} />,
                 id: 'content',
                 label: 'Visibility',
               },
               {
-                content: (
-                  <SidebarSettingsSection settings={settings.ui} />
-                ),
+                content: <SidebarSettingsSection settings={settings.ui} />,
                 id: 'sidebar',
                 label: 'Sidebar',
               },

@@ -41,4 +41,3 @@ export function transmuxedSegment(type, data, initSegment) {
     type,
   }
 }
-

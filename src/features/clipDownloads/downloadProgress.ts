@@ -19,8 +19,7 @@ export function estimateDownloadTransfer(
     return undefined
   }
 
-  const bytesPerSecond =
-    fetchedBytes / ((now - startedAt) / 1_000)
+  const bytesPerSecond = fetchedBytes / ((now - startedAt) / 1_000)
 
   if (!Number.isFinite(bytesPerSecond) || bytesPerSecond <= 0) {
     return undefined

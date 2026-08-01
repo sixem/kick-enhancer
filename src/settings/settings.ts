@@ -23,8 +23,7 @@ const persistence = createSettingsPersistence({
   onError: (error) => {
     log.error('Save failed', error)
   },
-  write: (serializedSettings) =>
-    GM.setValue(SETTINGS_KEY, serializedSettings),
+  write: (serializedSettings) => GM.setValue(SETTINGS_KEY, serializedSettings),
 })
 
 function notifyListeners() {
@@ -87,9 +86,7 @@ export function observeSetting<Value>(
   })
 }
 
-export function updateSettings(
-  update: (settings: Settings) => Settings,
-) {
+export function updateSettings(update: (settings: Settings) => Settings) {
   const nextSettings = update(currentSettings)
 
   if (nextSettings === currentSettings) {

@@ -39,10 +39,7 @@ test('coordinates fallback polling and route cancellation', async (t) => {
 
   assert.deepEqual(readIds(environment.requests[1].url), ['1'])
 
-  acquisition.syncTargets(
-    new Set(['active', 'missing-channel']),
-    'active',
-  )
+  acquisition.syncTargets(new Set(['active', 'missing-channel']), 'active')
   assert.equal(environment.requests.length, 3)
   assert.equal(
     environment.requests[2].url,

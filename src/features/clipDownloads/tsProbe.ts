@@ -51,11 +51,7 @@ export function inspectTransportStream(
   }
 }
 
-function findPsiSection(
-  bytes: Uint8Array,
-  targetPid: number,
-  tableId: number,
-) {
+function findPsiSection(bytes: Uint8Array, targetPid: number, tableId: number) {
   let sectionBytes: number[] = []
   let expectedLength: number | undefined
 
@@ -113,8 +109,7 @@ function findPsiSection(
           break
         }
 
-        expectedLength =
-          3 + (((sectionBytes[1] & 0x0f) << 8) | sectionBytes[2])
+        expectedLength = 3 + (((sectionBytes[1] & 0x0f) << 8) | sectionBytes[2])
       }
 
       if (
@@ -146,16 +141,14 @@ function parseStreamTypes(section: Uint8Array) {
     unsupported('The transport-stream program metadata is invalid.')
   }
 
-  const programInfoLength =
-    ((section[10] & 0x0f) << 8) | section[11]
+  const programInfoLength = ((section[10] & 0x0f) << 8) | section[11]
   const streamTypes = []
   let offset = 12 + programInfoLength
   const end = section.byteLength - 4
 
   while (offset + 5 <= end) {
     const streamType = section[offset]
-    const infoLength =
-      ((section[offset + 3] & 0x0f) << 8) | section[offset + 4]
+    const infoLength = ((section[offset + 3] & 0x0f) << 8) | section[offset + 4]
     streamTypes.push(streamType)
     offset += 5 + infoLength
   }

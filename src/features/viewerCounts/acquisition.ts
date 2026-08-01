@@ -28,8 +28,7 @@ export class ViewerCountAcquisition {
       timing,
     })
     this.#channelDetails = new ChannelDetailsScheduler({
-      onActiveChannelResolved: (slug) =>
-        this.#currentViewers.pollSlug(slug),
+      onActiveChannelResolved: (slug) => this.#currentViewers.pollSlug(slug),
       onData,
       store,
       timing,
@@ -73,13 +72,7 @@ export class ViewerCountAcquisition {
       return
     }
 
-    this.#currentViewers.syncTargets(
-      channelSlugs,
-      activeChannelSlug,
-    )
-    this.#channelDetails.syncTargets(
-      channelSlugs,
-      activeChannelSlug,
-    )
+    this.#currentViewers.syncTargets(channelSlugs, activeChannelSlug)
+    this.#channelDetails.syncTargets(channelSlugs, activeChannelSlug)
   }
 }

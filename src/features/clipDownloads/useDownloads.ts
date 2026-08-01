@@ -6,25 +6,21 @@ import {
   subscribeDownloadCenter,
 } from './downloadCenterController'
 
+const subscribeDownloads = (listener: () => void) =>
+  downloadManager.subscribe(listener)
+const getDownloadsSnapshot = () => downloadManager.getSnapshot()
+const getDownloadActivity = () => downloadManager.getActivitySummary()
+
 export function useDownloads() {
-  return useStoreSnapshot(
-    downloadManager.subscribe,
-    downloadManager.getSnapshot,
-  )
+  return useStoreSnapshot(subscribeDownloads, getDownloadsSnapshot)
 }
 
 export function useDownloadActivity() {
-  return useStoreSnapshot(
-    downloadManager.subscribe,
-    downloadManager.getActivitySummary,
-  )
+  return useStoreSnapshot(subscribeDownloads, getDownloadActivity)
 }
 
 export function useDownloadCenter() {
-  return useStoreSnapshot(
-    subscribeDownloadCenter,
-    getDownloadCenterSnapshot,
-  )
+  return useStoreSnapshot(subscribeDownloadCenter, getDownloadCenterSnapshot)
 }
 
 function useStoreSnapshot<Snapshot>(

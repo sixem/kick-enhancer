@@ -18,15 +18,10 @@ export function parseStreamStartedAt(value: unknown) {
     : trimmed
   const timestamp = Date.parse(normalized)
 
-  return Number.isFinite(timestamp) && timestamp >= 0
-    ? timestamp
-    : undefined
+  return Number.isFinite(timestamp) && timestamp >= 0 ? timestamp : undefined
 }
 
-export function formatStreamUptime(
-  startedAt: number,
-  now = Date.now(),
-) {
+export function formatStreamUptime(startedAt: number, now = Date.now()) {
   if (
     !Number.isFinite(startedAt) ||
     !Number.isFinite(now) ||
@@ -35,9 +30,7 @@ export function formatStreamUptime(
     return undefined
   }
 
-  const totalMinutes = Math.floor(
-    Math.max(0, now - startedAt) / (60 * 1000),
-  )
+  const totalMinutes = Math.floor(Math.max(0, now - startedAt) / (60 * 1000))
 
   if (totalMinutes < 1) {
     return '<1m'
@@ -51,9 +44,7 @@ export function formatStreamUptime(
   const minutes = totalMinutes % 60
 
   if (totalHours < 24) {
-    return minutes > 0
-      ? `${totalHours}h ${minutes}m`
-      : `${totalHours}h`
+    return minutes > 0 ? `${totalHours}h ${minutes}m` : `${totalHours}h`
   }
 
   const days = Math.floor(totalHours / 24)

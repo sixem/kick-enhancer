@@ -1,11 +1,6 @@
+#main-container main div:has(> [data-testid='carousel']),
 #main-container
   main
-  div:has(> [data-testid='carousel']),
-#main-container
-  main
-  div:has(
-    > div
-      > [aria-hidden='true'].invisible.aspect-video
-  ) {
+  div:has(> div > [aria-hidden='true'].invisible.aspect-video) {
   display: none !important;
 }

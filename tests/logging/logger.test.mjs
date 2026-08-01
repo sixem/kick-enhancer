@@ -37,9 +37,7 @@ test('scope filters update when logging is reconfigured', (t) => {
   networkLog.info('Fetched')
   settingsLog.info('Saved')
 
-  assert.deepEqual(messages, [
-    ['[KICK Enhancer] [viewer-counts]', 'Rendered'],
-  ])
+  assert.deepEqual(messages, [['[KICK Enhancer] [viewer-counts]', 'Rendered']])
 
   configureLogging({ filters: ['settings'] })
   viewerCountsLog.info('Rendered again')

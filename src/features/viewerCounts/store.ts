@@ -18,10 +18,7 @@ const SOURCE_PRIORITY: Readonly<Record<ViewerCountSource, number>> = {
 }
 
 export class ViewerCountStore {
-  readonly #currentViewersById = new Map<
-    number,
-    CurrentViewerRecord
-  >()
+  readonly #currentViewersById = new Map<number, CurrentViewerRecord>()
 
   readonly #slugByLivestreamId = new Map<number, string>()
   readonly #streamsBySlug = new Map<string, ViewerCountRecord>()
@@ -45,20 +42,14 @@ export class ViewerCountStore {
           this.#currentViewersById.delete(existing.livestreamId)
         }
 
-        this.#streamsBySlug.set(
-          replacement.channelSlug,
-          replacement,
-        )
+        this.#streamsBySlug.set(replacement.channelSlug, replacement)
         updated += 1
       }
 
       const stored = this.#streamsBySlug.get(incoming.channelSlug)
 
       if (stored?.livestreamId !== undefined) {
-        this.#slugByLivestreamId.set(
-          stored.livestreamId,
-          stored.channelSlug,
-        )
+        this.#slugByLivestreamId.set(stored.livestreamId, stored.channelSlug)
       }
     }
 
@@ -70,9 +61,7 @@ export class ViewerCountStore {
     let updated = 0
 
     for (const entry of entries) {
-      const existing = this.#currentViewersById.get(
-        entry.livestreamId,
-      )
+      const existing = this.#currentViewersById.get(entry.livestreamId)
 
       if (!existing || entry.capturedAt >= existing.capturedAt) {
         this.#currentViewersById.set(entry.livestreamId, entry)
@@ -92,41 +81,27 @@ export class ViewerCountStore {
     }
 
     if (stream.livestreamId === undefined) {
-      return now - stream.capturedAt <= MAX_RECORD_AGE_MS
-        ? stream
-        : undefined
+      return now - stream.capturedAt <= MAX_RECORD_AGE_MS ? stream : undefined
     }
 
-    const current = this.#currentViewersById.get(
-      stream.livestreamId,
-    )
+    const current = this.#currentViewersById.get(stream.livestreamId)
     const currentIsFresh =
-      current !== undefined &&
-      now - current.capturedAt <= MAX_RECORD_AGE_MS
+      current !== undefined && now - current.capturedAt <= MAX_RECORD_AGE_MS
 
-    if (
-      !currentIsFresh ||
-      current.capturedAt < stream.capturedAt
-    ) {
-      return now - stream.capturedAt <= MAX_RECORD_AGE_MS
-        ? stream
-        : undefined
+    if (!currentIsFresh || current.capturedAt < stream.capturedAt) {
+      return now - stream.capturedAt <= MAX_RECORD_AGE_MS ? stream : undefined
     }
 
     return {
       ...stream,
       capturedAt: current.capturedAt,
-      showViewCount:
-        current.showViewCount ?? stream.showViewCount,
+      showViewCount: current.showViewCount ?? stream.showViewCount,
       source: 'current-viewers' as const,
       viewerCount: current.viewerCount,
     }
   }
 
-  getLivestreamIds(
-    channelSlugs: ReadonlySet<string>,
-    now = Date.now(),
-  ) {
+  getLivestreamIds(channelSlugs: ReadonlySet<string>, now = Date.now()) {
     const ids = new Set<number>()
 
     for (const slug of channelSlugs) {
@@ -170,10 +145,7 @@ export class ViewerCountStore {
 
   prune(now = Date.now()) {
     for (const [slug, stream] of this.#streamsBySlug) {
-      if (
-        now - stream.capturedAt <= MAX_RECORD_AGE_MS ||
-        this.get(slug, now)
-      ) {
+      if (now - stream.capturedAt <= MAX_RECORD_AGE_MS || this.get(slug, now)) {
         continue
       }
 
@@ -214,10 +186,7 @@ function shouldReplace(
     return incoming.capturedAt > existing.capturedAt
   }
 
-  return (
-    SOURCE_PRIORITY[incoming.source] >=
-    SOURCE_PRIORITY[existing.source]
-  )
+  return SOURCE_PRIORITY[incoming.source] >= SOURCE_PRIORITY[existing.source]
 }
 
 function mergeReplacement(

@@ -24,10 +24,7 @@ test('limits inspections to two and reuses a non-terminal clip job', async () =>
   )
 
   const firstId = manager.inspectClip('clip_one', 'https://kick.com/a')
-  assert.equal(
-    manager.inspectClip('clip_one', 'https://kick.com/a'),
-    firstId,
-  )
+  assert.equal(manager.inspectClip('clip_one', 'https://kick.com/a'), firstId)
   manager.inspectClip('clip_two', 'https://kick.com/b')
   manager.inspectClip('clip_three', 'https://kick.com/c')
 
@@ -38,9 +35,7 @@ test('limits inspections to two and reuses a non-terminal clip job', async () =>
 
   inspections[0].pending.resolve(inspectionFor('clip_one'))
   await waitFor(
-    () =>
-      inspections.length === 3 &&
-      job(manager, firstId)?.status === 'ready',
+    () => inspections.length === 3 && job(manager, firstId)?.status === 'ready',
     'the first inspection to complete and release the queue',
   )
   assert.deepEqual(
@@ -134,9 +129,7 @@ test('picker dismissal returns a reserved job to ready', async () => {
   const manager = createDownloadManager(
     createManagerDependencies({
       getSaveFilePicker: () => () =>
-        Promise.reject(
-          new DOMException('Dismissed', 'AbortError'),
-        ),
+        Promise.reject(new DOMException('Dismissed', 'AbortError')),
     }),
   )
   const jobId = manager.inspectClip('clip_one', 'https://kick.com/a')
@@ -202,8 +195,7 @@ test('clears inactive jobs while preserving in-progress work', async () => {
     }),
   )
   const ids = ['clip_one', 'clip_two', 'clip_three', 'clip_four'].map(
-    (clipId) =>
-      manager.inspectClip(clipId, `https://kick.com/${clipId}`),
+    (clipId) => manager.inspectClip(clipId, `https://kick.com/${clipId}`),
   )
   await waitFor(
     () => ids.every((id) => job(manager, id)?.status === 'ready'),
@@ -290,13 +282,9 @@ test('caches published download and activity snapshots', async () => {
   assert.equal(manager.getActivitySummary(), readyActivity)
   assert.equal(job(manager, jobId).basename, 'renamed')
   assert.ok(
-    [
-      'abortController',
-      'generation',
-      'plan',
-      'progressTimer',
-      'sink',
-    ].every((key) => !(key in job(manager, jobId))),
+    ['abortController', 'generation', 'plan', 'progressTimer', 'sink'].every(
+      (key) => !(key in job(manager, jobId)),
+    ),
   )
 
   manager.requestDownload(jobId, 'memory')

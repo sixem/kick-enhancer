@@ -22,26 +22,16 @@ export function setChatFontSize(value: number | null) {
     'fontSize',
     value === null
       ? null
-      : normalizeChatValue(
-          value,
-          CHAT_FONT_SIZE_MIN,
-          CHAT_FONT_SIZE_MAX,
-        ),
+      : normalizeChatValue(value, CHAT_FONT_SIZE_MIN, CHAT_FONT_SIZE_MAX),
   )
 }
 
 export function setChatFontFamily(value: ChatFontFamily | null) {
-  return updateChatSetting(
-    'fontFamily',
-    normalizeChatFontFamily(value),
-  )
+  return updateChatSetting('fontFamily', normalizeChatFontFamily(value))
 }
 
 export function setChatFontWeight(value: number | null) {
-  return updateChatSetting(
-    'fontWeight',
-    normalizeChatFontWeight(value),
-  )
+  return updateChatSetting('fontWeight', normalizeChatFontWeight(value))
 }
 
 export function setChatMessageDividers(enabled: boolean) {

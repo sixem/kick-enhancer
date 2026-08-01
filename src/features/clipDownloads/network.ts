@@ -58,10 +58,7 @@ export async function readResponseBytes(
     reader.releaseLock()
   }
 
-  if (
-    expectedBytes !== undefined &&
-    receivedBytes !== expectedBytes
-  ) {
+  if (expectedBytes !== undefined && receivedBytes !== expectedBytes) {
     throw new ClipDownloadError(
       'media-request',
       'The media response was truncated.',
@@ -104,9 +101,7 @@ export async function fetchExactRange(
     )
   }
 
-  const contentRange = parseContentRange(
-    response.headers.get('content-range'),
-  )
+  const contentRange = parseContentRange(response.headers.get('content-range'))
 
   if (
     contentRange.start !== start ||
@@ -187,11 +182,7 @@ export async function fetchInitialMediaProbe(
   }
 
   return {
-    bytes: await readResponseBytes(
-      response,
-      maximumBytes,
-      declaredLength,
-    ),
+    bytes: await readResponseBytes(response, maximumBytes, declaredLength),
     totalBytes: declaredLength,
   }
 }
@@ -261,7 +252,5 @@ function parseContentLength(value: string | null) {
 
   const length = Number(value)
 
-  return Number.isSafeInteger(length) && length >= 0
-    ? length
-    : undefined
+  return Number.isSafeInteger(length) && length >= 0 ? length : undefined
 }

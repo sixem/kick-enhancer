@@ -64,20 +64,12 @@
 
   &[data-overflow-top]::before {
     top: 0;
-    background: linear-gradient(
-      to bottom,
-      rgb(0 0 0 / 0.5),
-      transparent
-    );
+    background: linear-gradient(to bottom, rgb(0 0 0 / 0.5), transparent);
   }
 
   &[data-overflow-bottom]::after {
     bottom: 0;
-    background: linear-gradient(
-      to top,
-      rgb(0 0 0 / 0.5),
-      transparent
-    );
+    background: linear-gradient(to top, rgb(0 0 0 / 0.5), transparent);
   }
 }
 
@@ -112,14 +104,12 @@
   }
 }
 
-.ke-scroll-area[data-scrollbar='compact']
-  > .ke-scroll-area__thumb {
+.ke-scroll-area[data-scrollbar='compact'] > .ke-scroll-area__thumb {
   right: 0.15rem;
   width: 0.1875rem;
 }
 
-.ke-scroll-area[data-scrollbar='overlay']
-  > .ke-scroll-area__thumb {
+.ke-scroll-area[data-scrollbar='overlay'] > .ke-scroll-area__thumb {
   right: 0.3rem;
   width: 0.25rem;
 }

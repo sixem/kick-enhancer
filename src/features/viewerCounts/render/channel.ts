@@ -66,8 +66,7 @@ export function renderChannelSurface(
     }
   }
 
-  const element =
-    existing ?? document.createElement('div')
+  const element = existing ?? document.createElement('div')
   ownership.updateCount(element, {
     className: 'ke-viewer-count-channel',
     count: stream.viewerCount,

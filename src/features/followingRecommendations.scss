@@ -1,5 +1,3 @@
-[data-testid='following']
-  [data-testid='followed-livestreams']
-  + section {
+[data-testid='following'] [data-testid='followed-livestreams'] + section {
   display: none !important;
 }

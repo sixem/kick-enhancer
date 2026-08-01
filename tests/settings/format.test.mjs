@@ -90,10 +90,9 @@ test('normalizes invalid values and ignores unknown settings', () => {
 
 test('rejects malformed and unrelated JSON', () => {
   assert.deepEqual(parseSettingsFile('{'), { ok: false })
-  assert.deepEqual(
-    parseSettingsFile('{"version":5,"unrelated":true}'),
-    { ok: false },
-  )
+  assert.deepEqual(parseSettingsFile('{"version":5,"unrelated":true}'), {
+    ok: false,
+  })
 })
 
 function expectSuccessful(result) {

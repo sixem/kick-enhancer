@@ -95,10 +95,7 @@ function flushHistoryListeners() {
 }
 
 function scheduleHistoryNotification() {
-  if (
-    historyListeners.size === 0 ||
-    historyNotifyTimer !== undefined
-  ) {
+  if (historyListeners.size === 0 || historyNotifyTimer !== undefined) {
     return
   }
 
@@ -136,10 +133,7 @@ function rebuildScopePatterns(filters: readonly string[]) {
   includedScopePatterns = included
 }
 
-function matchesAnyPattern(
-  scope: string,
-  patterns: readonly string[],
-) {
+function matchesAnyPattern(scope: string, patterns: readonly string[]) {
   for (const pattern of patterns) {
     if (matchesPattern(scope, pattern)) {
       return true
@@ -156,10 +150,7 @@ function isScopeEnabled(scope: string) {
     includedScopePatterns.length === 0 ||
     matchesAnyPattern(scope, includedScopePatterns)
 
-  return (
-    included &&
-    !matchesAnyPattern(scope, excludedScopePatterns)
-  )
+  return included && !matchesAnyPattern(scope, excludedScopePatterns)
 }
 
 function remember(entry: LogEntry) {
@@ -171,9 +162,7 @@ function remember(entry: LogEntry) {
 
   if (history.length > config.historyLimit) {
     history =
-      config.historyLimit === 0
-        ? []
-        : history.slice(-config.historyLimit)
+      config.historyLimit === 0 ? [] : history.slice(-config.historyLimit)
   }
 
   scheduleHistoryNotification()
@@ -244,9 +233,7 @@ export function configureLogging(update: Partial<LogConfig>) {
 
   if (history.length > config.historyLimit) {
     history =
-      config.historyLimit === 0
-        ? []
-        : history.slice(-config.historyLimit)
+      config.historyLimit === 0 ? [] : history.slice(-config.historyLimit)
   }
 
   if (history.length !== previousHistoryLength) {

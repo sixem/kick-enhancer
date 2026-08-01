@@ -31,9 +31,7 @@ export function normalizeChannelSlug(value: unknown) {
   return normalized
 }
 
-export function getChannelSlugFromHref(
-  href: string | null | undefined,
-) {
+export function getChannelSlugFromHref(href: string | null | undefined) {
   if (!href) {
     return undefined
   }
@@ -41,10 +39,7 @@ export function getChannelSlugFromHref(
   try {
     const url = new URL(href, window.location.href)
 
-    if (
-      url.hostname !== 'kick.com' &&
-      url.hostname !== 'www.kick.com'
-    ) {
+    if (url.hostname !== 'kick.com' && url.hostname !== 'www.kick.com') {
       return undefined
     }
 

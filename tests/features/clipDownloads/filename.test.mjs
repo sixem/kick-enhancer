@@ -23,4 +23,3 @@ test('generates and sanitizes portable MP4 filenames', () => {
   assert.equal(sanitizeBasename('CON', 'clip_123'), 'CON_')
   assert.equal(createMp4Filename(' ', 'clip_123'), 'clip_123.mp4')
 })
-

@@ -49,9 +49,5 @@ test('uses bounded file and Blob output sinks', async () => {
     [...new Uint8Array(await triggered.blob.arrayBuffer())],
     [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
   )
-  await assert.rejects(
-    blobSink.write(new Uint8Array(1)),
-    /already closed/i,
-  )
+  await assert.rejects(blobSink.write(new Uint8Array(1)), /already closed/i)
 })
-

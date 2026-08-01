@@ -1,7 +1,4 @@
-import {
-  type ChatStatisticsSnapshot,
-  type KickChatEvent,
-} from './types.ts'
+import { type ChatStatisticsSnapshot, type KickChatEvent } from './types.ts'
 
 const CURRENT_WINDOW_MS = 60_000
 const RETAINED_WINDOW_MS = 120_000
@@ -62,8 +59,7 @@ export class ChatStatsStore {
 
     if (
       !session ||
-      (event.messageType !== 'message' &&
-        event.messageType !== 'reply')
+      (event.messageType !== 'message' && event.messageType !== 'reply')
     ) {
       return
     }
@@ -79,10 +75,7 @@ export class ChatStatsStore {
       receivedAt: event.observedAt,
       senderId: event.senderId,
     })
-    session.seenMessageIds.set(
-      event.messageId,
-      event.observedAt,
-    )
+    session.seenMessageIds.set(event.messageId, event.observedAt)
     incrementSenderCount(session, event.senderId)
     session.totalMessages += 1
 
@@ -122,7 +115,7 @@ export class ChatStatsStore {
 
   getSelectedSocketId(): number | null {
     return this.#sessions.size === 1
-      ? [...this.#sessions.values()][0]?.socketId ?? null
+      ? ([...this.#sessions.values()][0]?.socketId ?? null)
       : null
   }
 
@@ -162,17 +155,11 @@ export class ChatStatsStore {
       chatroomId: session.chatroomId,
       messagesPerMinute: currentCount,
       peakMessagesPerMinute: session.peakMessagesPerMinute,
-      socketRttMs: median(
-        this.#rttSamples.get(session.socketId) ?? [],
-      ),
+      socketRttMs: median(this.#rttSamples.get(session.socketId) ?? []),
       status: 'active',
       totalMessages: session.totalMessages,
       trendReadyAt: session.confirmedAt + CURRENT_WINDOW_MS,
-      trendPercent: calculateSessionTrend(
-        session,
-        now,
-        currentCount,
-      ),
+      trendPercent: calculateSessionTrend(session, now, currentCount),
     }
   }
 }
@@ -183,16 +170,15 @@ function pruneSession(session: SessionState, now: number) {
 
   while (
     session.firstRecordIndex < session.records.length &&
-    (session.records[session.firstRecordIndex]?.receivedAt ??
-      Infinity) <= cutoff
+    (session.records[session.firstRecordIndex]?.receivedAt ?? Infinity) <=
+      cutoff
   ) {
     const record = session.records[session.firstRecordIndex]
     session.firstRecordIndex += 1
 
     if (
       record &&
-      session.seenMessageIds.get(record.messageId) ===
-        record.receivedAt
+      session.seenMessageIds.get(record.messageId) === record.receivedAt
     ) {
       session.seenMessageIds.delete(record.messageId)
     }
@@ -203,9 +189,7 @@ function pruneSession(session: SessionState, now: number) {
     session.firstRecordIndex * 2 > session.records.length
   ) {
     const removedRecords = session.firstRecordIndex
-    session.records = session.records.slice(
-      removedRecords,
-    )
+    session.records = session.records.slice(removedRecords)
     session.firstRecordIndex = 0
     session.currentWindowStartIndex = Math.max(
       0,
@@ -249,11 +233,7 @@ function countWindow(
     session.firstRecordIndex,
     lowerExclusive,
   )
-  const end = findFirstRecordAfter(
-    session.records,
-    start,
-    upperInclusive,
-  )
+  const end = findFirstRecordAfter(session.records, start, upperInclusive)
 
   return end - start
 }
@@ -299,11 +279,7 @@ function calculateSessionTrend(
           session.confirmedAt,
           session.confirmedAt + CURRENT_WINDOW_MS,
         )
-      : countWindow(
-          session,
-          now - RETAINED_WINDOW_MS,
-          now - CURRENT_WINDOW_MS,
-        )
+      : countWindow(session, now - RETAINED_WINDOW_MS, now - CURRENT_WINDOW_MS)
 
   return calculateTrend(currentCount, previousCount)
 }

@@ -37,21 +37,9 @@ test('recovers an isolated track without replacing the combined init', () => {
     const isolatedData = Uint8Array.of(4, 5, 6)
     const finalData = Uint8Array.of(7, 8)
     const fake = createFakeTransmuxer([
-      [
-        transmuxedSegment(
-          'combined',
-          Uint8Array.of(1),
-          combinedInit,
-        ),
-      ],
+      [transmuxedSegment('combined', Uint8Array.of(1), combinedInit)],
       [],
-      [
-        transmuxedSegment(
-          trackType,
-          isolatedData,
-          isolatedInit,
-        ),
-      ],
+      [transmuxedSegment(trackType, isolatedData, isolatedInit)],
       [transmuxedSegment('combined', finalData, combinedInit)],
     ])
     const session = createTransmuxerSession(fake.transmuxer)
@@ -70,13 +58,7 @@ test('recovers an isolated track without replacing the combined init', () => {
 test('restores combined mode when isolated-track recovery fails', () => {
   const initSegment = Uint8Array.of(1, 2, 3)
   const fake = createFakeTransmuxer([
-    [
-      transmuxedSegment(
-        'combined',
-        Uint8Array.of(4),
-        initSegment,
-      ),
-    ],
+    [transmuxedSegment('combined', Uint8Array.of(4), initSegment)],
     [],
     new Error('Recovery failed'),
   ])
@@ -89,19 +71,10 @@ test('restores combined mode when isolated-track recovery fails', () => {
 
 test('does not establish an MP4 from an isolated first track', () => {
   const fake = createFakeTransmuxer([
-    [
-      transmuxedSegment(
-        'audio',
-        Uint8Array.of(1, 2),
-        Uint8Array.of(3),
-      ),
-    ],
+    [transmuxedSegment('audio', Uint8Array.of(1, 2), Uint8Array.of(3))],
   ])
   const session = createTransmuxerSession(fake.transmuxer)
 
-  assert.throws(
-    () => session.flush(),
-    /supported audio and video tracks/i,
-  )
+  assert.throws(() => session.flush(), /supported audio and video tracks/i)
   assert.deepEqual(fake.remuxModes, [])
 })

@@ -1,9 +1,5 @@
 import { ClipDownloadError } from './errors.ts'
-import {
-  MAX_INPUT_BYTES,
-  MAX_SEGMENTS,
-  type HlsTsPlan,
-} from './mediaTypes.ts'
+import { MAX_INPUT_BYTES, MAX_SEGMENTS, type HlsTsPlan } from './mediaTypes.ts'
 
 type PlaylistParserOptions = Readonly<{
   isAllowedMediaUrl: (url: URL) => boolean
@@ -41,10 +37,7 @@ const ALLOWED_TAG_PREFIXES = [
 // interpret safely.
 export function parseKickMediaPlaylist(
   text: string,
-  {
-    isAllowedMediaUrl,
-    playlistUrl: playlistUrlValue,
-  }: PlaylistParserOptions,
+  { isAllowedMediaUrl, playlistUrl: playlistUrlValue }: PlaylistParserOptions,
 ): HlsTsPlan {
   const playlistUrl = toUrl(playlistUrlValue)
   const lines = text.split(/\r?\n/)
@@ -94,9 +87,7 @@ export function parseKickMediaPlaylist(
       const match = /^#EXT-X-BYTERANGE:(\d+)@(\d+)$/.exec(line)
 
       if (!match) {
-        unsupported(
-          'The playlist uses an unsupported implicit byte range.',
-        )
+        unsupported('The playlist uses an unsupported implicit byte range.')
       }
 
       const length = Number(match[1])
@@ -105,9 +96,7 @@ export function parseKickMediaPlaylist(
       validateRange(offset, length)
 
       if (length > MAX_INPUT_BYTES) {
-        unsupported(
-          'A clip segment exceeds the safe processing limit.',
-        )
+        unsupported('A clip segment exceeds the safe processing limit.')
       }
 
       pendingRange = {
@@ -118,15 +107,11 @@ export function parseKickMediaPlaylist(
     }
 
     if (line.startsWith('#')) {
-      if (
-        UNSUPPORTED_TAGS.some((tag) => line.startsWith(tag))
-      ) {
+      if (UNSUPPORTED_TAGS.some((tag) => line.startsWith(tag))) {
         unsupported('The clip uses an unsupported HLS layout.')
       }
 
-      if (
-        !ALLOWED_TAG_PREFIXES.some((tag) => line.startsWith(tag))
-      ) {
+      if (!ALLOWED_TAG_PREFIXES.some((tag) => line.startsWith(tag))) {
         unsupported(`The clip uses an unsupported HLS tag: ${line}`)
       }
 
@@ -171,9 +156,7 @@ export function parseKickMediaPlaylist(
 
   validateNonOverlappingRanges(segments)
 
-  const hasExactSize = segments.every(
-    (segment) => segment.length !== undefined,
-  )
+  const hasExactSize = segments.every((segment) => segment.length !== undefined)
   const sourceBytes = hasExactSize
     ? segments.reduce((total, segment) => {
         const next = total + (segment.length ?? 0)
@@ -187,17 +170,13 @@ export function parseKickMediaPlaylist(
     : undefined
 
   return {
-    duration: segments.reduce(
-      (total, segment) => total + segment.duration,
-      0,
-    ),
+    duration: segments.reduce((total, segment) => total + segment.duration, 0),
     kind: 'hls-ts',
     playlistUrl: playlistUrl.href,
     segments,
     sourceBytes,
-    uniqueSourceObjectCount: new Set(
-      segments.map((segment) => segment.url),
-    ).size,
+    uniqueSourceObjectCount: new Set(segments.map((segment) => segment.url))
+      .size,
   }
 }
 

@@ -5,8 +5,7 @@ import { ClipDownloadError } from '../../../src/features/clipDownloads/errors.ts
 import { MAX_INPUT_BYTES } from '../../../src/features/clipDownloads/mediaTypes.ts'
 import { parseKickMediaPlaylist } from '../../../src/features/clipDownloads/playlist.ts'
 
-const PLAYLIST_URL =
-  'https://clips.kick.com/clips/42/clip_test/playlist.m3u8'
+const PLAYLIST_URL = 'https://clips.kick.com/clips/42/clip_test/playlist.m3u8'
 const ALLOW_KICK_MEDIA = (url) => url.hostname === 'clips.kick.com'
 
 test('parses the observed explicit byte-range playlist shape', () => {
@@ -55,13 +54,7 @@ test('rejects unsafe and unsupported playlist layouts', () => {
       '1.ts',
       '#EXT-X-ENDLIST',
     ],
-    [
-      '#EXTM3U',
-      '#EXT-X-BYTERANGE:100',
-      '#EXTINF:2,',
-      '1.ts',
-      '#EXT-X-ENDLIST',
-    ],
+    ['#EXTM3U', '#EXT-X-BYTERANGE:100', '#EXTINF:2,', '1.ts', '#EXT-X-ENDLIST'],
     [
       '#EXTM3U',
       '#EXT-X-BYTERANGE:100@0',
@@ -79,17 +72,8 @@ test('rejects unsafe and unsupported playlist layouts', () => {
       '1.ts',
       '#EXT-X-ENDLIST',
     ],
-    [
-      '#EXTM3U',
-      '#EXTINF:2,',
-      'https://example.com/1.ts',
-      '#EXT-X-ENDLIST',
-    ],
-    [
-      '#EXTM3U',
-      '#EXTINF:2,',
-      '1.ts',
-    ],
+    ['#EXTM3U', '#EXTINF:2,', 'https://example.com/1.ts', '#EXT-X-ENDLIST'],
+    ['#EXTM3U', '#EXTINF:2,', '1.ts'],
   ]
 
   for (const lines of invalidPlaylists) {
@@ -105,4 +89,3 @@ test('rejects unsafe and unsupported playlist layouts', () => {
     )
   }
 })
-

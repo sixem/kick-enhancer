@@ -194,11 +194,7 @@ export class CurrentViewersPoller {
       this.#pollingSlugs.clear()
       this.#polling = false
 
-      if (
-        this.#enabled &&
-        !this.#isHidden() &&
-        this.#pendingSlugs.size > 0
-      ) {
+      if (this.#enabled && !this.#isHidden() && this.#pendingSlugs.size > 0) {
         void this.#pollSlugs(new Set())
       }
     }
@@ -207,9 +203,7 @@ export class CurrentViewersPoller {
   async #pollBatch(slugs: ReadonlySet<string>) {
     const now = this.#timing.now()
     this.#store.prune(now)
-    const livestreamIds = [
-      ...this.#store.getLivestreamIds(slugs, now),
-    ]
+    const livestreamIds = [...this.#store.getLivestreamIds(slugs, now)]
 
     if (livestreamIds.length === 0) {
       this.#onData()
@@ -233,10 +227,7 @@ export class CurrentViewersPoller {
           index,
           index + CURRENT_VIEWERS_BATCH_SIZE,
         )
-        const requestUrl = new URL(
-          '/current-viewers',
-          this.#getOrigin(),
-        )
+        const requestUrl = new URL('/current-viewers', this.#getOrigin())
 
         for (const id of batch) {
           requestUrl.searchParams.append('ids[]', String(id))
@@ -270,14 +261,10 @@ export class CurrentViewersPoller {
 
         if (normalized.kind === 'current-viewers') {
           const receivedIds = new Set(
-            normalized.currentViewers.map(
-              ({ livestreamId }) => livestreamId,
-            ),
+            normalized.currentViewers.map(({ livestreamId }) => livestreamId),
           )
 
-          updated += this.#store.upsertCurrentViewers(
-            normalized.currentViewers,
-          )
+          updated += this.#store.upsertCurrentViewers(normalized.currentViewers)
           updated += this.#store.removeLivestreamIds(
             batch.filter((id) => !receivedIds.has(id)),
           )

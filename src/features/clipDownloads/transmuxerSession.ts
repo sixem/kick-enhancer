@@ -8,10 +8,7 @@ type TransmuxedSegment = Readonly<{
 
 type Transmuxer = Readonly<{
   flush: () => void
-  on: (
-    event: 'data',
-    listener: (segment: TransmuxedSegment) => void,
-  ) => void
+  on: (event: 'data', listener: (segment: TransmuxedSegment) => void) => void
   push: (bytes: Uint8Array) => void
   setRemux: (remux: boolean) => void
 }>
@@ -40,8 +37,7 @@ export function createTransmuxerSession(transmuxer: Transmuxer) {
     transmuxer.flush()
 
     const isolatedTrackRecovered =
-      pendingSegments.length === 0 &&
-      firstInitSegment !== undefined
+      pendingSegments.length === 0 && firstInitSegment !== undefined
 
     if (isolatedTrackRecovered) {
       try {
@@ -53,9 +49,7 @@ export function createTransmuxerSession(transmuxer: Transmuxer) {
     }
 
     if (pendingSegments.length !== 1) {
-      throw new Error(
-        'The segment produced an unexpected output layout.',
-      )
+      throw new Error('The segment produced an unexpected output layout.')
     }
 
     const [segment] = pendingSegments
@@ -63,10 +57,7 @@ export function createTransmuxerSession(transmuxer: Transmuxer) {
 
     if (
       segment.type !== 'combined' &&
-      !(
-        isolatedTrackRecovered &&
-        ISOLATED_TRACK_TYPES.has(segment.type)
-      )
+      !(isolatedTrackRecovered && ISOLATED_TRACK_TYPES.has(segment.type))
     ) {
       throw new Error(
         'The clip did not produce supported audio and video tracks.',
@@ -83,12 +74,8 @@ export function createTransmuxerSession(transmuxer: Transmuxer) {
       if (!firstInitSegment) {
         firstInitSegment = segment.initSegment.slice()
         initSegment = firstInitSegment.slice()
-      } else if (
-        !equalBytes(firstInitSegment, segment.initSegment)
-      ) {
-        throw new Error(
-          'The clip track metadata changes during playback.',
-        )
+      } else if (!equalBytes(firstInitSegment, segment.initSegment)) {
+        throw new Error('The clip track metadata changes during playback.')
       }
     }
 

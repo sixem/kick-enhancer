@@ -1,20 +1,13 @@
-const COMPACT_COUNT_PATTERN =
-  /^(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?\s*[km]?$/i
+const COMPACT_COUNT_PATTERN = /^(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?\s*[km]?$/i
 
 export function findStatusLabel(scope: ParentNode) {
   let best: HTMLElement | undefined
   let bestScore = 0
 
-  for (const element of scope.querySelectorAll<HTMLElement>(
-    'span, p, div',
-  )) {
+  for (const element of scope.querySelectorAll<HTMLElement>('span, p, div')) {
     if (
-      element.closest(
-        '[data-ke-viewer-count], [data-ke-stream-uptime]',
-      ) ||
-      element.querySelector(
-        '[data-ke-viewer-count], [data-ke-stream-uptime]',
-      )
+      element.closest('[data-ke-viewer-count], [data-ke-stream-uptime]') ||
+      element.querySelector('[data-ke-viewer-count], [data-ke-stream-uptime]')
     ) {
       continue
     }
@@ -60,8 +53,6 @@ export function formatViewerCount(viewerCount: number) {
   return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)}${suffix}`
 }
 
-export function isCompactCount(
-  value: string | null | undefined,
-) {
+export function isCompactCount(value: string | null | undefined) {
   return COMPACT_COUNT_PATTERN.test(value?.trim() ?? '')
 }

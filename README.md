@@ -32,7 +32,8 @@ and approve the installation when prompted, or import the code manually into you
 ```sh
 pnpm install
 pnpm dev
-pnpm test
+pnpm format
+pnpm check
 pnpm build
 ```
 

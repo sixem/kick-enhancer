@@ -2,10 +2,7 @@ import { ClipDownloadError } from './errors.ts'
 
 const MP4_SIGNATURE_SEARCH_BYTES = 64
 
-export function inspectMp4Probe(
-  prefix: Uint8Array,
-  suffix?: Uint8Array,
-) {
+export function inspectMp4Probe(prefix: Uint8Array, suffix?: Uint8Array) {
   if (!hasFtypSignature(prefix)) {
     unsupported('The direct clip resource is not an MP4 file.')
   }
@@ -13,9 +10,7 @@ export function inspectMp4Probe(
   const probes = suffix ? [prefix, suffix] : [prefix]
   const hasMoov = probes.some((bytes) => containsBoxType(bytes, 'moov'))
   const hasH264 = probes.some(
-    (bytes) =>
-      containsBoxType(bytes, 'avc1') ||
-      containsBoxType(bytes, 'avc3'),
+    (bytes) => containsBoxType(bytes, 'avc1') || containsBoxType(bytes, 'avc3'),
   )
   const hasAac = probes.some((bytes) => containsBoxType(bytes, 'mp4a'))
   const unsupportedVideo = probes.some(

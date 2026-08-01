@@ -24,9 +24,7 @@ let restoreTarget: boolean | undefined
 let stopActiveFeature: Dispose | undefined
 
 function getSidebarButton() {
-  return document.querySelector<HTMLButtonElement>(
-    SIDEBAR_BUTTON_SELECTOR,
-  )
+  return document.querySelector<HTMLButtonElement>(SIDEBAR_BUTTON_SELECTOR)
 }
 
 function getSidebarLayout() {
@@ -62,11 +60,7 @@ function getCollapsedState() {
 }
 
 function attemptRestore() {
-  if (
-    !featureActive ||
-    !restoreRequested ||
-    !rememberSidebarState
-  ) {
+  if (!featureActive || !restoreRequested || !rememberSidebarState) {
     return
   }
 
@@ -130,11 +124,7 @@ function rememberCollapsedState(collapsed: boolean) {
 export function setRememberSidebarState(enabled: boolean) {
   const collapsed = enabled ? getCollapsedState() : undefined
 
-  log.info(
-    enabled
-      ? 'Memory enabled'
-      : 'Memory disabled',
-  )
+  log.info(enabled ? 'Memory enabled' : 'Memory disabled')
 
   return updateSettings((settings) => ({
     ...settings,
@@ -207,11 +197,7 @@ export function startSidebarStateMemory(): Dispose {
   })
 
   function connectObserver() {
-    if (
-      observerConnected ||
-      !featureActive ||
-      !rememberSidebarState
-    ) {
+    if (observerConnected || !featureActive || !rememberSidebarState) {
       return
     }
 
@@ -238,9 +224,7 @@ export function startSidebarStateMemory(): Dispose {
   }
 
   const stopObserving = subscribeSettings((settings) => {
-    if (
-      settings.ui.rememberSidebarState === rememberSidebarState
-    ) {
+    if (settings.ui.rememberSidebarState === rememberSidebarState) {
       return
     }
 

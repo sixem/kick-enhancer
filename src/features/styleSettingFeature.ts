@@ -1,8 +1,5 @@
 import { type Dispose } from '../lifecycle'
-import {
-  observeSetting,
-  type SettingsSelector,
-} from '../settings/settings'
+import { observeSetting, type SettingsSelector } from '../settings/settings'
 import { applyStyleToggle } from './styleToggle'
 
 type StyleSettingFeatureOptions = Readonly<{
@@ -22,9 +19,8 @@ export function createStyleSettingFeature({
     stopActiveFeature?.()
 
     let stopped = false
-    const stopObserving = observeSetting(
-      selectEnabled,
-      (enabled) => applyStyleToggle(id, styles, enabled),
+    const stopObserving = observeSetting(selectEnabled, (enabled) =>
+      applyStyleToggle(id, styles, enabled),
     )
     const stop = () => {
       if (stopped) {

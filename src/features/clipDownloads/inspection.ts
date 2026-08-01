@@ -110,11 +110,7 @@ export async function inspectClip(
       isAllowedMediaUrl,
       playlistUrl: clipUrl.href,
     })
-    await validateTransportStreamPlan(
-      plan,
-      signal,
-      fetchImplementation,
-    )
+    await validateTransportStreamPlan(plan, signal, fetchImplementation)
   } else {
     try {
       inspectMp4Probe(initialProbe.bytes)
@@ -133,8 +129,7 @@ export async function inspectClip(
         initialProbe.bytes.byteLength,
         initialProbe.totalBytes - remainingProbeBytes,
       )
-      const suffixLength =
-        initialProbe.totalBytes - suffixStart
+      const suffixLength = initialProbe.totalBytes - suffixStart
       const suffix = (
         await fetchExactRange(
           clipUrl.href,
@@ -211,22 +206,13 @@ function normalizeMetadata(
 
   return {
     category: firstSafeString(category?.name, clip.category),
-    channel: firstSafeString(
-      channel?.username,
-      channel?.slug,
-      channel?.name,
-    ),
-    creator: firstSafeString(
-      creator?.username,
-      creator?.name,
-    ),
+    channel: firstSafeString(channel?.username, channel?.slug, channel?.name),
+    creator: firstSafeString(creator?.username, creator?.name),
     duration: safeDuration(clip.duration),
     likeCount: safeCount(clip.likes),
     pageUrl,
     publishedAt: safeTimestamp(clip.created_at),
-    thumbnailUrl: safeThumbnailUrl(
-      clip.thumbnail_url ?? clip.thumbnail,
-    ),
+    thumbnailUrl: safeThumbnailUrl(clip.thumbnail_url ?? clip.thumbnail),
     title: firstSafeString(clip.title),
     viewCount: safeCount(clip.views),
   }
@@ -271,9 +257,7 @@ function parseJson(bytes: Uint8Array): Record<string, unknown> {
 }
 
 function getRecord(value: unknown) {
-  return value &&
-    typeof value === 'object' &&
-    !Array.isArray(value)
+  return value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : undefined
 }
@@ -304,9 +288,7 @@ function safeDuration(value: unknown) {
 }
 
 function safeCount(value: unknown) {
-  return typeof value === 'number' &&
-    Number.isSafeInteger(value) &&
-    value >= 0
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
     ? value
     : undefined
 }
@@ -330,8 +312,7 @@ function safeThumbnailUrl(value: unknown) {
     const url = new URL(value)
 
     return url.protocol === 'https:' &&
-      (url.hostname === 'kick.com' ||
-        url.hostname.endsWith('.kick.com'))
+      (url.hostname === 'kick.com' || url.hostname.endsWith('.kick.com'))
       ? url.href
       : undefined
   } catch {

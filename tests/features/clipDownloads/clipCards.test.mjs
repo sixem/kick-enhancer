@@ -45,24 +45,16 @@ test('extracts clip IDs only from exact same-origin clip paths', () => {
 
 test('rejects non-ASCII and overlong clip IDs', () => {
   assert.equal(
-    getClipIdFromHref(
-      '/identify/clips/clip_tromsø',
-      KICK_ORIGIN,
-    ),
+    getClipIdFromHref('/identify/clips/clip_tromsø', KICK_ORIGIN),
     undefined,
   )
   assert.equal(
-    getClipIdFromHref(
-      `/identify/clips/clip_${'a'.repeat(124)}`,
-      KICK_ORIGIN,
-    ),
+    getClipIdFromHref(`/identify/clips/clip_${'a'.repeat(124)}`, KICK_ORIGIN),
     undefined,
   )
   assert.equal(
-    getClipIdFromHref(
-      `/identify/clips/clip_${'a'.repeat(123)}`,
-      KICK_ORIGIN,
-    )?.length,
+    getClipIdFromHref(`/identify/clips/clip_${'a'.repeat(123)}`, KICK_ORIGIN)
+      ?.length,
     128,
   )
 })
@@ -81,10 +73,7 @@ test('resolves duplicate permalinks but rejects conflicting valid IDs', () => {
   )
   assert.equal(
     getUniqueClipId(
-      [
-        '/identify/clips/clip_one',
-        '/identify/clips/clip_two',
-      ],
+      ['/identify/clips/clip_one', '/identify/clips/clip_two'],
       KICK_ORIGIN,
     ),
     undefined,
@@ -112,10 +101,7 @@ test('reads the current permalink when a virtualized card is reused', () => {
   card.hrefs = ['/identify/clips/clip_after']
   assert.equal(getClipIdFromCard(card, KICK_ORIGIN), 'clip_after')
 
-  card.hrefs = [
-    '/identify/clips/clip_after',
-    '/identify/clips/clip_conflict',
-  ]
+  card.hrefs = ['/identify/clips/clip_after', '/identify/clips/clip_conflict']
   assert.equal(getClipIdFromCard(card, KICK_ORIGIN), undefined)
 })
 

@@ -94,9 +94,7 @@ type JobRuntime = {
 
 export type DownloadManagerDependencies = Readonly<{
   createBlobSink: (filename: string) => OutputSink
-  createFileSystemSink: (
-    handle: FileHandleLike,
-  ) => Promise<OutputSink>
+  createFileSystemSink: (handle: FileHandleLike) => Promise<OutputSink>
   downloadMediaPlan: (
     plan: MediaPlan,
     sink: OutputSink,
@@ -193,10 +191,7 @@ export function createDownloadManager(
         activeCount += 1
       }
 
-      if (
-        job.status === 'queued' ||
-        job.status === 'awaiting-destination'
-      ) {
+      if (job.status === 'queued' || job.status === 'awaiting-destination') {
         queuedCount += 1
       }
 
@@ -214,9 +209,7 @@ export function createDownloadManager(
       return {
         ...job,
         queuePosition:
-          job.status === 'queued'
-            ? queuePositions.get(job.id)
-            : undefined,
+          job.status === 'queued' ? queuePositions.get(job.id) : undefined,
       }
     })
     const nextActivitySummary: DownloadActivitySummary = {
@@ -224,10 +217,7 @@ export function createDownloadManager(
       attention,
       error,
       queuedCount,
-      visible:
-        activeCount > 0 ||
-        queuedCount > 0 ||
-        attention,
+      visible: activeCount > 0 || queuedCount > 0 || attention,
     }
 
     snapshot = {
@@ -241,9 +231,7 @@ export function createDownloadManager(
 
   function inspectClip(clipId: string, pageUrl = window.location.href) {
     const existing = [...jobs.values()].find(
-      (job) =>
-        job.clipId === clipId &&
-        !TERMINAL_STATUSES.has(job.status),
+      (job) => job.clipId === clipId && !TERMINAL_STATUSES.has(job.status),
     )
 
     if (existing) {
@@ -277,10 +265,7 @@ export function createDownloadManager(
   }
 
   function drainInspectionQueue() {
-    while (
-      activeInspections < MAX_INSPECTIONS &&
-      inspectionQueue.length > 0
-    ) {
+    while (activeInspections < MAX_INSPECTIONS && inspectionQueue.length > 0) {
       const jobId = inspectionQueue.shift()
       const job = jobId ? jobs.get(jobId) : undefined
 
@@ -325,10 +310,8 @@ export function createDownloadManager(
 
       const displayError = toDisplayError(error)
       job.phase = undefined
-      job.status =
-        displayError.code === 'cancelled' ? 'cancelled' : 'failed'
-      job.error =
-        displayError.code === 'cancelled' ? undefined : displayError
+      job.status = displayError.code === 'cancelled' ? 'cancelled' : 'failed'
+      job.error = displayError.code === 'cancelled' ? undefined : displayError
       job.completedAt = dependencies.now()
       job.acknowledged = false
       publish()
@@ -424,8 +407,7 @@ export function createDownloadManager(
       !runtime ||
       reservedMediaJobId !== jobId ||
       !runtime.plan ||
-      (job.status !== 'ready' &&
-        job.status !== 'awaiting-destination')
+      (job.status !== 'ready' && job.status !== 'awaiting-destination')
     ) {
       return
     }
@@ -461,10 +443,7 @@ export function createDownloadManager(
       })
       handle = await pickerPromise
     } catch (error) {
-      if (
-        error instanceof DOMException &&
-        error.name === 'AbortError'
-      ) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
         job.status = 'ready'
         job.error = undefined
       } else {
@@ -498,18 +477,11 @@ export function createDownloadManager(
     const job = jobs.get(jobId)
     const runtime = runtimes.get(jobId)
 
-    if (
-      !job ||
-      !runtime ||
-      !runtime.plan ||
-      reservedMediaJobId !== jobId
-    ) {
+    if (!job || !runtime || !runtime.plan || reservedMediaJobId !== jobId) {
       return
     }
 
-    const sink =
-      runtime.sink ??
-      dependencies.createBlobSink(job.filename)
+    const sink = runtime.sink ?? dependencies.createBlobSink(job.filename)
     const abortController = new AbortController()
     const generation = runtime.generation + 1
     runtime.abortController = abortController
@@ -560,11 +532,9 @@ export function createDownloadManager(
       const displayError = toDisplayError(error)
       flushProgressTimer(runtime)
       job.completedAt = dependencies.now()
-      job.error =
-        displayError.code === 'cancelled' ? undefined : displayError
+      job.error = displayError.code === 'cancelled' ? undefined : displayError
       job.phase = undefined
-      job.status =
-        displayError.code === 'cancelled' ? 'cancelled' : 'failed'
+      job.status = displayError.code === 'cancelled' ? 'cancelled' : 'failed'
       job.acknowledged = false
       cleanupAttempt(runtime)
       releaseMediaSlot(jobId)
@@ -669,11 +639,7 @@ export function createDownloadManager(
     const job = jobs.get(jobId)
     const runtime = runtimes.get(jobId)
 
-    if (
-      !job ||
-      !runtime ||
-      !REMOVABLE_STATUSES.has(job.status)
-    ) {
+    if (!job || !runtime || !REMOVABLE_STATUSES.has(job.status)) {
       return
     }
 

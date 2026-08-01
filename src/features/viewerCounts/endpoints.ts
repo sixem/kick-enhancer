@@ -5,17 +5,12 @@ type ViewerCountEndpointDefinition = Readonly<{
   matches: (url: URL) => boolean
 }>
 
-const KICK_ORIGINS = new Set([
-  'https://kick.com',
-  'https://www.kick.com',
-])
+const KICK_ORIGINS = new Set(['https://kick.com', 'https://www.kick.com'])
 
 const ENDPOINTS: readonly ViewerCountEndpointDefinition[] = [
   {
     endpoint: 'SIDEBAR_LIVESTREAMS',
-    matches: exactWebEndpoint(
-      '/api/v1/recommendations/livestreams/sidebar',
-    ),
+    matches: exactWebEndpoint('/api/v1/recommendations/livestreams/sidebar'),
   },
   {
     endpoint: 'RECOMMENDED_LIVESTREAMS',
@@ -23,9 +18,7 @@ const ENDPOINTS: readonly ViewerCountEndpointDefinition[] = [
   },
   {
     endpoint: 'PAGINATED_RECOMMENDED_LIVESTREAMS',
-    matches: exactWebEndpoint(
-      '/api/v1/recommendations/livestreams/list',
-    ),
+    matches: exactWebEndpoint('/api/v1/recommendations/livestreams/list'),
   },
   {
     endpoint: 'FEATURED_LIVESTREAMS',
@@ -52,14 +45,12 @@ const ENDPOINTS: readonly ViewerCountEndpointDefinition[] = [
 ]
 
 function exactKickEndpoint(pathname: string) {
-  return (url: URL) =>
-    KICK_ORIGINS.has(url.origin) && url.pathname === pathname
+  return (url: URL) => KICK_ORIGINS.has(url.origin) && url.pathname === pathname
 }
 
 function exactWebEndpoint(pathname: string) {
   return (url: URL) =>
-    url.origin === 'https://web.kick.com' &&
-    url.pathname === pathname
+    url.origin === 'https://web.kick.com' && url.pathname === pathname
 }
 
 export function classifyViewerCountEndpoint(

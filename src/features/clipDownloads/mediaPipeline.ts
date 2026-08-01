@@ -1,19 +1,12 @@
 import { ClipDownloadError } from './errors'
-import {
-  MAX_INPUT_BYTES,
-  type HlsSegment,
-  type MediaPlan,
-} from './mediaTypes'
+import { MAX_INPUT_BYTES, type HlsSegment, type MediaPlan } from './mediaTypes'
 import {
   type FetchImplementation,
   parseContentRange,
   validateFinalMediaUrl,
 } from './network'
 import { type OutputSink } from './outputSinks'
-import {
-  TransmuxWorkerClient,
-  type TransmuxedFragment,
-} from './workerClient'
+import { TransmuxWorkerClient, type TransmuxedFragment } from './workerClient'
 
 const WORKER_INPUT_CHUNK_BYTES = 256 * 1024
 
@@ -185,13 +178,7 @@ async function pushSegment(
     )
   }
 
-  return streamSegmentResponse(
-    response,
-    undefined,
-    worker,
-    signal,
-    onFetched,
-  )
+  return streamSegmentResponse(response, undefined, worker, signal, onFetched)
 }
 
 async function streamSegmentResponse(
@@ -237,10 +224,7 @@ async function streamSegmentResponse(
     reader.releaseLock()
   }
 
-  if (
-    expectedBytes !== undefined &&
-    segmentBytes !== expectedBytes
-  ) {
+  if (expectedBytes !== undefined && segmentBytes !== expectedBytes) {
     throw new ClipDownloadError(
       'media-request',
       'A clip media segment was truncated.',
@@ -261,9 +245,7 @@ async function pushBoundedChunks(
     offset += WORKER_INPUT_CHUNK_BYTES
   ) {
     assertNotAborted(signal)
-    await worker.push(
-      bytes.subarray(offset, offset + WORKER_INPUT_CHUNK_BYTES),
-    )
+    await worker.push(bytes.subarray(offset, offset + WORKER_INPUT_CHUNK_BYTES))
   }
 }
 
@@ -407,11 +389,7 @@ async function writeDirectChunk(
 ) {
   let chunkWritten = 0
 
-  for (
-    let offset = 0;
-    offset < bytes.byteLength;
-    offset += MAX_INPUT_BYTES
-  ) {
+  for (let offset = 0; offset < bytes.byteLength; offset += MAX_INPUT_BYTES) {
     const chunk = bytes.subarray(offset, offset + MAX_INPUT_BYTES)
     onProgress({
       completedSegments: 0,

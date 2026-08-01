@@ -44,12 +44,7 @@ test('calculates adjacent-window trend, peak, and totals', () => {
 
   for (let index = 1; index <= 10; index += 1) {
     store.accept(
-      message(
-        `previous-${index}`,
-        `sender-${index}`,
-        'message',
-        index * 1_000,
-      ),
+      message(`previous-${index}`, `sender-${index}`, 'message', index * 1_000),
     )
   }
 
@@ -80,12 +75,7 @@ test('uses the first complete minute as the initial trend baseline', () => {
 
   for (let index = 1; index <= 10; index += 1) {
     store.accept(
-      message(
-        `baseline-${index}`,
-        `sender-${index}`,
-        'message',
-        index * 5_000,
-      ),
+      message(`baseline-${index}`, `sender-${index}`, 'message', index * 5_000),
     )
   }
 
@@ -132,15 +122,7 @@ test('selects exactly one confirmed session', () => {
   })
 
   store.accept(sessionEvent('sessionStarted', 0))
-  store.accept(
-    sessionEvent(
-      'sessionStarted',
-      0,
-      8,
-      'chatrooms.777.v2',
-      '777',
-    ),
-  )
+  store.accept(sessionEvent('sessionStarted', 0, 8, 'chatrooms.777.v2', '777'))
 
   assert.deepEqual(store.getSnapshot(1_000), {
     reason: 'multiple-sessions',
@@ -148,13 +130,7 @@ test('selects exactly one confirmed session', () => {
   })
 
   store.accept(
-    sessionEvent(
-      'sessionEnded',
-      2_000,
-      8,
-      'chatrooms.777.v2',
-      '777',
-    ),
+    sessionEvent('sessionEnded', 2_000, 8, 'chatrooms.777.v2', '777'),
   )
 
   assert.equal(store.getSnapshot(2_000).status, 'active')
@@ -274,12 +250,7 @@ function sessionEvent(
   }
 }
 
-function message(
-  messageId,
-  senderId,
-  messageType,
-  observedAt,
-) {
+function message(messageId, senderId, messageType, observedAt) {
   return {
     channelName: CHANNEL,
     chatroomId: '29191',
