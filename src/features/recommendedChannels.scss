@@ -1,7 +1,0 @@
-#sidebar-wrapper
-  section:has([data-testid^='sidebar-recommended-channel-']),
-#sidebar-wrapper
-  section:has([data-testid^='sidebar-recommended-channel-'])
-  + div:has([data-testid*='recommended']) {
-  display: none !important;
-}

@@ -1,6 +1,6 @@
-import { renderAnimatedNumber } from '../animatedNumber.ts'
-import { getChannelSlugFromPath } from '../slug.ts'
-import { type ViewerCountStore } from '../store.ts'
+import { renderAnimatedNumber } from '../../../components/numberReel.ts'
+import { getChannelSlugFromPath } from '../model/slug.ts'
+import { type ViewerCountStore } from '../model/store.ts'
 import { type ViewerCountDomOwnership } from './domOwnership.ts'
 import { VIEWER_COUNT_SELECTOR } from './selectors.ts'
 
@@ -66,8 +66,7 @@ export function renderChannelSurface(
     }
   }
 
-  const element =
-    existing ?? document.createElement('div')
+  const element = existing ?? document.createElement('div')
   ownership.updateCount(element, {
     className: 'ke-viewer-count-channel',
     count: stream.viewerCount,

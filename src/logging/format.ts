@@ -50,9 +50,7 @@ export function formatLogValue(value: unknown) {
   }
 
   try {
-    return JSON.stringify(
-      sanitizeValue(value, 0, new WeakSet<object>()),
-    )
+    return JSON.stringify(sanitizeValue(value, 0, new WeakSet<object>()))
   } catch {
     return '[Unserializable value]'
   }
@@ -63,25 +61,17 @@ function formatCompactLogValue(value: unknown) {
     return `${value.name}: ${sanitizeText(value.message)}`
   }
 
-  if (
-    typeof value !== 'object' ||
-    value === null ||
-    Array.isArray(value)
-  ) {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return formatLogValue(value)
   }
 
-  const prototype = Object.getPrototypeOf(value)
+  const prototype = Reflect.getPrototypeOf(value)
 
   if (prototype !== Object.prototype && prototype !== null) {
     return formatLogValue(value)
   }
 
-  const sanitized = sanitizeValue(
-    value,
-    0,
-    new WeakSet<object>(),
-  )
+  const sanitized = sanitizeValue(value, 0, new WeakSet<object>())
   const entries =
     typeof sanitized === 'object' && sanitized !== null
       ? Object.entries(sanitized)
@@ -90,10 +80,7 @@ function formatCompactLogValue(value: unknown) {
   return entries.length === 0
     ? '{}'
     : entries
-        .map(
-          ([key, entry]) =>
-            `${key}=${formatCompactDataValue(entry)}`,
-        )
+        .map(([key, entry]) => `${key}=${formatCompactDataValue(entry)}`)
         .join('; ')
 }
 
@@ -136,8 +123,16 @@ function sanitizeValue(
     return `${value}n`
   }
 
+  if (typeof value === 'symbol') {
+    return value.description ? `Symbol(${value.description})` : 'Symbol()'
+  }
+
+  if (typeof value === 'function') {
+    return `[Function ${value.name || 'anonymous'}]`
+  }
+
   if (typeof value !== 'object') {
-    return String(value)
+    return '[Unknown value]'
   }
 
   if (value instanceof Error) {

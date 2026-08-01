@@ -1,9 +1,5 @@
 import type { ComponentChildren, JSX } from 'preact'
-import {
-  useCallback,
-  useEffect,
-  useRef,
-} from 'preact/hooks'
+import { useCallback, useEffect, useRef } from 'preact/hooks'
 
 import { calculateScrollOverflow } from './scrollOverflow'
 import { joinClassNames } from './utils'
@@ -68,20 +64,14 @@ export function ScrollArea({
 
     const viewportHeight = viewport.clientHeight
     const contentHeight = viewport.scrollHeight
-    const maximumScrollTop = Math.max(
-      0,
-      contentHeight - viewportHeight,
-    )
+    const maximumScrollTop = Math.max(0, contentHeight - viewportHeight)
     const overflow = calculateScrollOverflow(
       viewport.scrollTop,
       viewportHeight,
       contentHeight,
     )
 
-    root.toggleAttribute(
-      'data-overflow-top',
-      scrollIndicators && overflow.top,
-    )
+    root.toggleAttribute('data-overflow-top', scrollIndicators && overflow.top)
     root.toggleAttribute(
       'data-overflow-bottom',
       scrollIndicators && overflow.bottom,
@@ -100,9 +90,7 @@ export function ScrollArea({
       viewportHeight,
       Math.max(
         minimumSize,
-        Math.round(
-          (viewportHeight / contentHeight) * viewportHeight,
-        ),
+        Math.round((viewportHeight / contentHeight) * viewportHeight),
       ),
     )
     const maximumOffset = Math.max(0, viewportHeight - nextSize)
@@ -181,10 +169,7 @@ export function ScrollArea({
 
   const finishDrag = useCallback(
     (event: JSX.TargetedPointerEvent<HTMLDivElement>) => {
-      if (
-        !dragRef.current ||
-        event.pointerId !== dragRef.current.pointerId
-      ) {
+      if (!dragRef.current || event.pointerId !== dragRef.current.pointerId) {
         return
       }
 
@@ -202,11 +187,7 @@ export function ScrollArea({
     (event: JSX.TargetedPointerEvent<HTMLDivElement>) => {
       const viewport = viewportRef.current
 
-      if (
-        event.button !== 0 ||
-        !viewport ||
-        !thumbVisibleRef.current
-      ) {
+      if (event.button !== 0 || !viewport || !thumbVisibleRef.current) {
         return
       }
 
@@ -229,11 +210,7 @@ export function ScrollArea({
       const drag = dragRef.current
       const viewport = viewportRef.current
 
-      if (
-        !drag ||
-        drag.pointerId !== event.pointerId ||
-        !viewport
-      ) {
+      if (!drag || drag.pointerId !== event.pointerId || !viewport) {
         return
       }
 
@@ -246,8 +223,7 @@ export function ScrollArea({
         viewport.clientHeight - thumbSizeRef.current,
       )
       const pointerDelta = event.clientY - drag.startClientY
-      const scrollDelta =
-        (pointerDelta * maximumScrollTop) / maximumThumbOffset
+      const scrollDelta = (pointerDelta * maximumScrollTop) / maximumThumbOffset
 
       viewport.scrollTop = Math.min(
         maximumScrollTop,

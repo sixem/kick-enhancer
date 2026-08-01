@@ -7,16 +7,14 @@ export function isSidebarLinkHiddenByEnhancer(
 ) {
   if (
     options.hideRecommendedChannels &&
-    link.matches(
-      'a[data-testid^="sidebar-recommended-channel-"]',
-    )
+    link.matches('a[data-testid^="sidebar-recommended-channel-"]')
   ) {
     return true
   }
 
   return Boolean(
     options.hideGamblingStreams &&
-      link.closest('[data-kick-enhancer-gambling-stream]'),
+    link.closest('[data-kick-enhancer-gambling-stream]'),
   )
 }
 
@@ -29,8 +27,7 @@ export function findSidebarTooltip(
     const tooltip =
       describedElement?.closest<HTMLElement>(
         '[data-radix-popper-content-wrapper]',
-      ) ??
-      describedElement?.closest<HTMLElement>('[role="tooltip"]')
+      ) ?? describedElement?.closest<HTMLElement>('[role="tooltip"]')
 
     if (tooltip && !tooltip.closest('#sidebar-wrapper')) {
       return tooltip
@@ -43,27 +40,28 @@ export function findSidebarTooltip(
     '[role="tooltip"], [data-radix-popper-content-wrapper]',
   )) {
     const candidate =
-      element.closest<HTMLElement>(
-        '[data-radix-popper-content-wrapper]',
-      ) ?? element
+      element.closest<HTMLElement>('[data-radix-popper-content-wrapper]') ??
+      element
 
     if (!candidate.closest('#sidebar-wrapper')) {
       candidates.add(candidate)
     }
   }
 
-  return [...candidates].find((candidate) =>
-    containsExactText(candidate, target.displayName),
-  )
+  for (const candidate of candidates) {
+    if (containsExactText(candidate, target.displayName)) {
+      return candidate
+    }
+  }
+
+  return undefined
 }
 
 export function findTooltipHeadingRow(
   tooltip: HTMLElement,
   displayName: string,
 ) {
-  for (const element of tooltip.querySelectorAll<HTMLElement>(
-    'span, p, div',
-  )) {
+  for (const element of tooltip.querySelectorAll<HTMLElement>('span, p, div')) {
     if (element.childElementCount > 0) {
       continue
     }
@@ -113,9 +111,7 @@ function getTooltipIds(sourceLink: HTMLAnchorElement) {
   const ids = new Set<string>()
 
   for (const attribute of ['aria-describedby', 'aria-controls']) {
-    for (const id of (
-      sourceLink.getAttribute(attribute) ?? ''
-    ).split(/\s+/)) {
+    for (const id of (sourceLink.getAttribute(attribute) ?? '').split(/\s+/)) {
       if (id) {
         ids.add(id)
       }
@@ -128,10 +124,15 @@ function getTooltipIds(sourceLink: HTMLAnchorElement) {
 function containsExactText(scope: ParentNode, expected: string) {
   const normalizedExpected = expected.trim().toLowerCase()
 
-  return [...scope.querySelectorAll<HTMLElement>('span, p, div')].some(
-    (element) =>
+  for (const element of scope.querySelectorAll<HTMLElement>('span, p, div')) {
+    if (
       !element.closest(RENDER_ELEMENT_SELECTOR) &&
       element.childElementCount === 0 &&
-      element.textContent?.trim().toLowerCase() === normalizedExpected,
-  )
+      element.textContent?.trim().toLowerCase() === normalizedExpected
+    ) {
+      return true
+    }
+  }
+
+  return false
 }

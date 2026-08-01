@@ -1,0 +1,41 @@
+@mixin styles {
+  .ke-animated-number {
+    display: inline-flex;
+    align-items: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ke-animated-number__digit {
+    position: relative;
+    display: inline-block;
+    width: 1ch;
+    height: var(--ke-animated-number-height, 1.25rem);
+    overflow: hidden;
+  }
+
+  .ke-animated-number__reel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    will-change: transform;
+  }
+
+  .ke-animated-number__cell {
+    display: flex;
+    width: 100%;
+    height: var(--ke-animated-number-height, 1.25rem);
+    flex: 0 0 var(--ke-animated-number-height, 1.25rem);
+    align-items: center;
+    justify-content: center;
+    line-height: var(--ke-animated-number-height, 1.25rem);
+  }
+
+  .ke-animated-number__separator {
+    display: inline-block;
+    height: var(--ke-animated-number-height, 1.25rem);
+    line-height: var(--ke-animated-number-height, 1.25rem);
+  }
+}

@@ -1,12 +1,12 @@
 import { unsafeWindow } from '$'
 
 import { createLogger } from '../../logging/logger'
-import { classifyViewerCountEndpoint } from './endpoints'
+import { classifyViewerCountEndpoint } from './acquisition/endpoints'
 import {
   VIEWER_COUNT_MESSAGE_SOURCE,
   VIEWER_COUNT_MESSAGE_TYPE,
   type CapturedViewerCountMessage,
-} from './types'
+} from './model/types'
 
 const log = createLogger('viewer-counts:capture')
 
@@ -23,6 +23,9 @@ export function installViewerCountCaptureBridge() {
       return true
     }
 
+    // The original method is deliberately detached and later invoked with the
+    // response as its receiver through Reflect.apply.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const originalJson = pageWindow.Response.prototype.json
     const originalDescriptor = Object.getOwnPropertyDescriptor(
       pageWindow.Response.prototype,
@@ -55,10 +58,7 @@ export function installViewerCountCaptureBridge() {
                 url: thisArgument.url,
               }
 
-              pageWindow.postMessage(
-                message,
-                pageWindow.location.origin,
-              )
+              pageWindow.postMessage(message, pageWindow.location.origin)
             })
             .catch(() => {
               // Kick still receives the original rejected promise.
@@ -69,25 +69,18 @@ export function installViewerCountCaptureBridge() {
       },
     })
 
-    Object.defineProperty(
-      pageWindow.Response.prototype,
-      'json',
-      {
-        ...originalDescriptor,
-        configurable: true,
-        value: hookedJson,
-        writable: true,
-      },
-    )
+    Object.defineProperty(pageWindow.Response.prototype, 'json', {
+      ...originalDescriptor,
+      configurable: true,
+      value: hookedJson,
+      writable: true,
+    })
 
     pageWindow.__kickEnhancerViewerCountHookInstalled = true
     log.info('Installed')
     return true
   } catch (error) {
-    log.warn(
-      'Unavailable; using fallback',
-      error,
-    )
+    log.warn('Unavailable; using fallback', error)
     return false
   }
 }

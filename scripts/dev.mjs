@@ -8,12 +8,16 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const host = '127.0.0.1'
 const port = 5173
 const files = new Map([
-  ['/kick-enhancer.dev.user.js', resolve(root, 'scripts/kick-enhancer.dev.user.js')],
-  ['/kick-enhancer.user.js', resolve(root, 'dist/kick-enhancer.user.js')],
+  [
+    '/kick-enhancer.dev.user.js',
+    resolve(root, 'scripts/kick-enhancer.dev.user.js'),
+  ],
+  ['/kick-enhancer.user.js', resolve(root, '.dev/kick-enhancer.user.js')],
 ])
 
 const server = createServer(async (request, response) => {
-  const pathname = new URL(request.url ?? '/', `http://${host}:${port}`).pathname
+  const pathname = new URL(request.url ?? '/', `http://${host}:${port}`)
+    .pathname
   const file = files.get(pathname)
 
   response.setHeader('Access-Control-Allow-Origin', '*')

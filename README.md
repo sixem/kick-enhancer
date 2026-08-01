@@ -12,6 +12,7 @@
 - Hide live gambling streams from followed channels.
 - Hide auto-playing front page streams to avoid bloat and noise.
 - Customizable chat settings (size, spacing, weight, fonts etc.).
+- Chat statistics (messages per minute, active chatters, socket latency etc.)
 - A download manager for downloading clips directly _without_ watermark.
 
 ## Installation
@@ -31,7 +32,8 @@ and approve the installation when prompted, or import the code manually into you
 ```sh
 pnpm install
 pnpm dev
-pnpm test
+pnpm format
+pnpm check
 pnpm build
 ```
 

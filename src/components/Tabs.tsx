@@ -29,8 +29,7 @@ function findEnabledTabIndex(
   direction: -1 | 1,
 ) {
   for (let offset = 1; offset <= tabs.length; offset += 1) {
-    const index =
-      (startIndex + direction * offset + tabs.length) % tabs.length
+    const index = (startIndex + direction * offset + tabs.length) % tabs.length
 
     if (!tabs[index].disabled) {
       return index

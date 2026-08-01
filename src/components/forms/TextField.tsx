@@ -5,10 +5,11 @@ import { joinClassNames } from '../utils'
 
 type TextFieldProps = Omit<
   JSX.InputHTMLAttributes<HTMLInputElement>,
-  'className' | 'onInput'
+  'className' | 'id' | 'onInput'
 > & {
   className?: string
   description?: string
+  id?: string
   label: string
   onValueChange?: (value: string) => void
   suffix?: string
@@ -27,9 +28,8 @@ export function TextField({
   const inputId = id ?? generatedId
   const descriptionId = description ? `${inputId}-description` : undefined
   const suffixId = suffix ? `${inputId}-suffix` : undefined
-  const describedBy = [descriptionId, suffixId]
-    .filter(Boolean)
-    .join(' ') || undefined
+  const describedBy =
+    [descriptionId, suffixId].filter(Boolean).join(' ') || undefined
 
   return (
     <label className="ke-form-field" htmlFor={inputId}>
@@ -45,9 +45,7 @@ export function TextField({
           aria-describedby={describedBy}
           className={joinClassNames('ke-text-field', className)}
           id={inputId}
-          onInput={(event) =>
-            onValueChange?.(event.currentTarget.value)
-          }
+          onInput={(event) => onValueChange?.(event.currentTarget.value)}
         />
         {suffix ? (
           <span className="ke-text-field__suffix" id={suffixId}>

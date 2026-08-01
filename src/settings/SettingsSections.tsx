@@ -1,11 +1,6 @@
 import { useMemo } from 'preact/hooks'
 
-import {
-  Button,
-  SelectBox,
-  Toggle,
-  TrackBar,
-} from '../components/forms'
+import { Button, SelectBox, Toggle, TrackBar } from '../components/forms'
 import {
   resetChatAppearance,
   setChatFontFamily,
@@ -13,6 +8,7 @@ import {
   setChatFontWeight,
   setChatMessageDividers,
   setChatMessageSpacing,
+  setHideChatLeaderboard,
   setHideFollowingRecommendations,
   setHideGamblingStreams,
   setHideHomepageCarousel,
@@ -20,6 +16,7 @@ import {
   setRememberSidebarState,
   setShowClipDownloadButtons,
   setShowHiddenViewerCounts,
+  setShowChatStatistics,
   setShowStreamUptime,
 } from './actions'
 import {
@@ -77,8 +74,11 @@ export function ChatSettingsSection({
   open: boolean
   settings: Settings['chat']
 }>) {
-  const kickDefaults = useMemo(
-    () => ({
+  const kickDefaults = useMemo(() => {
+    // Re-read KICK's variables whenever the modal opens.
+    void open
+
+    return {
       fontSize: readKickChatValue(
         '--chatroom-font-size',
         CHAT_FONT_SIZE_DEFAULT,
@@ -91,9 +91,8 @@ export function ChatSettingsSection({
         CHAT_MESSAGE_SPACING_MIN,
         CHAT_MESSAGE_SPACING_MAX,
       ),
-    }),
-    [open],
-  )
+    }
+  }, [open])
 
   return (
     <div className="ke-settings">
@@ -102,9 +101,7 @@ export function ChatSettingsSection({
         label="Chat font"
         onValueChange={(value) => {
           void setChatFontFamily(
-            value === 'default'
-              ? null
-              : (value as ChatFontFamily),
+            value === 'default' ? null : (value as ChatFontFamily),
           )
         }}
         options={CHAT_FONT_FAMILY_OPTIONS}
@@ -156,9 +153,7 @@ export function ChatSettingsSection({
           void setChatMessageSpacing(value)
         }}
         step={1}
-        value={
-          settings.messageSpacing ?? kickDefaults.messageSpacing
-        }
+        value={settings.messageSpacing ?? kickDefaults.messageSpacing}
       />
       <Toggle
         checked={settings.messageDividers}
@@ -166,6 +161,14 @@ export function ChatSettingsSection({
         label="Message dividers"
         onCheckedChange={(enabled) => {
           void setChatMessageDividers(enabled)
+        }}
+      />
+      <Toggle
+        checked={settings.showChatStatistics}
+        description="Show live message activity, active chatters, socket RTT, and session totals in chat."
+        label="Show chat statistics"
+        onCheckedChange={(visible) => {
+          void setShowChatStatistics(visible)
         }}
       />
       <div className="ke-settings__actions">
@@ -189,11 +192,19 @@ export function ChatSettingsSection({
   )
 }
 
-export function ContentSettingsSection({
+export function VisibilitySettingsSection({
   settings,
 }: Readonly<{ settings: Settings['ui'] }>) {
   return (
     <div className="ke-settings">
+      <Toggle
+        checked={settings.hideChatLeaderboard}
+        description="Remove the gift and KICKs leaderboard above chat."
+        label="Hide chat leaderboard"
+        onCheckedChange={(hidden) => {
+          void setHideChatLeaderboard(hidden)
+        }}
+      />
       <Toggle
         checked={settings.hideHomepageCarousel}
         description="Remove the featured autoplaying stream and chat from the homepage."
@@ -218,15 +229,6 @@ export function ContentSettingsSection({
           void setHideFollowingRecommendations(hidden)
         }}
       />
-    </div>
-  )
-}
-
-export function SidebarSettingsSection({
-  settings,
-}: Readonly<{ settings: Settings['ui'] }>) {
-  return (
-    <div className="ke-settings">
       <Toggle
         checked={settings.hideRecommendedChannels}
         description="Remove recommended channels and their controls from the sidebar."
@@ -264,9 +266,7 @@ function readKickChatValue(
   max: number,
 ) {
   const value = Number.parseFloat(
-    getComputedStyle(document.documentElement).getPropertyValue(
-      property,
-    ),
+    getComputedStyle(document.documentElement).getPropertyValue(property),
   )
 
   return normalizeChatValue(value, min, max) ?? fallback

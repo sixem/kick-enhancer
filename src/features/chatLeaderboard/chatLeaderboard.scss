@@ -1,0 +1,3 @@
+#channel-chatroom div:has(> button[aria-label='Expand leaderboard']) {
+  display: none !important;
+}

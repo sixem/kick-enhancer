@@ -1,21 +1,12 @@
 import type { ComponentChildren, JSX } from 'preact'
 import { memo } from 'preact/compat'
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'preact/hooks'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks'
 
 import {
   calculateListViewRange,
   type ListViewRange,
 } from './listViewVirtualization'
-import {
-  ScrollArea,
-  type ScrollAreaHeightMode,
-} from './ScrollArea'
+import { ScrollArea, type ScrollAreaHeightMode } from './ScrollArea'
 import { joinClassNames } from './utils'
 
 export type ListViewColumn<TItem> = Readonly<{
@@ -66,13 +57,7 @@ function useListViewRange(
   const updateRangeRef = useRef<() => void>(() => undefined)
   const [range, setRange] = useState<ListViewRange>(() =>
     virtualized
-      ? calculateListViewRange(
-          itemCount,
-          rowHeight,
-          overscan,
-          0,
-          0,
-        )
+      ? calculateListViewRange(itemCount, rowHeight, overscan, 0, 0)
       : { end: itemCount, start: 0 },
   )
 
@@ -90,8 +75,7 @@ function useListViewRange(
         : { end: itemCount, start: 0 }
 
     setRange((current) =>
-      current.start === nextRange.start &&
-      current.end === nextRange.end
+      current.start === nextRange.start && current.end === nextRange.end
         ? current
         : nextRange,
     )
@@ -130,11 +114,7 @@ function useListViewRange(
   useEffect(() => {
     const viewport = viewportRef.current
 
-    if (
-      !virtualized ||
-      !viewport ||
-      typeof ResizeObserver === 'undefined'
-    ) {
+    if (!virtualized || !viewport || typeof ResizeObserver === 'undefined') {
       return
     }
 
@@ -194,9 +174,7 @@ function ListViewRowComponent<TItem>({
       )}
       data-last-row={index === itemCount - 1 ? 'true' : undefined}
       data-virtualized={virtualized ? 'true' : undefined}
-      onClick={
-        onItemActivate ? () => onItemActivate(item) : undefined
-      }
+      onClick={onItemActivate ? () => onItemActivate(item) : undefined}
       onKeyDown={
         onItemActivate
           ? (event) => {
@@ -215,10 +193,7 @@ function ListViewRowComponent<TItem>({
     >
       {columns.map((column) => (
         <div
-          className={joinClassNames(
-            'ke-list-view__cell',
-            column.cellClassName,
-          )}
+          className={joinClassNames('ke-list-view__cell', column.cellClassName)}
           data-align={column.align}
           data-column-id={column.id}
           key={column.id}
@@ -233,7 +208,7 @@ function ListViewRowComponent<TItem>({
   )
 }
 
-const ListViewRow = memo(ListViewRowComponent) as typeof ListViewRowComponent
+const ListViewRow = memo(ListViewRowComponent)
 
 export function ListView<TItem>({
   ariaLabel,
@@ -254,9 +229,7 @@ export function ListView<TItem>({
     rowHeight !== undefined &&
     (!Number.isFinite(rowHeight) || rowHeight <= 0)
   ) {
-    throw new Error(
-      'ListView rowHeight must be a positive finite number.',
-    )
+    throw new Error('ListView rowHeight must be a positive finite number.')
   }
 
   const gridTemplateColumns = useMemo(
@@ -266,20 +239,11 @@ export function ListView<TItem>({
   const rowStyle = {
     gridTemplateColumns,
   } satisfies JSX.CSSProperties
-  const {
-    range,
-    scheduleRangeUpdate,
-    setViewport,
-    virtualized,
-  } = useListViewRange(items.length, overscan, rowHeight)
+  const { range, scheduleRangeUpdate, setViewport, virtualized } =
+    useListViewRange(items.length, overscan, rowHeight)
   const rangeStart = Math.min(items.length, range.start)
-  const rangeEnd = Math.min(
-    items.length,
-    Math.max(rangeStart, range.end),
-  )
-  const visibleItems = virtualized
-    ? items.slice(rangeStart, rangeEnd)
-    : items
+  const rangeEnd = Math.min(items.length, Math.max(rangeStart, range.end))
+  const visibleItems = virtualized ? items.slice(rangeStart, rangeEnd) : items
   const bodyStyle =
     virtualized && rowHeight !== undefined
       ? ({
@@ -323,9 +287,7 @@ export function ListView<TItem>({
         contentClassName="ke-list-view__scroll-content"
         heightMode={heightMode}
         onViewportChange={setViewport}
-        onViewportScroll={
-          virtualized ? scheduleRangeUpdate : undefined
-        }
+        onViewportScroll={virtualized ? scheduleRangeUpdate : undefined}
         scrollIndicators
         scrollbarVariant="compact"
         viewportAriaLabel={`${ariaLabel} rows`}

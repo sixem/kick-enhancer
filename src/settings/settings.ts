@@ -6,6 +6,7 @@ import {
   parseSettings,
   type Settings,
 } from './settingsFormat'
+import { createSettingsPersistence } from './settingsPersistence'
 
 export * from './settingsFormat'
 
@@ -17,7 +18,13 @@ const log = createLogger('settings')
 
 const listeners = new Set<SettingsListener>()
 let currentSettings = DEFAULT_SETTINGS
-let pendingWrite = Promise.resolve()
+let persistenceLifecycleInstalled = false
+const persistence = createSettingsPersistence({
+  onError: (error) => {
+    log.error('Save failed', error)
+  },
+  write: (serializedSettings) => GM.setValue(SETTINGS_KEY, serializedSettings),
+})
 
 function notifyListeners() {
   for (const listener of listeners) {
@@ -26,6 +33,8 @@ function notifyListeners() {
 }
 
 export async function initializeSettings() {
+  installPersistenceLifecycle()
+
   try {
     const storedSettings = await GM.getValue(SETTINGS_KEY, '')
     currentSettings = storedSettings
@@ -77,25 +86,36 @@ export function observeSetting<Value>(
   })
 }
 
-export function updateSettings(
-  update: (settings: Settings) => Settings,
-) {
+export function updateSettings(update: (settings: Settings) => Settings) {
   const nextSettings = update(currentSettings)
 
   if (nextSettings === currentSettings) {
-    return pendingWrite
+    return persistence.whenIdle()
   }
 
   currentSettings = nextSettings
   notifyListeners()
 
   const serializedSettings = JSON.stringify(currentSettings)
-  pendingWrite = pendingWrite
-    .catch(() => undefined)
-    .then(() => GM.setValue(SETTINGS_KEY, serializedSettings))
-    .catch((error) => {
-      log.error('Save failed', error)
-    })
+  return persistence.schedule(serializedSettings)
+}
 
-  return pendingWrite
+function installPersistenceLifecycle() {
+  if (persistenceLifecycleInstalled) {
+    return
+  }
+
+  persistenceLifecycleInstalled = true
+  window.addEventListener('pagehide', flushPersistence)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+}
+
+function flushPersistence() {
+  void persistence.flush()
+}
+
+function handleVisibilityChange() {
+  if (document.hidden) {
+    flushPersistence()
+  }
 }

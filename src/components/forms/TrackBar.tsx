@@ -3,11 +3,12 @@ import { useId, useState } from 'preact/hooks'
 
 type TrackBarProps = Omit<
   JSX.InputHTMLAttributes<HTMLInputElement>,
-  'max' | 'min' | 'onInput' | 'type' | 'value'
+  'id' | 'max' | 'min' | 'onInput' | 'type' | 'value'
 > & {
   defaultValue?: number
   description?: string
   formatValue?: (value: number) => string
+  id?: string
   label: string
   max: number
   min: number

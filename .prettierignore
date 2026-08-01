@@ -1,0 +1,6 @@
+.dev/
+dist/
+HTML/
+node_modules/
+pnpm-lock.yaml
+references/
