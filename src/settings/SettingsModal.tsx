@@ -14,9 +14,8 @@ import { DiagnosticsTab } from './DiagnosticsTab'
 import { replaceSettings, resetSettings, type Settings } from './settings'
 import {
   ChatSettingsSection,
-  ContentSettingsSection,
-  SidebarSettingsSection,
   StreamAndClipSettingsSection,
+  VisibilitySettingsSection,
 } from './SettingsSections'
 
 type SettingsModalProps = {
@@ -170,14 +169,9 @@ export function SettingsModal({
                 label: 'Chat',
               },
               {
-                content: <ContentSettingsSection settings={settings.ui} />,
-                id: 'content',
+                content: <VisibilitySettingsSection settings={settings.ui} />,
+                id: 'visibility',
                 label: 'Visibility',
-              },
-              {
-                content: <SidebarSettingsSection settings={settings.ui} />,
-                id: 'sidebar',
-                label: 'Sidebar',
               },
               {
                 content: (

@@ -192,7 +192,7 @@ export function ChatSettingsSection({
   )
 }
 
-export function ContentSettingsSection({
+export function VisibilitySettingsSection({
   settings,
 }: Readonly<{ settings: Settings['ui'] }>) {
   return (
@@ -229,15 +229,6 @@ export function ContentSettingsSection({
           void setHideFollowingRecommendations(hidden)
         }}
       />
-    </div>
-  )
-}
-
-export function SidebarSettingsSection({
-  settings,
-}: Readonly<{ settings: Settings['ui'] }>) {
-  return (
-    <div className="ke-settings">
       <Toggle
         checked={settings.hideRecommendedChannels}
         description="Remove recommended channels and their controls from the sidebar."
