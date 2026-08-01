@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => {
     build: {
       cssMinify: readableBuild ? false : 'lightningcss',
       minify: readableBuild ? false : 'oxc',
-      outDir: greasyFork ? 'dist/greasyfork' : 'dist',
+      outDir: development ? '.dev' : greasyFork ? 'dist/greasyfork' : 'dist',
     },
     plugins: [
       preact(),

@@ -12,7 +12,7 @@ const files = new Map([
     '/kick-enhancer.dev.user.js',
     resolve(root, 'scripts/kick-enhancer.dev.user.js'),
   ],
-  ['/kick-enhancer.user.js', resolve(root, 'dist/kick-enhancer.user.js')],
+  ['/kick-enhancer.user.js', resolve(root, '.dev/kick-enhancer.user.js')],
 ])
 
 const server = createServer(async (request, response) => {

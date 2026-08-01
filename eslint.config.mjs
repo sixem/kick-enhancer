@@ -18,7 +18,7 @@ const modernJavaScriptRules = {
 
 export default defineConfig(
   {
-    ignores: ['dist/**', 'HTML/**', 'references/**'],
+    ignores: ['.dev/**', 'dist/**', 'HTML/**', 'references/**'],
   },
   {
     files: ['**/*.{js,mjs,cjs}'],
