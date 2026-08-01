@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { createTransmuxerSession } from '../../../src/features/clipDownloads/transmuxerSession.ts'
+import { createTransmuxerSession } from '../../../src/features/clipDownloads/media/transmuxerSession.ts'
 import {
   createFakeTransmuxer,
   transmuxedSegment,

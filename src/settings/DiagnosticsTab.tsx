@@ -15,8 +15,8 @@ import {
   VIEWER_COUNT_ENDPOINTS,
   type EndpointCheckResult,
   type EndpointObservation,
-} from '../features/viewerCounts/diagnostics'
-import { getChannelSlugFromPath } from '../features/viewerCounts/slug'
+  getChannelSlugFromPath,
+} from '../features/viewerCounts'
 import { formatLogEntry, formatLogMessage } from '../logging/format'
 import {
   clearLogHistory,

@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { ClipDownloadError } from '../../../src/features/clipDownloads/errors.ts'
-import { MAX_INPUT_BYTES } from '../../../src/features/clipDownloads/mediaTypes.ts'
-import { parseKickMediaPlaylist } from '../../../src/features/clipDownloads/playlist.ts'
+import { MAX_INPUT_BYTES } from '../../../src/features/clipDownloads/media/mediaTypes.ts'
+import { parseKickMediaPlaylist } from '../../../src/features/clipDownloads/media/playlist.ts'
 
 const PLAYLIST_URL = 'https://clips.kick.com/clips/42/clip_test/playlist.m3u8'
 const ALLOW_KICK_MEDIA = (url) => url.hostname === 'clips.kick.com'

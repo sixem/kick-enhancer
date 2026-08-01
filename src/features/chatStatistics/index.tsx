@@ -7,6 +7,8 @@ import { getChatStatisticsRuntime } from './runtime.ts'
 import styles from './chatStatistics.scss?inline'
 import { findChatStatisticsAnchors, type ChatStatisticsAnchors } from './dom'
 
+export { initializeChatStatisticsCapture } from './runtime.ts'
+
 const NATIVE_TITLE_ATTRIBUTE = 'data-ke-native-chat-title'
 const PANEL_HOST_ID = 'kick-enhancer-chat-statistics-panel'
 const STYLE_ID = 'kick-enhancer-chat-statistics-styles'

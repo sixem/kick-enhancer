@@ -5,10 +5,6 @@ import { type Dispose } from '../../lifecycle'
 import { createLogger } from '../../logging/logger'
 import { getSettings, observeSetting } from '../../settings/settings'
 import { installSharedUiStyles } from '../../styles/sharedUi'
-import { ClipDownloadAction } from './ClipDownloadAction'
-import { DirectClipDownloadAction } from './DirectClipDownloadAction'
-import { DownloadCenter } from './DownloadCenter'
-import { createClipCardReconciler } from './clipCardReconciler'
 import {
   CLIP_CARD_SELECTOR,
   CLIP_MODAL_BUTTON_SELECTOR,
@@ -17,9 +13,16 @@ import {
   getClipIdFromHref,
   type ClipSelectionHandler,
 } from './clipCards'
-import styles from './clipDownloads.scss?inline'
-import centerStyles from './downloadCenter.scss?inline'
-import { openDownloadCenterForClip } from './downloadCenterController'
+import { ClipDownloadAction } from './integration/ClipDownloadAction'
+import { DirectClipDownloadAction } from './integration/DirectClipDownloadAction'
+import { createClipCardReconciler } from './integration/clipCardReconciler'
+import styles from './integration/clipDownloads.scss?inline'
+import { DownloadCenter } from './ui/DownloadCenter'
+import centerStyles from './ui/downloadCenter.scss?inline'
+import { openDownloadCenterForClip } from './ui/downloadCenterController'
+
+export { openDownloadCenter } from './ui/downloadCenterController'
+export { useDownloadActivity } from './ui/useDownloads'
 
 const STYLE_ID = 'kick-enhancer-clip-download-styles'
 const CENTER_HOST_ID = 'kick-enhancer-download-center'

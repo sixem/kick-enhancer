@@ -4,7 +4,7 @@ import test from 'node:test'
 import {
   createBlobSink,
   createFileSystemSink,
-} from '../../../src/features/clipDownloads/outputSinks.ts'
+} from '../../../src/features/clipDownloads/manager/outputSinks.ts'
 
 test('uses bounded file and Blob output sinks', async () => {
   const writableCalls = []

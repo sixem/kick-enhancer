@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { ViewerCountStore } from '../../../src/features/viewerCounts/store.ts'
+import { ViewerCountStore } from '../../../src/features/viewerCounts/model/store.ts'
 
 test('store preserves hidden ownership while enriching channel details', () => {
   const store = new ViewerCountStore()

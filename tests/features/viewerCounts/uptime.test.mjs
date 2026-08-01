@@ -4,7 +4,7 @@ import test from 'node:test'
 import {
   formatStreamUptime,
   parseStreamStartedAt,
-} from '../../../src/features/viewerCounts/uptime.ts'
+} from '../../../src/features/viewerCounts/model/uptime.ts'
 
 test('parses Kick timestamps without treating them as local time', () => {
   assert.equal(

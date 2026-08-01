@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { estimateDownloadTransfer } from '../../../src/features/clipDownloads/downloadProgress.ts'
+import { estimateDownloadTransfer } from '../../../src/features/clipDownloads/ui/downloadProgress.ts'
 
 test('estimates average download rate and remaining time', () => {
   assert.deepEqual(

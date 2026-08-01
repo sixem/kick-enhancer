@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { createDownloadManager } from '../../../src/features/clipDownloads/downloadManagerCore.ts'
+import { createDownloadManager } from '../../../src/features/clipDownloads/manager/downloadManagerCore.ts'
 import { waitFor } from '../../support/waitFor.mjs'
 import {
   createFakeHandle,

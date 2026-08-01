@@ -5,7 +5,7 @@ import {
   createDefaultBasename,
   createMp4Filename,
   sanitizeBasename,
-} from '../../../src/features/clipDownloads/filename.ts'
+} from '../../../src/features/clipDownloads/manager/filename.ts'
 
 test('generates and sanitizes portable MP4 filenames', () => {
   assert.equal(

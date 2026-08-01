@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { updateCountElementState } from '../../../src/features/viewerCounts/countElement.ts'
+import { updateCountElementState } from '../../../src/features/viewerCounts/render/countElement.ts'
 
 const INITIAL_STATE = {
   className: 'ke-viewer-count-card',

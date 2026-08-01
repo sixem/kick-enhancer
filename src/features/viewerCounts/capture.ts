@@ -1,12 +1,12 @@
 import { unsafeWindow } from '$'
 
 import { createLogger } from '../../logging/logger'
-import { classifyViewerCountEndpoint } from './endpoints'
+import { classifyViewerCountEndpoint } from './acquisition/endpoints'
 import {
   VIEWER_COUNT_MESSAGE_SOURCE,
   VIEWER_COUNT_MESSAGE_TYPE,
   type CapturedViewerCountMessage,
-} from './types'
+} from './model/types'
 
 const log = createLogger('viewer-counts:capture')
 

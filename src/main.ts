@@ -1,7 +1,9 @@
 import { startChatAppearance } from './features/chatAppearance'
 import { startChatLeaderboardVisibility } from './features/chatLeaderboard'
-import { startChatStatistics } from './features/chatStatistics'
-import { initializeChatStatisticsCapture } from './features/chatStatistics/runtime'
+import {
+  initializeChatStatisticsCapture,
+  startChatStatistics,
+} from './features/chatStatistics'
 import { startClipDownloadActions } from './features/clipDownloads'
 import { startFollowingRecommendationsVisibility } from './features/followingRecommendations'
 import { startGamblingStreamsVisibility } from './features/gamblingStreams'

@@ -2,9 +2,11 @@ import { render } from 'preact'
 import { useState } from 'preact/hooks'
 
 import icon from '../assets/icon.png?inline'
+import {
+  openDownloadCenter,
+  useDownloadActivity,
+} from '../features/clipDownloads'
 import { type Dispose } from '../lifecycle'
-import { openDownloadCenter } from '../features/clipDownloads/downloadCenterController'
-import { useDownloadActivity } from '../features/clipDownloads/useDownloads'
 import { DownloadIcon, LoadingSpinnerIcon } from '../icons'
 import { SettingsModal } from '../settings/SettingsModal'
 import { useSettings } from '../settings/useSettings'

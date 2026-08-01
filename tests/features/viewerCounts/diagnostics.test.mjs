@@ -7,7 +7,7 @@ import {
   runViewerEndpointChecks,
   subscribeViewerEndpointObservations,
 } from '../../../src/features/viewerCounts/diagnostics.ts'
-import { normalizeViewerCountPayload } from '../../../src/features/viewerCounts/normalize.ts'
+import { normalizeViewerCountPayload } from '../../../src/features/viewerCounts/model/normalize.ts'
 
 test('records passive endpoint summaries without retaining payloads', () => {
   const normalized = normalizeViewerCountPayload(

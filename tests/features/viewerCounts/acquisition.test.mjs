@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { ViewerCountAcquisition } from '../../../src/features/viewerCounts/acquisition.ts'
-import { ViewerCountStore } from '../../../src/features/viewerCounts/store.ts'
+import { ViewerCountAcquisition } from '../../../src/features/viewerCounts/acquisition/acquisition.ts'
+import { ViewerCountStore } from '../../../src/features/viewerCounts/model/store.ts'
 import { waitFor } from '../../support/waitFor.mjs'
 import { readIds } from './_support/acquisitionFixtures.mjs'
 

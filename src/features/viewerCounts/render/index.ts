@@ -1,5 +1,5 @@
 import { createLogger } from '../../../logging/logger.ts'
-import { type ViewerCountStore } from '../store.ts'
+import { type ViewerCountStore } from '../model/store.ts'
 import { renderCardSurfaces, type CardRenderResult } from './cards.ts'
 import { renderChannelSurface, type ChannelRenderResult } from './channel.ts'
 import {

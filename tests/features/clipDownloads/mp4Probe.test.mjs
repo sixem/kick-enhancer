@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { inspectMp4Probe } from '../../../src/features/clipDownloads/mp4Probe.ts'
+import { inspectMp4Probe } from '../../../src/features/clipDownloads/media/mp4Probe.ts'
 import { concatBytes, createBox } from './_support/mediaFixtures.mjs'
 
 test('accepts only an MP4 probe with moov, H.264, and AAC markers', () => {

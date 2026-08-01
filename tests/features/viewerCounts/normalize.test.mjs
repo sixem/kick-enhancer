@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { normalizeViewerCountPayload } from '../../../src/features/viewerCounts/normalize.ts'
+import { normalizeViewerCountPayload } from '../../../src/features/viewerCounts/model/normalize.ts'
 
 const START_TIME = '2026-07-28 03:00:00'
 const STARTED_AT = Date.UTC(2026, 6, 28, 3)

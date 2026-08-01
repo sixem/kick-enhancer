@@ -1,6 +1,6 @@
-import { getChannelSlugFromHref } from '../slug.ts'
-import { type ViewerCountStore } from '../store.ts'
-import { formatStreamUptime } from '../uptime.ts'
+import { getChannelSlugFromHref } from '../model/slug.ts'
+import { type ViewerCountStore } from '../model/store.ts'
+import { formatStreamUptime } from '../model/uptime.ts'
 import { type ViewerCountDomOwnership } from './domOwnership.ts'
 import { findStatusLabel, formatViewerCount, isCompactCount } from './shared.ts'
 import {

@@ -4,12 +4,18 @@ import { onDocumentElementReady } from '../../dom/onDocumentElementReady'
 import { type Dispose } from '../../lifecycle'
 import { createLogger } from '../../logging/logger'
 import { getSettings, subscribeSettings } from '../../settings/settings'
-import { applyStyleToggle } from '../styleToggle'
-import { ViewerCountAcquisition } from './acquisition'
+import { applyStyleToggle } from '../shared/styleToggle'
+import { ViewerCountAcquisition } from './acquisition/acquisition'
+import { classifyViewerCountEndpoint } from './acquisition/endpoints'
 import { installViewerCountCaptureBridge } from './capture'
 import { recordViewerEndpointObservation } from './diagnostics'
-import { classifyViewerCountEndpoint } from './endpoints'
-import { normalizeViewerCountPayload } from './normalize'
+import { normalizeViewerCountPayload } from './model/normalize'
+import { getChannelSlugFromHref } from './model/slug'
+import { ViewerCountStore } from './model/store'
+import {
+  isCapturedViewerCountMessage,
+  type CapturedViewerCountMessage,
+} from './model/types'
 import {
   cleanupViewerCountDom,
   renderViewerCounts,
@@ -17,12 +23,6 @@ import {
   type ViewerCountRenderResult,
 } from './render'
 import { SIDEBAR_LINK_SELECTOR } from './render/selectors'
-import { getChannelSlugFromHref } from './slug'
-import { ViewerCountStore } from './store'
-import {
-  isCapturedViewerCountMessage,
-  type CapturedViewerCountMessage,
-} from './types'
 import styles from './viewerCounts.scss?inline'
 
 const STYLE_ID = 'kick-enhancer-viewer-count-styles'

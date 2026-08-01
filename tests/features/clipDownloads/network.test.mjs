@@ -5,7 +5,7 @@ import {
   fetchExactRange,
   fetchInitialMediaProbe,
   parseContentRange,
-} from '../../../src/features/clipDownloads/network.ts'
+} from '../../../src/features/clipDownloads/media/network.ts'
 import { rangeResponse, responseWithUrl } from './_support/mediaFixtures.mjs'
 
 test('validates exact media byte ranges and rejects ignored ranges', async () => {

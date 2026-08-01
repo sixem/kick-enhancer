@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { inspectTransportStream } from '../../../src/features/clipDownloads/tsProbe.ts'
+import { inspectTransportStream } from '../../../src/features/clipDownloads/media/tsProbe.ts'
 import {
   concatBytes,
   createPatSection,

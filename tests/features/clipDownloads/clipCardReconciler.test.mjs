@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { createClipCardReconciler } from '../../../src/features/clipDownloads/clipCardReconciler.ts'
+import { createClipCardReconciler } from '../../../src/features/clipDownloads/integration/clipCardReconciler.ts'
 
 test('reconciles mounts, reused IDs, invalid cards, and teardown', () => {
   const calls = []

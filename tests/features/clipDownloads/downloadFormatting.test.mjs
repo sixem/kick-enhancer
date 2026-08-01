@@ -8,7 +8,7 @@ import {
   formatPhase,
   formatRemainingTime,
   formatStatus,
-} from '../../../src/features/clipDownloads/downloadFormatting.ts'
+} from '../../../src/features/clipDownloads/ui/downloadFormatting.ts'
 
 test('formats download sizes and durations', () => {
   assert.equal(formatBytes(512), '512 B')

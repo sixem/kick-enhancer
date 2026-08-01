@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { createChatAppearanceStyles } from '../../../src/features/chatAppearanceStyles.ts'
+import { createChatAppearanceStyles } from '../../../src/features/chatAppearance/styles.ts'
 
 test('inherits Kick when no chat appearance overrides are set', () => {
   assert.equal(

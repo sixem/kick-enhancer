@@ -7,7 +7,7 @@ import {
   cleanupViewerCountDom,
   renderViewerCounts,
 } from '../../../src/features/viewerCounts/render/index.ts'
-import { ViewerCountStore } from '../../../src/features/viewerCounts/store.ts'
+import { ViewerCountStore } from '../../../src/features/viewerCounts/model/store.ts'
 
 const DEFAULT_OPTIONS = {
   hideFollowingRecommendations: false,

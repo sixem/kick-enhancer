@@ -2,10 +2,10 @@ import { createLogger } from '../../logging/logger.ts'
 import {
   normalizeViewerCountPayload,
   type NormalizedViewerCountPayload,
-} from './normalize.ts'
-import { requestViewerJson } from './network.ts'
-import { normalizeChannelSlug } from './slug.ts'
-import type { ViewerCountEndpoint } from './types.ts'
+} from './model/normalize.ts'
+import { requestViewerJson } from './acquisition/network.ts'
+import { normalizeChannelSlug } from './model/slug.ts'
+import type { ViewerCountEndpoint } from './model/types.ts'
 
 export const VIEWER_COUNT_ENDPOINTS: readonly ViewerCountEndpoint[] = [
   'CHANNEL_DETAILS',

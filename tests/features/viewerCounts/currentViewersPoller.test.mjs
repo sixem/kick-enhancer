@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { CurrentViewersPoller } from '../../../src/features/viewerCounts/currentViewersPoller.ts'
-import { ViewerCountStore } from '../../../src/features/viewerCounts/store.ts'
+import { CurrentViewersPoller } from '../../../src/features/viewerCounts/acquisition/currentViewersPoller.ts'
+import { ViewerCountStore } from '../../../src/features/viewerCounts/model/store.ts'
 import { waitFor } from '../../support/waitFor.mjs'
 import {
   createManualTiming,

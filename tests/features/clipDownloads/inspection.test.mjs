@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { inspectClip } from '../../../src/features/clipDownloads/inspection.ts'
+import { inspectClip } from '../../../src/features/clipDownloads/media/inspection.ts'
 import {
   concatBytes,
   createBox,

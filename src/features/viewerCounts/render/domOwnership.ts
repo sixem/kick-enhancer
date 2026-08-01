@@ -1,7 +1,7 @@
 import {
   type CountElementState,
   updateCountElementState,
-} from '../countElement.ts'
+} from './countElement.ts'
 import {
   CARD_THUMBNAIL_SELECTOR,
   RENDER_ELEMENT_SELECTOR,
