@@ -10,6 +10,7 @@ import { findChatStatisticsAnchors, type ChatStatisticsAnchors } from './dom'
 export { initializeChatStatisticsCapture } from './runtime.ts'
 
 const NATIVE_TITLE_ATTRIBUTE = 'data-ke-native-chat-title'
+const CHATROOM_SELECTOR = '#channel-chatroom'
 const PANEL_HOST_ID = 'kick-enhancer-chat-statistics-panel'
 const STYLE_ID = 'kick-enhancer-chat-statistics-styles'
 const TITLE_HOST_ID = 'kick-enhancer-chat-statistics-title'
@@ -60,7 +61,6 @@ function startStatisticsUi(): Dispose {
   let panelHost: HTMLElement | null = null
   let panelOpen = false
   let rttTimer: ReturnType<typeof setInterval> | undefined
-  let rttChatroomId: string | null = null
   let snapshot = runtime.getSnapshot()
   let titleHost: HTMLElement | null = null
   let reconcileScheduled = false
@@ -124,6 +124,14 @@ function startStatisticsUi(): Dispose {
     anchors?.title.removeAttribute(NATIVE_TITLE_ATTRIBUTE)
   }
 
+  const titleIsAttached = () =>
+    Boolean(
+      anchors?.title.isConnected &&
+      anchors.title.hasAttribute(NATIVE_TITLE_ATTRIBUTE) &&
+      titleHost?.isConnected &&
+      titleHost.previousElementSibling === anchors.title,
+    )
+
   const reconcile = () => {
     reconcileScheduled = false
 
@@ -133,7 +141,10 @@ function startStatisticsUi(): Dispose {
 
     const nextAnchors = findChatStatisticsAnchors()
 
-    if (nextAnchors?.title !== anchors?.title) {
+    if (
+      nextAnchors?.title !== anchors?.title ||
+      (nextAnchors && !titleIsAttached())
+    ) {
       removeTitle()
       anchors = nextAnchors
 
@@ -167,15 +178,10 @@ function startStatisticsUi(): Dispose {
     }
 
     if (!panelOpen || snapshot.status !== 'active') {
-      rttChatroomId = null
       return
     }
 
-    if (rttChatroomId !== snapshot.chatroomId) {
-      rttChatroomId = snapshot.chatroomId
-      runtime.requestSocketRttSample()
-    }
-
+    runtime.requestSocketRttSample()
     rttTimer = setInterval(() => {
       runtime.requestSocketRttSample()
     }, 60_000)
@@ -206,7 +212,6 @@ function startStatisticsUi(): Dispose {
     snapshot = nextSnapshot
 
     if (panelOpen && previousChatroomId !== nextChatroomId) {
-      rttChatroomId = null
       updateRttSampling()
     }
 
@@ -218,9 +223,9 @@ function startStatisticsUi(): Dispose {
 
   const observer = new MutationObserver((mutations) => {
     if (
-      anchors?.title.isConnected &&
-      titleHost?.isConnected &&
-      (!panelOpen || panelHost?.isConnected)
+      titleIsAttached() &&
+      (!panelOpen || panelHost?.isConnected) &&
+      !mutations.some(mutationMayChangeChatroom)
     ) {
       return
     }
@@ -240,6 +245,14 @@ function startStatisticsUi(): Dispose {
   })
 
   observer.observe(document.documentElement, {
+    attributeFilter: [
+      'aria-hidden',
+      'class',
+      'hidden',
+      NATIVE_TITLE_ATTRIBUTE,
+      'style',
+    ],
+    attributes: true,
     childList: true,
     subtree: true,
   })
@@ -271,4 +284,32 @@ function installStyles() {
   style.id = STYLE_ID
   style.textContent = styles
   document.documentElement.append(style)
+}
+
+function mutationMayChangeChatroom(mutation: MutationRecord) {
+  if (mutation.type === 'attributes') {
+    return containsChatroom(mutation.target)
+  }
+
+  for (const node of mutation.addedNodes) {
+    if (containsChatroom(node)) {
+      return true
+    }
+  }
+
+  for (const node of mutation.removedNodes) {
+    if (containsChatroom(node)) {
+      return true
+    }
+  }
+
+  return false
+}
+
+function containsChatroom(node: Node) {
+  return (
+    node instanceof Element &&
+    (node.matches(CHATROOM_SELECTOR) ||
+      Boolean(node.querySelector(CHATROOM_SELECTOR)))
+  )
 }

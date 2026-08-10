@@ -6,7 +6,7 @@ import { KickChatAdapter } from './kickChatAdapter.ts'
 import { decodePusherEvent } from './pusherAdapter.ts'
 import { SocketRttTracker } from './rttTracker.ts'
 import { ChatStatsStore } from './statsStore.ts'
-import { type ChatStatisticsSnapshot } from './types.ts'
+import { type ChatStatisticsSnapshot, type WebSocketTapEvent } from './types.ts'
 import { WebSocketTap } from './webSocketTap.ts'
 
 const PING_TIMEOUT_MS = 15_000
@@ -26,20 +26,18 @@ export class ChatStatisticsRuntime {
   readonly #listeners = new Set<SnapshotListener>()
   readonly #rttTracker = new SocketRttTracker()
   readonly #statsStore = new ChatStatsStore()
-  readonly #tap: WebSocketTap
+  readonly #webSocketTap: WebSocketTap
   #captureFailed = false
   #collectionEnabled = false
-  #connectionFailed = false
   #initialized = false
   #snapshotTimer: ReturnType<typeof setInterval> | undefined
-  #stopTapEvents: Dispose | undefined
 
   constructor(
-    tap: WebSocketTap = new WebSocketTap(unsafeWindow),
+    webSocketTap: WebSocketTap = new WebSocketTap(unsafeWindow),
     clock: () => number = Date.now,
   ) {
-    this.#tap = tap
     this.#clock = clock
+    this.#webSocketTap = webSocketTap
   }
 
   initialize() {
@@ -47,20 +45,12 @@ export class ChatStatisticsRuntime {
       return true
     }
 
-    this.#stopTapEvents = this.#tap.subscribe((event) => {
-      if (
-        event.type === 'error' &&
-        event.socketId === this.#statsStore.getSelectedSocketId()
-      ) {
-        this.#connectionFailed = true
-      }
+    const observeEvent = (event: WebSocketTapEvent) => {
+      const previousSocketId = this.#chatAdapter.getPreferredSocketId()
 
       const pusherEvent = decodePusherEvent(event)
 
       if (!pusherEvent) {
-        if (event.type === 'error') {
-          this.#publish()
-        }
         return
       }
 
@@ -77,13 +67,11 @@ export class ChatStatisticsRuntime {
         pusherEvent,
         this.#collectionEnabled,
       )
-      let lifecycleChanged = false
+      const selectedSocketId = this.#chatAdapter.getPreferredSocketId()
+      let lifecycleChanged = previousSocketId !== selectedSocketId
 
       for (const chatEvent of chatEvents) {
         this.#statsStore.accept(chatEvent)
-        if (chatEvent.type === 'sessionStarted') {
-          this.#connectionFailed = false
-        }
         lifecycleChanged ||= chatEvent.type !== 'message'
       }
 
@@ -94,16 +82,16 @@ export class ChatStatisticsRuntime {
       if (lifecycleChanged) {
         this.#publish()
       }
-    })
+    }
+    const stopTapEvents = this.#webSocketTap.subscribe(observeEvent)
 
-    this.#initialized = this.#tap.install()
+    this.#initialized = this.#webSocketTap.install()
     this.#captureFailed = !this.#initialized
 
     if (this.#initialized) {
       log.info('Socket observation installed')
     } else {
-      this.#stopTapEvents()
-      this.#stopTapEvents = undefined
+      stopTapEvents()
       log.warn('Socket observation unavailable')
     }
 
@@ -111,7 +99,18 @@ export class ChatStatisticsRuntime {
   }
 
   getSnapshot(): ChatStatisticsSnapshot {
-    const snapshot = this.#statsStore.getSnapshot(this.#clock())
+    const selectedSocketId = this.#chatAdapter.getPreferredSocketId()
+    const snapshot = this.#statsStore.getSnapshot(
+      this.#clock(),
+      selectedSocketId,
+    )
+
+    if (snapshot.status === 'active' && selectedSocketId === null) {
+      return {
+        reason: 'connection-failed',
+        status: 'unavailable',
+      }
+    }
 
     if (snapshot.status !== 'pending') {
       return snapshot
@@ -120,13 +119,6 @@ export class ChatStatisticsRuntime {
     if (this.#captureFailed) {
       return {
         reason: 'capture-failed',
-        status: 'unavailable',
-      }
-    }
-
-    if (this.#connectionFailed) {
-      return {
-        reason: 'connection-failed',
         status: 'unavailable',
       }
     }
@@ -150,7 +142,7 @@ export class ChatStatisticsRuntime {
       return false
     }
 
-    const socketId = this.#statsStore.getSelectedSocketId()
+    const socketId = this.#chatAdapter.getPreferredSocketId()
 
     if (socketId === null) {
       return false
@@ -162,7 +154,7 @@ export class ChatStatisticsRuntime {
       return false
     }
 
-    return this.#tap.send(socketId, PUSHER_PING_FRAME)
+    return this.#webSocketTap.send(socketId, PUSHER_PING_FRAME)
   }
 
   subscribe(listener: SnapshotListener): Dispose {

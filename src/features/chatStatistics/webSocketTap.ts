@@ -24,7 +24,6 @@ export class WebSocketTap {
   readonly #sockets = new Map<number, CapturedSocket>()
   #installed = false
   #nextSocketId = 1
-  #restoreConstructor: Dispose | undefined
 
   constructor(host: WebSocketHost, clock: () => number = Date.now) {
     this.#host = host
@@ -67,22 +66,6 @@ export class WebSocketTap {
         writable: true,
       })
 
-      this.#restoreConstructor = () => {
-        if (this.#host.WebSocket !== proxy) {
-          return
-        }
-
-        if (descriptor) {
-          Object.defineProperty(this.#host, 'WebSocket', descriptor)
-        } else {
-          Object.defineProperty(this.#host, 'WebSocket', {
-            configurable: true,
-            enumerable: true,
-            value: NativeWebSocket,
-            writable: true,
-          })
-        }
-      }
       this.#installed = true
       return true
     } catch {
@@ -111,18 +94,6 @@ export class WebSocketTap {
     return () => {
       this.#listeners.delete(listener)
     }
-  }
-
-  dispose() {
-    this.#restoreConstructor?.()
-    this.#restoreConstructor = undefined
-
-    for (const socketId of [...this.#sockets.keys()]) {
-      this.#releaseSocket(socketId)
-    }
-
-    this.#listeners.clear()
-    this.#installed = false
   }
 
   #captureSocket(socket: WebSocket) {

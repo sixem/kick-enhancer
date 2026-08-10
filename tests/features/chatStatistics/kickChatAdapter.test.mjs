@@ -5,7 +5,7 @@ import { KickChatAdapter } from '../../../src/features/chatStatistics/kickChatAd
 
 const CHANNEL = 'chatrooms.29191.v2'
 
-test('requires subscribe confirmation and emits sanitized messages', () => {
+test('emits sanitized messages after subscription confirmation', () => {
   const adapter = new KickChatAdapter()
   const message = pusherMessage({
     chatroom_id: 29191,
@@ -20,14 +20,11 @@ test('requires subscribe confirmation and emits sanitized messages', () => {
     type: 'message',
   })
 
-  assert.deepEqual(adapter.accept(message), [])
   assert.deepEqual(adapter.accept(subscribing()), [])
   assert.deepEqual(adapter.accept(subscribed()), [
     {
-      channelName: CHANNEL,
       chatroomId: '29191',
       observedAt: 200,
-      socketId: 7,
       type: 'sessionStarted',
     },
   ])
@@ -36,13 +33,11 @@ test('requires subscribe confirmation and emits sanitized messages', () => {
 
   assert.deepEqual(events, [
     {
-      channelName: CHANNEL,
       chatroomId: '29191',
       messageId: 'message-1',
       messageType: 'message',
       observedAt: 300,
       senderId: '42',
-      socketId: 7,
       type: 'message',
     },
   ])
@@ -107,7 +102,7 @@ test('rejects changed message contracts and late events', () => {
   )
 })
 
-test('closing a socket ends all of its confirmed sessions', () => {
+test('keeps the logical session when its socket closes', () => {
   const adapter = new KickChatAdapter()
   adapter.accept(subscribing())
   adapter.accept(subscribed())
@@ -118,24 +113,152 @@ test('closing a socket ends all of its confirmed sessions', () => {
     type: 'socketClosed',
   })
 
-  assert.equal(events.length, 1)
-  assert.equal(events[0]?.type, 'sessionEnded')
+  assert.deepEqual(events, [])
+  assert.equal(adapter.getPreferredSocketId(), null)
 })
 
-function subscribing() {
-  return {
-    channelName: CHANNEL,
-    observedAt: 100,
+test('merges same-room socket replicas and fails RTT selection over', () => {
+  const adapter = new KickChatAdapter()
+
+  adapter.accept(subscribing(7))
+  assert.equal(adapter.accept(subscribed(7))[0]?.type, 'sessionStarted')
+  adapter.accept(subscribing(8))
+  assert.deepEqual(adapter.accept(subscribed(8)), [])
+  assert.equal(adapter.getPreferredSocketId(), 7)
+
+  adapter.accept({
+    observedAt: 300,
     socketId: 7,
+    type: 'socketClosed',
+  })
+
+  assert.equal(adapter.getPreferredSocketId(), 8)
+  assert.equal(
+    adapter.accept(
+      pusherMessage(
+        {
+          chatroom_id: 29191,
+          id: 'replica-message',
+          sender: { id: 42 },
+          type: 'message',
+        },
+        { socketId: 8 },
+      ),
+    )[0]?.type,
+    'message',
+  )
+})
+
+test('switches logical rooms before the previous room unsubscribes', () => {
+  const adapter = new KickChatAdapter()
+  const nextChannel = 'chatrooms.777.v2'
+
+  adapter.accept(subscribing())
+  adapter.accept(subscribed())
+
+  assert.deepEqual(adapter.accept(subscribing(8, nextChannel, 400)), [
+    {
+      chatroomId: '29191',
+      observedAt: 400,
+      type: 'sessionEnded',
+    },
+  ])
+  assert.deepEqual(adapter.accept(subscribed(8, nextChannel, 500)), [
+    {
+      chatroomId: '777',
+      observedAt: 500,
+      type: 'sessionStarted',
+    },
+  ])
+
+  assert.deepEqual(
+    adapter.accept(
+      pusherMessage(
+        {
+          chatroom_id: 29191,
+          id: 'late-old-room',
+          sender: { id: 42 },
+          type: 'message',
+        },
+        { socketId: 7 },
+      ),
+    ),
+    [],
+  )
+  assert.deepEqual(adapter.accept(subscribed(7, CHANNEL, 600)), [])
+  assert.equal(adapter.getPreferredSocketId(), 8)
+})
+
+test('preserves statistics lifecycle across a same-room reconnect', () => {
+  const adapter = new KickChatAdapter()
+  adapter.accept(subscribing())
+  adapter.accept(subscribed())
+
+  assert.deepEqual(
+    adapter.accept({ observedAt: 300, socketId: 7, type: 'socketClosed' }),
+    [],
+  )
+  assert.deepEqual(adapter.accept(subscribing(8, CHANNEL, 400)), [])
+  assert.deepEqual(adapter.accept(subscribed(8, CHANNEL, 500)), [])
+  assert.equal(adapter.getPreferredSocketId(), 8)
+})
+
+test('bootstraps from confirmation or a message when earlier frames were missed', () => {
+  const confirmedAdapter = new KickChatAdapter()
+
+  assert.equal(confirmedAdapter.accept(subscribed())[0]?.type, 'sessionStarted')
+
+  const messageAdapter = new KickChatAdapter()
+  const events = messageAdapter.accept(
+    pusherMessage({
+      chatroom_id: 29191,
+      id: 'first-observed-frame',
+      sender: { id: 42 },
+      type: 'message',
+    }),
+  )
+
+  assert.deepEqual(
+    events.map((event) => event.type),
+    ['sessionStarted', 'message'],
+  )
+  assert.equal(messageAdapter.getPreferredSocketId(), 7)
+})
+
+test('accepts a valid message before subscription confirmation', () => {
+  const adapter = new KickChatAdapter()
+  adapter.accept(subscribing())
+
+  const events = adapter.accept(
+    pusherMessage({
+      chatroom_id: 29191,
+      id: 'early-message',
+      sender: { id: 42 },
+      type: 'message',
+    }),
+  )
+
+  assert.deepEqual(
+    events.map((event) => event.type),
+    ['sessionStarted', 'message'],
+  )
+  assert.deepEqual(adapter.accept(subscribed()), [])
+})
+
+function subscribing(socketId = 7, channelName = CHANNEL, observedAt = 100) {
+  return {
+    channelName,
+    observedAt,
+    socketId,
     type: 'subscribing',
   }
 }
 
-function subscribed() {
+function subscribed(socketId = 7, channelName = CHANNEL, observedAt = 200) {
   return {
-    channelName: CHANNEL,
-    observedAt: 200,
-    socketId: 7,
+    channelName,
+    observedAt,
+    socketId,
     type: 'subscribed',
   }
 }
@@ -149,13 +272,13 @@ function unsubscribing() {
   }
 }
 
-function pusherMessage(data) {
+function pusherMessage(data, options = {}) {
   return {
-    channelName: CHANNEL,
+    channelName: options.channelName ?? CHANNEL,
     data: JSON.stringify(data),
     eventName: 'App\\Events\\ChatMessageEvent',
-    observedAt: 300,
-    socketId: 7,
+    observedAt: options.observedAt ?? 300,
+    socketId: options.socketId ?? 7,
     type: 'event',
   }
 }

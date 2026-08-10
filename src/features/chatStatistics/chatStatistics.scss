@@ -111,7 +111,6 @@
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   line-height: 1.25;
-  animation: ke-chat-statistics-enter 140ms ease-out;
 
   &__header,
   &__primary {
@@ -241,18 +240,6 @@
   }
 }
 
-@keyframes ke-chat-statistics-enter {
-  from {
-    opacity: 0;
-    transform: translateY(-0.35rem);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @keyframes ke-chat-statistics-spin {
   to {
     transform: rotate(1turn);
@@ -260,7 +247,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ke-chat-statistics-card,
   .ke-chat-statistics-trigger__trend-loader {
     animation: none;
   }

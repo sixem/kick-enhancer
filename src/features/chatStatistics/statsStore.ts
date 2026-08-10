@@ -19,19 +19,20 @@ type SessionState = {
   peakMessagesPerMinute: number
   records: MessageRecord[]
   seenMessageIds: Map<string, number>
-  socketId: number
   totalMessages: number
 }
 
 export class ChatStatsStore {
   readonly #rttSamples = new Map<number, number[]>()
-  readonly #sessions = new Map<string, SessionState>()
+  #session: SessionState | undefined
 
   accept(event: KickChatEvent) {
-    const key = createSessionKey(event.socketId, event.channelName)
-
     if (event.type === 'sessionStarted') {
-      this.#sessions.set(key, {
+      if (this.#session?.chatroomId === event.chatroomId) {
+        return
+      }
+
+      this.#session = {
         activeSenderCounts: new Map(),
         chatroomId: event.chatroomId,
         confirmedAt: event.observedAt,
@@ -40,14 +41,16 @@ export class ChatStatsStore {
         peakMessagesPerMinute: 0,
         records: [],
         seenMessageIds: new Map(),
-        socketId: event.socketId,
         totalMessages: 0,
-      })
+      }
       return
     }
 
     if (event.type === 'sessionEnded') {
-      this.#sessions.delete(key)
+      if (this.#session?.chatroomId === event.chatroomId) {
+        this.#session = undefined
+      }
+
       return
     }
 
@@ -55,10 +58,11 @@ export class ChatStatsStore {
       return
     }
 
-    const session = this.#sessions.get(key)
+    const session = this.#session
 
     if (
       !session ||
+      session.chatroomId !== event.chatroomId ||
       (event.messageType !== 'message' && event.messageType !== 'reply')
     ) {
       return
@@ -108,32 +112,16 @@ export class ChatStatsStore {
   resetStatistics(now: number) {
     this.#rttSamples.clear()
 
-    for (const session of this.#sessions.values()) {
-      resetSessionStatistics(session, now)
+    if (this.#session) {
+      resetSessionStatistics(this.#session, now)
     }
   }
 
-  getSelectedSocketId(): number | null {
-    return this.#sessions.size === 1
-      ? ([...this.#sessions.values()][0]?.socketId ?? null)
-      : null
-  }
-
-  getSnapshot(now: number): ChatStatisticsSnapshot {
-    if (this.#sessions.size === 0) {
-      return {
-        status: 'pending',
-      }
-    }
-
-    if (this.#sessions.size > 1) {
-      return {
-        reason: 'multiple-sessions',
-        status: 'unavailable',
-      }
-    }
-
-    const session = [...this.#sessions.values()][0]
+  getSnapshot(
+    now: number,
+    preferredSocketId: number | null = null,
+  ): ChatStatisticsSnapshot {
+    const session = this.#session
 
     if (!session) {
       return {
@@ -155,7 +143,11 @@ export class ChatStatsStore {
       chatroomId: session.chatroomId,
       messagesPerMinute: currentCount,
       peakMessagesPerMinute: session.peakMessagesPerMinute,
-      socketRttMs: median(this.#rttSamples.get(session.socketId) ?? []),
+      socketRttMs: median(
+        preferredSocketId === null
+          ? []
+          : (this.#rttSamples.get(preferredSocketId) ?? []),
+      ),
       status: 'active',
       totalMessages: session.totalMessages,
       trendReadyAt: session.confirmedAt + CURRENT_WINDOW_MS,
@@ -345,8 +337,4 @@ function resetSessionStatistics(session: SessionState, now: number) {
   session.records = []
   session.seenMessageIds.clear()
   session.totalMessages = 0
-}
-
-function createSessionKey(socketId: number, channelName: string) {
-  return `${socketId}:${channelName}`
 }

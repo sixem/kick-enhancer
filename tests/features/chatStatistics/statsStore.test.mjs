@@ -3,8 +3,6 @@ import test from 'node:test'
 
 import { ChatStatsStore } from '../../../src/features/chatStatistics/statsStore.ts'
 
-const CHANNEL = 'chatrooms.29191.v2'
-
 test('calculates rolling statistics during the visual warm-up', () => {
   const store = new ChatStatsStore()
   store.accept(sessionEvent('sessionStarted', 0))
@@ -114,7 +112,7 @@ test('handles zero previous windows without infinite percentages', () => {
   assert.equal(snapshot.trendPercent, null)
 })
 
-test('selects exactly one confirmed session', () => {
+test('replaces the logical session and ignores a late prior-room end', () => {
   const store = new ChatStatsStore()
 
   assert.deepEqual(store.getSnapshot(0), {
@@ -122,18 +120,16 @@ test('selects exactly one confirmed session', () => {
   })
 
   store.accept(sessionEvent('sessionStarted', 0))
-  store.accept(sessionEvent('sessionStarted', 0, 8, 'chatrooms.777.v2', '777'))
+  store.accept(message('room-one', 'sender', 'message', 100))
+  store.accept(sessionEvent('sessionStarted', 0, '777'))
 
-  assert.deepEqual(store.getSnapshot(1_000), {
-    reason: 'multiple-sessions',
-    status: 'unavailable',
-  })
+  store.accept(sessionEvent('sessionEnded', 2_000))
 
-  store.accept(
-    sessionEvent('sessionEnded', 2_000, 8, 'chatrooms.777.v2', '777'),
-  )
+  const snapshot = store.getSnapshot(2_000)
 
-  assert.equal(store.getSnapshot(2_000).status, 'active')
+  assert.equal(snapshot.status, 'active')
+  assert.equal(snapshot.chatroomId, '777')
+  assert.equal(snapshot.totalMessages, 0)
 })
 
 test('reports the median of bounded socket RTT samples', () => {
@@ -143,7 +139,7 @@ test('reports the median of bounded socket RTT samples', () => {
   store.addRttSample(7, 108)
   store.addRttSample(7, 107.5)
 
-  const snapshot = store.getSnapshot(1_000)
+  const snapshot = store.getSnapshot(1_000, 7)
 
   assert.equal(snapshot.status, 'active')
   assert.equal(snapshot.socketRttMs, 108)
@@ -234,31 +230,21 @@ test('keeps rolling statistics exact during high-volume chat', () => {
   assert.equal(reusedId.activeChatters, 1)
 })
 
-function sessionEvent(
-  type,
-  observedAt,
-  socketId = 7,
-  channelName = CHANNEL,
-  chatroomId = '29191',
-) {
+function sessionEvent(type, observedAt, chatroomId = '29191') {
   return {
-    channelName,
     chatroomId,
     observedAt,
-    socketId,
     type,
   }
 }
 
 function message(messageId, senderId, messageType, observedAt) {
   return {
-    channelName: CHANNEL,
     chatroomId: '29191',
     messageId,
     messageType,
     observedAt,
     senderId,
-    socketId: 7,
     type: 'message',
   }
 }

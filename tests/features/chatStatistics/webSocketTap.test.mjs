@@ -51,9 +51,6 @@ test('observes sockets without changing constructor or send semantics', () => {
     ],
   )
   assert.equal(tap.send(1, 'after-close'), false)
-
-  tap.dispose()
-  assert.equal(host.WebSocket, NativeWebSocket)
 })
 
 class FakeWebSocket extends EventTarget {

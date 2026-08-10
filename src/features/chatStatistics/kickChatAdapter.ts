@@ -3,19 +3,32 @@ import { type KickChatEvent, type PusherEvent } from './types.ts'
 const CHAT_CHANNEL_PATTERN = /^chatrooms\.(\d+)\.v2$/
 const CHAT_MESSAGE_EVENT = 'App\\Events\\ChatMessageEvent'
 
-type Session = Readonly<{
+type Session = {
   channelName: string
   chatroomId: string
-  confirmed: boolean
+  preferredSocketId: number | null
+  sockets: Map<number, boolean>
+  started: boolean
+}
+
+type ChannelLifecycleEvent = Readonly<{
+  channelName: string
+  observedAt: number
   socketId: number
 }>
 
 export class KickChatAdapter {
-  readonly #sessions = new Map<string, Session>()
+  #endedChannelName: string | undefined
+  #session: Session | undefined
+
+  getPreferredSocketId() {
+    return this.#session?.preferredSocketId ?? null
+  }
 
   accept(event: PusherEvent, collectMessages = true): readonly KickChatEvent[] {
     if (event.type === 'socketClosed') {
-      return this.#endSocketSessions(event.socketId, event.observedAt)
+      this.#removeSocket(event.socketId)
+      return []
     }
 
     if (
@@ -39,57 +52,37 @@ export class KickChatAdapter {
       return []
     }
 
-    const key = createSessionKey(event.socketId, event.channelName)
-
     if (event.type === 'subscribing') {
-      const existing = this.#sessions.get(key)
-      this.#sessions.set(key, {
-        channelName: event.channelName,
-        chatroomId,
-        confirmed: false,
-        socketId: event.socketId,
-      })
-
-      return existing?.confirmed
-        ? [createSessionEvent('sessionEnded', existing, event.observedAt)]
-        : []
+      return this.#startSubscription(event, chatroomId)
     }
 
     if (event.type === 'unsubscribing') {
-      const existing = this.#sessions.get(key)
-      this.#sessions.delete(key)
-
-      return existing?.confirmed
-        ? [createSessionEvent('sessionEnded', existing, event.observedAt)]
-        : []
-    }
-
-    const session = this.#sessions.get(key)
-
-    if (!session) {
-      return []
+      return this.#endSubscription(event)
     }
 
     if (event.type === 'subscribed') {
-      if (session.confirmed) {
+      return this.#confirmSubscription(event, chatroomId)
+    }
+
+    if (event.type !== 'event' || event.eventName !== CHAT_MESSAGE_EVENT) {
+      return []
+    }
+
+    const session = this.#session
+
+    if (session && session.channelName !== event.channelName) {
+      return []
+    }
+
+    if (!collectMessages) {
+      if (!session) {
         return []
       }
 
-      const confirmed = {
-        ...session,
-        confirmed: true,
-      }
-      this.#sessions.set(key, confirmed)
-
-      return [createSessionEvent('sessionStarted', confirmed, event.observedAt)]
-    }
-
-    if (
-      !session.confirmed ||
-      !collectMessages ||
-      event.eventName !== CHAT_MESSAGE_EVENT
-    ) {
-      return []
+      const started = this.#markSocketLive(session, event.socketId)
+      return started
+        ? [createSessionEvent('sessionStarted', session, event)]
+        : []
     }
 
     const message = decodeMessage(decodeEventData(event.data), chatroomId)
@@ -98,36 +91,146 @@ export class KickChatAdapter {
       return []
     }
 
-    return [
-      {
-        channelName: session.channelName,
-        chatroomId: session.chatroomId,
-        messageId: message.messageId,
-        messageType: message.messageType,
-        observedAt: event.observedAt,
-        senderId: message.senderId,
-        socketId: session.socketId,
-        type: 'message',
-      },
-    ]
-  }
-
-  #endSocketSessions(socketId: number, observedAt: number) {
-    const ended: KickChatEvent[] = []
-
-    for (const [key, session] of this.#sessions) {
-      if (session.socketId !== socketId) {
-        continue
-      }
-
-      this.#sessions.delete(key)
-
-      if (session.confirmed) {
-        ended.push(createSessionEvent('sessionEnded', session, observedAt))
+    if (!session) {
+      if (this.#endedChannelName === event.channelName) {
+        return []
       }
     }
 
-    return ended
+    const activeSession =
+      session ?? createSession(event.channelName, chatroomId)
+
+    this.#session ??= activeSession
+
+    const started = this.#markSocketLive(activeSession, event.socketId)
+    const events: KickChatEvent[] = started
+      ? [createSessionEvent('sessionStarted', activeSession, event)]
+      : []
+
+    events.push({
+      chatroomId: activeSession.chatroomId,
+      messageId: message.messageId,
+      messageType: message.messageType,
+      observedAt: event.observedAt,
+      senderId: message.senderId,
+      type: 'message',
+    })
+
+    return events
+  }
+
+  #startSubscription(event: ChannelLifecycleEvent, chatroomId: string) {
+    const session = this.#session
+
+    this.#endedChannelName = undefined
+
+    if (session?.channelName === event.channelName) {
+      if (!session.sockets.has(event.socketId)) {
+        session.sockets.set(event.socketId, false)
+      }
+
+      return []
+    }
+
+    this.#session = createSession(event.channelName, chatroomId, event.socketId)
+
+    return session?.started
+      ? [createSessionEvent('sessionEnded', session, event)]
+      : []
+  }
+
+  #confirmSubscription(event: ChannelLifecycleEvent, chatroomId: string) {
+    let session = this.#session
+
+    if (!session) {
+      if (this.#endedChannelName === event.channelName) {
+        return []
+      }
+
+      session = createSession(event.channelName, chatroomId)
+      this.#session = session
+    } else if (session.channelName !== event.channelName) {
+      return []
+    }
+
+    return this.#markSocketLive(session, event.socketId)
+      ? [createSessionEvent('sessionStarted', session, event)]
+      : []
+  }
+
+  #endSubscription(event: ChannelLifecycleEvent) {
+    const session = this.#session
+
+    if (
+      !session ||
+      session.channelName !== event.channelName ||
+      !session.sockets.has(event.socketId)
+    ) {
+      return []
+    }
+
+    this.#removeSocket(event.socketId)
+
+    if (session.sockets.size > 0) {
+      return []
+    }
+
+    this.#session = undefined
+    this.#endedChannelName = session.channelName
+
+    return session.started
+      ? [createSessionEvent('sessionEnded', session, event)]
+      : []
+  }
+
+  #markSocketLive(session: Session, socketId: number) {
+    session.sockets.set(socketId, true)
+    session.preferredSocketId ??= socketId
+
+    if (session.started) {
+      return false
+    }
+
+    session.started = true
+    return true
+  }
+
+  #removeSocket(socketId: number) {
+    const session = this.#session
+
+    if (!session?.sockets.delete(socketId)) {
+      return
+    }
+
+    if (session.preferredSocketId !== socketId) {
+      return
+    }
+
+    session.preferredSocketId = null
+
+    for (const [candidateId, confirmed] of session.sockets) {
+      if (confirmed) {
+        session.preferredSocketId = candidateId
+        break
+      }
+    }
+  }
+}
+
+function createSession(
+  channelName: string,
+  chatroomId: string,
+  socketId?: number,
+): Session {
+  return {
+    channelName,
+    chatroomId,
+    preferredSocketId: null,
+    sockets:
+      socketId === undefined
+        ? new Map<number, boolean>()
+        : new Map([[socketId, false]]),
+    started: false,
   }
 }
 
@@ -168,19 +271,13 @@ function decodeMessage(data: unknown, chatroomId: string) {
 function createSessionEvent(
   type: 'sessionStarted' | 'sessionEnded',
   session: Session,
-  observedAt: number,
+  source: Readonly<{ observedAt: number }>,
 ): KickChatEvent {
   return {
-    channelName: session.channelName,
     chatroomId: session.chatroomId,
-    observedAt,
-    socketId: session.socketId,
+    observedAt: source.observedAt,
     type,
   }
-}
-
-function createSessionKey(socketId: number, channelName: string) {
-  return `${socketId}:${channelName}`
 }
 
 function isId(value: unknown): value is string | number {

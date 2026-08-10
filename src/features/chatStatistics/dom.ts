@@ -14,19 +14,34 @@ const TITLE_POSITION_CLASSES = [
 export function findChatStatisticsAnchors(
   ownerDocument: Document = document,
 ): ChatStatisticsAnchors | null {
-  const chatroom = ownerDocument.querySelector<HTMLElement>(CHATROOM_SELECTOR)
+  let fallback: ChatStatisticsAnchors | null = null
+  let visible: ChatStatisticsAnchors | null = null
 
-  if (!chatroom) {
-    return null
-  }
+  for (const chatroom of ownerDocument.querySelectorAll<HTMLElement>(
+    CHATROOM_SELECTOR,
+  )) {
+    const anchors = findChatroomAnchors(chatroom)
 
-  let title: HTMLElement | undefined
-
-  for (const candidate of chatroom.querySelectorAll<HTMLElement>('span')) {
-    if (candidate.parentElement?.parentElement?.parentElement !== chatroom) {
+    if (!anchors) {
       continue
     }
 
+    fallback = anchors
+
+    if (isVisible(chatroom)) {
+      visible = anchors
+    }
+  }
+
+  return visible ?? fallback
+}
+
+function findChatroomAnchors(
+  chatroom: HTMLElement,
+): ChatStatisticsAnchors | null {
+  let title: HTMLElement | undefined
+
+  for (const candidate of chatroom.querySelectorAll<HTMLElement>('span')) {
     let matchesPosition = true
 
     for (const className of TITLE_POSITION_CLASSES) {
@@ -36,7 +51,12 @@ export function findChatStatisticsAnchors(
       }
     }
 
-    if (matchesPosition) {
+    const header = candidate.parentElement
+    const isNearChatroomRoot =
+      header?.parentElement === chatroom ||
+      header?.parentElement?.parentElement === chatroom
+
+    if (matchesPosition && isNearChatroomRoot) {
       title = candidate
       break
     }
@@ -59,4 +79,14 @@ export function findChatStatisticsAnchors(
     eventStack,
     title,
   }
+}
+
+function isVisible(element: HTMLElement) {
+  return (
+    typeof element.checkVisibility !== 'function' ||
+    element.checkVisibility({
+      checkOpacity: true,
+      checkVisibilityCSS: true,
+    })
+  )
 }

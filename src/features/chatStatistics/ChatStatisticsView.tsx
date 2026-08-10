@@ -117,11 +117,9 @@ export function ChatStatisticsCard({
 
       {snapshot.status === 'unavailable' ? (
         <p className="ke-chat-statistics-card__error">
-          {snapshot.reason === 'multiple-sessions'
-            ? 'Multiple compatible chat sessions were detected, so no room was selected.'
-            : snapshot.reason === 'capture-failed'
-              ? 'Chat socket observation could not be installed.'
-              : 'The KICK chat socket connection failed.'}
+          {snapshot.reason === 'capture-failed'
+            ? 'Chat socket observation could not be installed.'
+            : 'The KICK chat socket connection failed.'}
         </p>
       ) : (
         <>

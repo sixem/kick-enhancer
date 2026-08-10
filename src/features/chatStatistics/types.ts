@@ -19,18 +19,12 @@ type PusherEventBase = Readonly<{
   socketId: number
 }>
 
-type PusherChannelLifecycleType = 'subscribed' | 'subscribing' | 'unsubscribing'
-
-type PusherChannelLifecycleEvent = {
-  [Type in PusherChannelLifecycleType]: PusherEventBase &
-    Readonly<{
-      channelName: string
-      type: Type
-    }>
-}[PusherChannelLifecycleType]
-
 export type PusherEvent =
-  | PusherChannelLifecycleEvent
+  | (PusherEventBase &
+      Readonly<{
+        channelName: string
+        type: 'subscribed' | 'subscribing' | 'unsubscribing'
+      }>)
   | (PusherEventBase &
       Readonly<{
         channelName: string
@@ -48,32 +42,23 @@ export type PusherEvent =
         type: 'socketClosed'
       }>)
 
-type KickChatSessionEventBase = Readonly<{
-  channelName: string
-  chatroomId: string
-  observedAt: number
-  socketId: number
-}>
-
 export type KickChatEvent =
-  | (KickChatSessionEventBase &
-      Readonly<{
-        type: 'sessionStarted'
-      }>)
-  | (KickChatSessionEventBase &
-      Readonly<{
-        type: 'sessionEnded'
-      }>)
-  | (KickChatSessionEventBase &
-      Readonly<{
-        messageId: string
-        messageType: string
-        senderId: string
-        type: 'message'
-      }>)
+  | Readonly<{
+      chatroomId: string
+      observedAt: number
+      type: 'sessionEnded' | 'sessionStarted'
+    }>
+  | Readonly<{
+      chatroomId: string
+      messageId: string
+      messageType: string
+      observedAt: number
+      senderId: string
+      type: 'message'
+    }>
 
 export type ChatStatisticsUnavailableReason =
-  'capture-failed' | 'connection-failed' | 'multiple-sessions'
+  'capture-failed' | 'connection-failed'
 
 export type ChatStatisticsSnapshot =
   | Readonly<{
