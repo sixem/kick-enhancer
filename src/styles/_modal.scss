@@ -13,7 +13,12 @@
   background: transparent;
   color: tokens.$text;
   font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
     sans-serif;
   font-size: 16px;
   line-height: 1.5;
@@ -125,6 +130,14 @@
   justify-content: flex-end;
 }
 
+.ke-settings__divider {
+  width: 100%;
+  height: 1px;
+  margin: 0;
+  border: 0;
+  background: tokens.$border;
+}
+
 .ke-workspace-modal {
   --ke-workspace-modal-gutter: clamp(1rem, 4vw, 2rem);
   --ke-workspace-modal-height: 52rem;
@@ -134,9 +147,7 @@
     var(--ke-workspace-modal-width),
     calc(100vw - var(--ke-workspace-modal-gutter))
   );
-  max-height: calc(
-    100dvh - var(--ke-workspace-modal-gutter)
-  );
+  max-height: calc(100dvh - var(--ke-workspace-modal-gutter));
 }
 
 .ke-workspace-modal .ke-modal__surface {

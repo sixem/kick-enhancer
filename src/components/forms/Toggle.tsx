@@ -5,10 +5,11 @@ import { joinClassNames } from '../utils'
 
 type ToggleProps = Omit<
   JSX.InputHTMLAttributes<HTMLInputElement>,
-  'className' | 'onChange' | 'type'
+  'className' | 'id' | 'onChange' | 'type'
 > & {
   className?: string
   description?: string
+  id?: string
   label: string
   onCheckedChange?: (checked: boolean) => void
 }
@@ -41,9 +42,7 @@ export function Toggle({
           aria-describedby={descriptionId}
           className="ke-toggle__input"
           id={inputId}
-          onChange={(event) =>
-            onCheckedChange?.(event.currentTarget.checked)
-          }
+          onChange={(event) => onCheckedChange?.(event.currentTarget.checked)}
           role="switch"
           type="checkbox"
         />

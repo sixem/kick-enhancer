@@ -54,9 +54,7 @@ export function ConfirmationDialog({
   }
 
   const dismiss = onDismiss ?? onCancel
-  const handleKeyDown = (
-    event: JSX.TargetedKeyboardEvent<HTMLDivElement>,
-  ) => {
+  const handleKeyDown = (event: JSX.TargetedKeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Escape') {
       if (dismiss) {
         event.preventDefault()
@@ -83,10 +81,7 @@ export function ConfirmationDialog({
     if (event.shiftKey && document.activeElement === firstButton) {
       event.preventDefault()
       lastButton.focus()
-    } else if (
-      !event.shiftKey &&
-      document.activeElement === lastButton
-    ) {
+    } else if (!event.shiftKey && document.activeElement === lastButton) {
       event.preventDefault()
       firstButton.focus()
     }
@@ -107,19 +102,12 @@ export function ConfirmationDialog({
           <h3 className="ke-confirmation-dialog__title" id={titleId}>
             {title}
           </h3>
-          <p
-            className="ke-confirmation-dialog__description"
-            id={descriptionId}
-          >
+          <p className="ke-confirmation-dialog__description" id={descriptionId}>
             {description}
           </p>
         </div>
         <div className="ke-confirmation-dialog__actions">
-          {onCancel ? (
-            <Button onClick={onCancel}>
-              {cancelLabel}
-            </Button>
-          ) : null}
+          {onCancel ? <Button onClick={onCancel}>{cancelLabel}</Button> : null}
           <Button onClick={onConfirm} tone={confirmTone}>
             {confirmLabel}
           </Button>

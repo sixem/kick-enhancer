@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 
-import {
-  ListView,
-  type ListViewColumn,
-} from '../components/ListView'
+import { ListView, type ListViewColumn } from '../components/ListView'
 import {
   Button,
   SelectBox,
@@ -18,12 +15,9 @@ import {
   VIEWER_COUNT_ENDPOINTS,
   type EndpointCheckResult,
   type EndpointObservation,
-} from '../features/viewerCounts/diagnostics'
-import { getChannelSlugFromPath } from '../features/viewerCounts/slug'
-import {
-  formatLogEntry,
-  formatLogMessage,
-} from '../logging/format'
+  getChannelSlugFromPath,
+} from '../features/viewerCounts'
+import { formatLogEntry, formatLogMessage } from '../logging/format'
 import {
   clearLogHistory,
   getLogHistory,
@@ -63,8 +57,7 @@ const CHECK_COLUMNS: readonly ListViewColumn<EndpointCheckResult>[] = [
   {
     header: 'Endpoint',
     id: 'endpoint',
-    renderCell: (result) =>
-      VIEWER_COUNT_ENDPOINT_LABELS[result.endpoint],
+    renderCell: (result) => VIEWER_COUNT_ENDPOINT_LABELS[result.endpoint],
     width: '7.5rem',
   },
   {
@@ -72,10 +65,7 @@ const CHECK_COLUMNS: readonly ListViewColumn<EndpointCheckResult>[] = [
     header: 'Status',
     id: 'status',
     renderCell: (result) => (
-      <DiagnosticsPill
-        label={result.status}
-        tone={result.status}
-      />
+      <DiagnosticsPill label={result.status} tone={result.status} />
     ),
     width: '7.2rem',
   },
@@ -99,8 +89,7 @@ const PASSIVE_COLUMNS: readonly ListViewColumn<PassiveEndpointRow>[] = [
   {
     header: 'Endpoint',
     id: 'endpoint',
-    renderCell: (row) =>
-      VIEWER_COUNT_ENDPOINT_LABELS[row.endpoint],
+    renderCell: (row) => VIEWER_COUNT_ENDPOINT_LABELS[row.endpoint],
     width: '9rem',
   },
   {
@@ -120,9 +109,7 @@ const PASSIVE_COLUMNS: readonly ListViewColumn<PassiveEndpointRow>[] = [
     header: 'Last seen',
     id: 'last-seen',
     renderCell: (row) =>
-      row.observation
-        ? formatTime(row.observation.observedAt)
-        : '—',
+      row.observation ? formatTime(row.observation.observedAt) : '—',
     width: '6.2rem',
   },
   {
@@ -156,10 +143,7 @@ const LOG_COLUMNS: readonly ListViewColumn<LogEntry>[] = [
     header: 'Scope',
     id: 'scope',
     renderCell: (entry) => (
-      <DiagnosticsPill
-        label={entry.scope}
-        tone={getScopeTone(entry.scope)}
-      />
+      <DiagnosticsPill label={entry.scope} tone={getScopeTone(entry.scope)} />
     ),
     width: '10rem',
   },
@@ -172,25 +156,16 @@ const LOG_COLUMNS: readonly ListViewColumn<LogEntry>[] = [
   },
 ]
 
-export function DiagnosticsTab({
-  active,
-  onShowMessage,
-}: DiagnosticsTabProps) {
+export function DiagnosticsTab({ active, onShowMessage }: DiagnosticsTabProps) {
   const abortControllerRef = useRef<AbortController | null>(null)
   const [channelSlug, setChannelSlug] = useState(
     () => getChannelSlugFromPath(window.location.pathname) ?? '',
   )
-  const [checks, setChecks] = useState<
-    readonly EndpointCheckResult[]
-  >([])
+  const [checks, setChecks] = useState<readonly EndpointCheckResult[]>([])
   const [checksRunning, setChecksRunning] = useState(false)
   const [observations, setObservations] = useState<
     readonly EndpointObservation[]
-  >(() =>
-    active
-      ? getViewerEndpointObservations()
-      : EMPTY_OBSERVATIONS,
-  )
+  >(() => (active ? getViewerEndpointObservations() : EMPTY_OBSERVATIONS))
   const [logs, setLogs] = useState<readonly LogEntry[]>(() =>
     active ? getLogHistory() : EMPTY_LOGS,
   )
@@ -220,10 +195,7 @@ export function DiagnosticsTab({
 
   const passiveRows = useMemo<readonly PassiveEndpointRow[]>(() => {
     const byEndpoint = new Map(
-      observations.map((observation) => [
-        observation.endpoint,
-        observation,
-      ]),
+      observations.map((observation) => [observation.endpoint, observation]),
     )
 
     return VIEWER_COUNT_ENDPOINTS.map((endpoint) => ({
@@ -261,9 +233,7 @@ export function DiagnosticsTab({
     setChecksRunning(true)
 
     try {
-      setChecks(
-        await runViewerEndpointChecks(channelSlug, controller.signal),
-      )
+      setChecks(await runViewerEndpointChecks(channelSlug, controller.signal))
     } catch {
       if (!controller.signal.aborted) {
         setChecks([
@@ -296,10 +266,7 @@ export function DiagnosticsTab({
       return
     }
 
-    const text = filteredLogs
-      .map(formatLogEntry)
-      .reverse()
-      .join('\n')
+    const text = filteredLogs.map(formatLogEntry).reverse().join('\n')
 
     try {
       await navigator.clipboard.writeText(text)
@@ -369,9 +336,7 @@ export function DiagnosticsTab({
           className="ke-diagnostics__check-list"
           columns={CHECK_COLUMNS}
           emptyContent={
-            checksRunning
-              ? 'Contacting KICK…'
-              : 'Run checks to test endpoints.'
+            checksRunning ? 'Contacting KICK…' : 'Run checks to test endpoints.'
           }
           getItemKey={(result) => result.endpoint}
           heightMode="content"
@@ -392,8 +357,8 @@ export function DiagnosticsTab({
               Observed responses
             </h3>
             <p className="ke-diagnostics__description">
-              Passive summaries from KICK responses already used by the
-              page or Enhancer. No response bodies are retained.
+              Passive summaries from KICK responses already used by the page or
+              Enhancer. No response bodies are retained.
             </p>
           </div>
         </div>
@@ -419,8 +384,8 @@ export function DiagnosticsTab({
               Session log
             </h3>
             <p className="ke-diagnostics__description">
-              Latest 250 entries from this page load. Sensitive fields
-              and URL queries are redacted when displayed or copied.
+              Latest 250 entries from this page load. Sensitive fields and URL
+              queries are redacted when displayed or copied.
             </p>
           </div>
         </div>
@@ -438,9 +403,7 @@ export function DiagnosticsTab({
             value={logScope}
           />
           <div className="ke-diagnostics__actions">
-            <Button onClick={() => void copyLogs()}>
-              Copy
-            </Button>
+            <Button onClick={() => void copyLogs()}>Copy</Button>
             <Button
               onClick={() => {
                 clearLogHistory()
@@ -515,17 +478,13 @@ function formatCheckResponse(result: EndpointCheckResult) {
   return duration ?? '—'
 }
 
-function formatObservation(
-  observation: EndpointObservation | undefined,
-) {
+function formatObservation(observation: EndpointObservation | undefined) {
   if (!observation) {
     return 'No matching response seen this session.'
   }
 
   const source =
-    observation.source === 'captured'
-      ? 'page traffic'
-      : 'fallback request'
+    observation.source === 'captured' ? 'page traffic' : 'fallback request'
   const details = [
     `normalized=${observation.records}`,
     `hidden=${observation.hiddenViewerCounts}`,

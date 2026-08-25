@@ -51,8 +51,7 @@ for (const [index, segment] of segments.entries()) {
     throw new Error('Range request redirected to an unexpected host')
   }
 
-  const expectedContentRange =
-    `bytes ${segment.offset}-${end}/`
+  const expectedContentRange = `bytes ${segment.offset}-${end}/`
   const contentRange = response.headers.get('content-range')
 
   if (!contentRange?.startsWith(expectedContentRange)) {
@@ -93,10 +92,7 @@ for (const [index, segment] of segments.entries()) {
     throw new Error(`Initialization metadata changed at segment ${index}`)
   }
 
-  maximumOutputFragment = Math.max(
-    maximumOutputFragment,
-    data.byteLength,
-  )
+  maximumOutputFragment = Math.max(maximumOutputFragment, data.byteLength)
   await write(output, data)
 }
 

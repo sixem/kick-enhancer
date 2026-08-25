@@ -1,7 +1,16 @@
 import { startChatAppearance } from './features/chatAppearance'
+import { startChatLeaderboardVisibility } from './features/chatLeaderboard'
+import {
+  initializeChatStatisticsCapture,
+  startChatStatistics,
+} from './features/chatStatistics'
 import { startClipDownloadActions } from './features/clipDownloads'
+import { startDeletedMessages } from './features/deletedMessages'
 import { startFollowingRecommendationsVisibility } from './features/followingRecommendations'
-import { startGamblingStreamsVisibility } from './features/gamblingStreams'
+import {
+  initializeGamblingStreamsCapture,
+  startGamblingStreamsVisibility,
+} from './features/gamblingStreams'
 import { startHomepageCarouselVisibility } from './features/homepageCarousel'
 import { startRecommendedChannelsVisibility } from './features/recommendedChannels'
 import { startSidebarStateMemory } from './features/sidebarState'
@@ -9,10 +18,7 @@ import {
   initializeViewerCountCapture,
   startViewerEnhancements,
 } from './features/viewerCounts'
-import {
-  composeDisposers,
-  type Dispose,
-} from './lifecycle'
+import { composeDisposers, type Dispose } from './lifecycle'
 import { createLogger } from './logging/logger'
 import { initializeSettings } from './settings/settings'
 import { startTopNavButton } from './ui/App'
@@ -23,6 +29,8 @@ let stopFeatures: Dispose | undefined
 // Capture must be installed at document-start; waiting for settings I/O can
 // miss responses Kick consumes during its initial render.
 initializeViewerCountCapture()
+initializeGamblingStreamsCapture()
+initializeChatStatisticsCapture()
 
 async function start() {
   await initializeSettings()
@@ -30,6 +38,9 @@ async function start() {
   stopFeatures?.()
   stopFeatures = composeDisposers(
     startChatAppearance(),
+    startChatLeaderboardVisibility(),
+    startChatStatistics(),
+    startDeletedMessages(),
     startClipDownloadActions(),
     startViewerEnhancements(),
     startFollowingRecommendationsVisibility(),

@@ -14,16 +14,10 @@ import {
 
 type AboutTabProps = Readonly<{
   onImportError: () => void
-  onImportRequest: (
-    settings: Settings,
-    compatibilityWarning: boolean,
-  ) => void
+  onImportRequest: (settings: Settings, compatibilityWarning: boolean) => void
 }>
 
-export function AboutTab({
-  onImportError,
-  onImportRequest,
-}: AboutTabProps) {
+export function AboutTab({ onImportError, onImportRequest }: AboutTabProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const rejectImport = () => onImportError()
@@ -65,31 +59,21 @@ export function AboutTab({
       type: 'application/json;charset=utf-8',
     })
 
-    triggerDownload(
-      blob,
-      `kick-enhancer-settings-v${SETTINGS_VERSION}.json`,
-    )
+    triggerDownload(blob, `kick-enhancer-settings-v${SETTINGS_VERSION}.json`)
   }
 
   return (
     <section className="ke-about" aria-labelledby="ke-about-title">
-      <img
-        alt=""
-        className="ke-about__icon"
-        draggable={false}
-        src={icon}
-      />
+      <img alt="" className="ke-about__icon" draggable={false} src={icon} />
       <div className="ke-about__identity">
         <h3 className="ke-about__title" id="ke-about-title">
           KICK Enhancer
         </h3>
-        <p className="ke-about__version">
-          Version {packageMetadata.version}
-        </p>
+        <p className="ke-about__version">Version {packageMetadata.version}</p>
       </div>
       <p className="ke-about__description">
-        A userscript that makes KICK cleaner and puts useful viewing
-        information back in sight.
+        A userscript that makes KICK cleaner and puts useful viewing information
+        back in sight.
       </p>
       <div className="ke-about__actions">
         <Button onClick={() => fileInputRef.current?.click()}>

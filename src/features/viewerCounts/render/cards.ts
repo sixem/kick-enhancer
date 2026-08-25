@@ -1,6 +1,6 @@
-import { getChannelSlugFromHref } from '../slug.ts'
-import { type ViewerCountStore } from '../store.ts'
-import { formatStreamUptime } from '../uptime.ts'
+import { getChannelSlugFromHref } from '../model/slug.ts'
+import { type ViewerCountStore } from '../model/store.ts'
+import { formatStreamUptime } from '../model/uptime.ts'
 import { type ViewerCountDomOwnership } from './domOwnership.ts'
 import {
   CARD_SELECTOR,
@@ -26,23 +26,18 @@ export function renderCardSurfaces(
   let uptimes = 0
   let viewerCounts = 0
 
-  for (const card of document.querySelectorAll<HTMLElement>(
-    CARD_SELECTOR,
-  )) {
+  for (const card of document.querySelectorAll<HTMLElement>(CARD_SELECTOR)) {
     if (isCardHiddenByEnhancer(card, options)) {
       ownership.removeCount(card, 'card')
       ownership.removeUptime(card, 'card')
       continue
     }
 
-    const thumbnail =
-      card.querySelector<HTMLAnchorElement>(CARD_THUMBNAIL_SELECTOR)
-    const slug = getChannelSlugFromHref(
-      thumbnail?.getAttribute('href'),
+    const thumbnail = card.querySelector<HTMLAnchorElement>(
+      CARD_THUMBNAIL_SELECTOR,
     )
-    const liveBadge = thumbnail
-      ? findCardLiveBadge(thumbnail)
-      : undefined
+    const slug = getChannelSlugFromHref(thumbnail?.getAttribute('href'))
+    const liveBadge = thumbnail ? findCardLiveBadge(thumbnail) : undefined
 
     if (!thumbnail || !slug || !liveBadge) {
       ownership.removeCount(card, 'card')
@@ -76,8 +71,7 @@ export function renderCardSurfaces(
     }
 
     const element =
-      ownership.findCount(thumbnail, 'card') ??
-      document.createElement('div')
+      ownership.findCount(thumbnail, 'card') ?? document.createElement('div')
 
     const contentChanged = ownership.updateCount(element, {
       className: 'ke-viewer-count-card',
@@ -86,10 +80,7 @@ export function renderCardSurfaces(
       target: 'card',
     })
 
-    if (
-      contentChanged ||
-      !element.querySelector(':scope > span')
-    ) {
+    if (contentChanged || !element.querySelector(':scope > span')) {
       const count = document.createElement('span')
       count.textContent = formatViewerCount(stream.viewerCount)
       element.replaceChildren(count, ' watching')
@@ -131,8 +122,7 @@ function renderCardUptime(
   }
 
   const element =
-    ownership.findUptime(thumbnail, 'card') ??
-    document.createElement('div')
+    ownership.findUptime(thumbnail, 'card') ?? document.createElement('div')
 
   ownership.updateUptime(element, {
     className: 'ke-stream-uptime-card',
@@ -152,30 +142,34 @@ function renderCardUptime(
 }
 
 function hasNativeCardCount(thumbnail: HTMLElement) {
-  return [...thumbnail.querySelectorAll<HTMLElement>('[title]')].some(
-    (element) => {
-      if (element.closest(VIEWER_COUNT_SELECTOR)) {
-        return false
-      }
+  for (const element of thumbnail.querySelectorAll<HTMLElement>('[title]')) {
+    if (element.closest(VIEWER_COUNT_SELECTOR)) {
+      continue
+    }
 
-      const title = element.getAttribute('title')
-      const parentText = element.parentElement?.textContent ?? ''
+    const title = element.getAttribute('title')
+    const parentText = element.parentElement?.textContent ?? ''
 
-      return (
-        isCompactCount(title) &&
-        /\bwatching\b/i.test(parentText)
-      )
-    },
-  )
+    if (isCompactCount(title) && /\bwatching\b/i.test(parentText)) {
+      return true
+    }
+  }
+
+  return false
 }
 
 function findCardLiveBadge(thumbnail: HTMLElement) {
-  return [...thumbnail.querySelectorAll<HTMLElement>('div, span')].find(
-    (element) =>
+  for (const element of thumbnail.querySelectorAll<HTMLElement>('div, span')) {
+    if (
       !element.closest(RENDER_ELEMENT_SELECTOR) &&
       element.childElementCount === 0 &&
-      element.textContent?.trim().toLowerCase() === 'live',
-  )
+      element.textContent?.trim().toLowerCase() === 'live'
+    ) {
+      return element
+    }
+  }
+
+  return undefined
 }
 
 function isCardHiddenByEnhancer(
@@ -192,7 +186,7 @@ function isCardHiddenByEnhancer(
 
   return Boolean(
     options.hideFollowingRecommendations &&
-      card.closest('[data-testid="following"]') &&
-      !card.closest('[data-testid="followed-livestreams"]'),
+    card.closest('[data-testid="following"]') &&
+    !card.closest('[data-testid="followed-livestreams"]'),
   )
 }

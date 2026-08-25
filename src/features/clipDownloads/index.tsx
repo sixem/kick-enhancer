@@ -3,15 +3,8 @@ import { render } from 'preact'
 import { onDocumentElementReady } from '../../dom/onDocumentElementReady'
 import { type Dispose } from '../../lifecycle'
 import { createLogger } from '../../logging/logger'
-import {
-  getSettings,
-  observeSetting,
-} from '../../settings/settings'
+import { getSettings, observeSetting } from '../../settings/settings'
 import { installSharedUiStyles } from '../../styles/sharedUi'
-import { ClipDownloadAction } from './ClipDownloadAction'
-import { DirectClipDownloadAction } from './DirectClipDownloadAction'
-import { DownloadCenter } from './DownloadCenter'
-import { createClipCardReconciler } from './clipCardReconciler'
 import {
   CLIP_CARD_SELECTOR,
   CLIP_MODAL_BUTTON_SELECTOR,
@@ -20,18 +13,24 @@ import {
   getClipIdFromHref,
   type ClipSelectionHandler,
 } from './clipCards'
-import styles from './clipDownloads.scss?inline'
-import centerStyles from './downloadCenter.scss?inline'
-import { openDownloadCenterForClip } from './downloadCenterController'
+import { ClipDownloadAction } from './integration/ClipDownloadAction'
+import { DirectClipDownloadAction } from './integration/DirectClipDownloadAction'
+import { createClipCardReconciler } from './integration/clipCardReconciler'
+import styles from './integration/clipDownloads.scss?inline'
+import { DownloadCenter } from './ui/DownloadCenter'
+import centerStyles from './ui/downloadCenter.scss?inline'
+import { openDownloadCenterForClip } from './ui/downloadCenterController'
+
+export { openDownloadCenter } from './ui/downloadCenterController'
+export { useDownloadActivity } from './ui/useDownloads'
 
 const STYLE_ID = 'kick-enhancer-clip-download-styles'
 const CENTER_HOST_ID = 'kick-enhancer-download-center'
 const ACTION_SELECTOR = '[data-ke-clip-download]'
 const HOST_SELECTOR = '[data-ke-clip-download-host]'
-const DIRECT_ACTION_ANCHOR_SELECTOR =
-  '[data-testid="follow-button"]'
-const DIRECT_HOST_SELECTOR =
-  '[data-ke-direct-clip-download-host]'
+const DIRECT_ACTION_ANCHOR_SELECTOR = '[data-testid="follow-button"]'
+const DIRECT_HOST_SELECTOR = '[data-ke-direct-clip-download-host]'
+const CHATROOM_MESSAGES_SELECTOR = '#chatroom-messages'
 
 const log = createLogger('clip-downloads')
 let stopActiveIntegration: Dispose | undefined
@@ -75,7 +74,7 @@ export function startClipDownloadActions(
   let actionsVisible = getSettings().ui.showClipDownloadButtons
   let directActionClipId: string | undefined
   let directActionHost: HTMLSpanElement | undefined
-  let stopWatchingSettings: Dispose | undefined
+  let lastUrl = window.location.href
   let stopped = false
 
   const reconciler = createClipCardReconciler<
@@ -100,20 +99,14 @@ export function startClipDownloadActions(
       container.append(host)
 
       render(
-        <ClipDownloadAction
-          clipId={clipId}
-          onSelectClip={onSelectClip}
-        />,
+        <ClipDownloadAction clipId={clipId} onSelectClip={onSelectClip} />,
         host,
       )
 
       return host
     },
     resolve: (card) => {
-      const clipId = getClipIdFromCard(
-        card,
-        window.location.origin,
-      )
+      const clipId = getClipIdFromCard(card, window.location.origin)
       const modalButton = card.querySelector<HTMLElement>(
         CLIP_MODAL_BUTTON_SELECTOR,
       )
@@ -133,30 +126,27 @@ export function startClipDownloadActions(
     },
     update: (host, { clipId }) => {
       render(
-        <ClipDownloadAction
-          clipId={clipId}
-          onSelectClip={onSelectClip}
-        />,
+        <ClipDownloadAction clipId={clipId} onSelectClip={onSelectClip} />,
         host,
       )
     },
   })
 
-  const scheduler = createBatchedCardScheduler<
-    HTMLElement | undefined
-  >((cards) => {
-    if (stopped || !actionsVisible) {
-      return
-    }
-
-    reconciler.removeDisconnected()
-
-    for (const card of cards) {
-      if (card?.isConnected) {
-        reconciler.reconcile(card)
+  const scheduler = createBatchedCardScheduler<HTMLElement | undefined>(
+    (cards) => {
+      if (stopped || !actionsVisible) {
+        return
       }
-    }
-  })
+
+      reconciler.removeDisconnected()
+
+      for (const card of cards) {
+        if (card?.isConnected) {
+          reconciler.reconcile(card)
+        }
+      }
+    },
+  )
 
   function removeDirectClipAction() {
     if (!directActionHost) {
@@ -177,15 +167,10 @@ export function startClipDownloadActions(
     }
 
     const clipId = actionsVisible
-      ? getClipIdFromHref(
-          window.location.href,
-          window.location.origin,
-        )
+      ? getClipIdFromHref(window.location.href, window.location.origin)
       : undefined
     const anchor = clipId
-      ? document.querySelector<HTMLElement>(
-          DIRECT_ACTION_ANCHOR_SELECTOR,
-        )
+      ? document.querySelector<HTMLElement>(DIRECT_ACTION_ANCHOR_SELECTOR)
       : undefined
     const container = anchor?.parentElement
 
@@ -194,10 +179,7 @@ export function startClipDownloadActions(
       return
     }
 
-    if (
-      directActionHost &&
-      directActionHost.parentElement === container
-    ) {
+    if (directActionHost && directActionHost.parentElement === container) {
       if (directActionClipId !== clipId) {
         render(
           <DirectClipDownloadAction
@@ -214,9 +196,7 @@ export function startClipDownloadActions(
 
     removeDirectClipAction()
 
-    for (const staleHost of document.querySelectorAll(
-      DIRECT_HOST_SELECTOR,
-    )) {
+    for (const staleHost of document.querySelectorAll(DIRECT_HOST_SELECTOR)) {
       staleHost.remove()
     }
 
@@ -225,10 +205,7 @@ export function startClipDownloadActions(
     host.setAttribute('data-ke-direct-clip-download-host', '')
     anchor.after(host)
     render(
-      <DirectClipDownloadAction
-        clipId={clipId}
-        onSelectClip={onSelectClip}
-      />,
+      <DirectClipDownloadAction clipId={clipId} onSelectClip={onSelectClip} />,
       host,
     )
     directActionClipId = clipId
@@ -250,57 +227,84 @@ export function startClipDownloadActions(
 
     enqueueClosestCard(node)
 
-    for (const card of node.querySelectorAll<HTMLElement>(
-      CLIP_CARD_SELECTOR,
-    )) {
+    for (const card of node.querySelectorAll<HTMLElement>(CLIP_CARD_SELECTOR)) {
       scheduler.enqueue(card)
     }
   }
 
   function handleMutations(records: readonly MutationRecord[]) {
-    mountDownloadCenter()
-    reconcileDirectClipAction()
+    const currentUrl = window.location.href
+    let directSurfaceChanged =
+      currentUrl !== lastUrl ||
+      Boolean(directActionHost && !directActionHost.isConnected)
     let shouldCleanDisconnectedActions = false
+    lastUrl = currentUrl
 
     for (const record of records) {
+      const target =
+        record.target instanceof Element
+          ? record.target
+          : record.target.parentElement
+
+      if (target?.closest(CHATROOM_MESSAGES_SELECTOR)) {
+        continue
+      }
+
       if (record.type === 'attributes') {
         enqueueClosestCard(record.target as Element)
+        directSurfaceChanged ||=
+          target?.matches(DIRECT_ACTION_ANCHOR_SELECTOR) ?? false
         continue
       }
 
       if (record.removedNodes.length > 0) {
         shouldCleanDisconnectedActions = true
+
+        for (const node of record.removedNodes) {
+          directSurfaceChanged ||= nodeTouchesSelector(
+            node,
+            DIRECT_ACTION_ANCHOR_SELECTOR,
+          )
+        }
       }
 
       enqueueClosestCard(record.target as Element)
 
       for (const node of record.addedNodes) {
         enqueueCardsFromSubtree(node)
+        directSurfaceChanged ||= nodeTouchesSelector(
+          node,
+          DIRECT_ACTION_ANCHOR_SELECTOR,
+        )
       }
     }
 
     if (shouldCleanDisconnectedActions) {
       scheduler.enqueue(undefined)
     }
+
+    if (directSurfaceChanged) {
+      reconcileDirectClipAction()
+    }
   }
 
-  function beginObserving() {
-    if (stopped) {
+  function reconcileExistingActions() {
+    reconcileDirectClipAction()
+
+    for (const card of document.querySelectorAll<HTMLElement>(
+      CLIP_CARD_SELECTOR,
+    )) {
+      scheduler.enqueue(card)
+    }
+  }
+
+  function connectActionObserver() {
+    if (stopped || !actionsVisible || observer || !document.documentElement) {
       return
     }
 
-    installStyles()
-    mountDownloadCenter()
-    reconcileDirectClipAction()
-
-    if (actionsVisible) {
-      for (const card of document.querySelectorAll<HTMLElement>(
-        CLIP_CARD_SELECTOR,
-      )) {
-        scheduler.enqueue(card)
-      }
-    }
-
+    lastUrl = window.location.href
+    reconcileExistingActions()
     observer = new MutationObserver(handleMutations)
     observer.observe(document.documentElement, {
       attributeFilter: ['href'],
@@ -310,9 +314,26 @@ export function startClipDownloadActions(
     })
   }
 
+  function disconnectActionObserver() {
+    observer?.disconnect()
+    observer = undefined
+    reconciler.teardown()
+    removeDirectClipAction()
+  }
+
+  function beginObserving() {
+    if (stopped) {
+      return
+    }
+
+    installStyles()
+    mountDownloadCenter()
+    connectActionObserver()
+  }
+
   const stopWaitingForDocument = onDocumentElementReady(beginObserving)
 
-  stopWatchingSettings = observeSetting(
+  const stopWatchingSettings = observeSetting(
     (settings) => settings.ui.showClipDownloadButtons,
     (visible) => {
       if (actionsVisible === visible) {
@@ -322,18 +343,11 @@ export function startClipDownloadActions(
       actionsVisible = visible
 
       if (!visible) {
-        reconciler.teardown()
-        removeDirectClipAction()
+        disconnectActionObserver()
         return
       }
 
-      reconcileDirectClipAction()
-
-      for (const card of document.querySelectorAll<HTMLElement>(
-        CLIP_CARD_SELECTOR,
-      )) {
-        scheduler.enqueue(card)
-      }
+      connectActionObserver()
     },
   )
 
@@ -344,12 +358,9 @@ export function startClipDownloadActions(
 
     stopped = true
     stopWaitingForDocument()
-    observer?.disconnect()
+    disconnectActionObserver()
     stopWatchingSettings?.()
     scheduler.cancel()
-
-    reconciler.teardown()
-    removeDirectClipAction()
 
     const centerHost = document.getElementById(CENTER_HOST_ID)
 
@@ -367,4 +378,11 @@ export function startClipDownloadActions(
 
   stopActiveIntegration = stop
   return stop
+}
+
+function nodeTouchesSelector(node: Node, selector: string) {
+  return (
+    node instanceof Element &&
+    (node.matches(selector) || Boolean(node.querySelector(selector)))
+  )
 }

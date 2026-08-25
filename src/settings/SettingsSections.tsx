@@ -1,11 +1,6 @@
 import { useMemo } from 'preact/hooks'
 
-import {
-  Button,
-  SelectBox,
-  Toggle,
-  TrackBar,
-} from '../components/forms'
+import { Button, SelectBox, Toggle, TrackBar } from '../components/forms'
 import {
   resetChatAppearance,
   setChatFontFamily,
@@ -13,6 +8,8 @@ import {
   setChatFontWeight,
   setChatMessageDividers,
   setChatMessageSpacing,
+  setDeletedMessageCacheSize,
+  setHideChatLeaderboard,
   setHideFollowingRecommendations,
   setHideGamblingStreams,
   setHideHomepageCarousel,
@@ -20,9 +17,14 @@ import {
   setRememberSidebarState,
   setShowClipDownloadButtons,
   setShowHiddenViewerCounts,
+  setShowChatStatistics,
+  setShowDeletedMessages,
   setShowStreamUptime,
 } from './actions'
 import {
+  CHAT_DELETED_MESSAGE_CACHE_SIZE_MAX,
+  CHAT_DELETED_MESSAGE_CACHE_SIZE_MIN,
+  CHAT_DELETED_MESSAGE_CACHE_SIZE_STEP,
   CHAT_FONT_SIZE_DEFAULT,
   CHAT_FONT_SIZE_MAX,
   CHAT_FONT_SIZE_MIN,
@@ -77,8 +79,11 @@ export function ChatSettingsSection({
   open: boolean
   settings: Settings['chat']
 }>) {
-  const kickDefaults = useMemo(
-    () => ({
+  const kickDefaults = useMemo(() => {
+    // Re-read KICK's variables whenever the modal opens.
+    void open
+
+    return {
       fontSize: readKickChatValue(
         '--chatroom-font-size',
         CHAT_FONT_SIZE_DEFAULT,
@@ -91,20 +96,47 @@ export function ChatSettingsSection({
         CHAT_MESSAGE_SPACING_MIN,
         CHAT_MESSAGE_SPACING_MAX,
       ),
-    }),
-    [open],
-  )
+    }
+  }, [open])
 
   return (
     <div className="ke-settings">
+      <Toggle
+        checked={settings.showChatStatistics}
+        description="Show live message activity, active chatters, socket RTT, and session totals in chat."
+        label="Show chat statistics"
+        onCheckedChange={(visible) => {
+          void setShowChatStatistics(visible)
+        }}
+      />
+      <Toggle
+        checked={settings.showDeletedMessages}
+        description="Keep recently observed message text visible when KICK deletes it."
+        label="Show deleted chat messages"
+        onCheckedChange={(visible) => {
+          void setShowDeletedMessages(visible)
+        }}
+      />
+      <TrackBar
+        description="Limit how many recent chat messages are kept in memory."
+        disabled={!settings.showDeletedMessages}
+        formatValue={(value) => `${value} messages`}
+        label="Messages to cache"
+        max={CHAT_DELETED_MESSAGE_CACHE_SIZE_MAX}
+        min={CHAT_DELETED_MESSAGE_CACHE_SIZE_MIN}
+        onValueChange={(value) => {
+          void setDeletedMessageCacheSize(value)
+        }}
+        step={CHAT_DELETED_MESSAGE_CACHE_SIZE_STEP}
+        value={settings.deletedMessageCacheSize}
+      />
+      <hr className="ke-settings__divider" />
       <SelectBox
         description="Change the typeface used throughout the chatroom."
         label="Chat font"
         onValueChange={(value) => {
           void setChatFontFamily(
-            value === 'default'
-              ? null
-              : (value as ChatFontFamily),
+            value === 'default' ? null : (value as ChatFontFamily),
           )
         }}
         options={CHAT_FONT_FAMILY_OPTIONS}
@@ -156,9 +188,7 @@ export function ChatSettingsSection({
           void setChatMessageSpacing(value)
         }}
         step={1}
-        value={
-          settings.messageSpacing ?? kickDefaults.messageSpacing
-        }
+        value={settings.messageSpacing ?? kickDefaults.messageSpacing}
       />
       <Toggle
         checked={settings.messageDividers}
@@ -189,11 +219,19 @@ export function ChatSettingsSection({
   )
 }
 
-export function ContentSettingsSection({
+export function VisibilitySettingsSection({
   settings,
 }: Readonly<{ settings: Settings['ui'] }>) {
   return (
     <div className="ke-settings">
+      <Toggle
+        checked={settings.hideChatLeaderboard}
+        description="Remove the gift and KICKs leaderboard above chat."
+        label="Hide chat leaderboard"
+        onCheckedChange={(hidden) => {
+          void setHideChatLeaderboard(hidden)
+        }}
+      />
       <Toggle
         checked={settings.hideHomepageCarousel}
         description="Remove the featured autoplaying stream and chat from the homepage."
@@ -218,15 +256,6 @@ export function ContentSettingsSection({
           void setHideFollowingRecommendations(hidden)
         }}
       />
-    </div>
-  )
-}
-
-export function SidebarSettingsSection({
-  settings,
-}: Readonly<{ settings: Settings['ui'] }>) {
-  return (
-    <div className="ke-settings">
       <Toggle
         checked={settings.hideRecommendedChannels}
         description="Remove recommended channels and their controls from the sidebar."
@@ -264,9 +293,7 @@ function readKickChatValue(
   max: number,
 ) {
   const value = Number.parseFloat(
-    getComputedStyle(document.documentElement).getPropertyValue(
-      property,
-    ),
+    getComputedStyle(document.documentElement).getPropertyValue(property),
   )
 
   return normalizeChatValue(value, min, max) ?? fallback

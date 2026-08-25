@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => {
     build: {
       cssMinify: readableBuild ? false : 'lightningcss',
       minify: readableBuild ? false : 'oxc',
-      outDir: greasyFork ? 'dist/greasyfork' : 'dist',
+      outDir: development ? '.dev' : greasyFork ? 'dist/greasyfork' : 'dist',
     },
     plugins: [
       preact(),
@@ -102,9 +102,7 @@ function readableInlineWorkerPlugin(): Plugin {
       const assignmentStart = code.indexOf(marker)
 
       if (assignmentStart === -1) {
-        throw new Error(
-          `Unable to find the inline worker source in ${id}.`,
-        )
+        throw new Error(`Unable to find the inline worker source in ${id}.`)
       }
 
       const valueStart = assignmentStart + marker.length
@@ -113,9 +111,7 @@ function readableInlineWorkerPlugin(): Plugin {
       let workerSource: unknown
 
       try {
-        workerSource = JSON.parse(
-          escapeJsonControlCharacters(serializedSource),
-        )
+        workerSource = JSON.parse(escapeJsonControlCharacters(serializedSource))
       } catch (error) {
         throw new Error(
           `Unable to decode the inline worker source in ${id}: ${JSON.stringify(
@@ -126,9 +122,7 @@ function readableInlineWorkerPlugin(): Plugin {
       }
 
       if (typeof workerSource !== 'string') {
-        throw new Error(
-          `The inline worker source in ${id} is not a string.`,
-        )
+        throw new Error(`The inline worker source in ${id} is not a string.`)
       }
 
       return {
@@ -165,9 +159,9 @@ function findStringLiteralEnd(code: string, start: number) {
 }
 
 function escapeJsonControlCharacters(value: string) {
-  return value.replace(
-    /[\u0000-\u001f]/g,
-    (character) => JSON.stringify(character).slice(1, -1),
+  // eslint-disable-next-line no-control-regex -- These are the characters being escaped.
+  return value.replace(/[\u0000-\u001f]/g, (character) =>
+    JSON.stringify(character).slice(1, -1),
   )
 }
 
@@ -215,10 +209,7 @@ function createThirdPartyLicenseNotices() {
 function readPackageVersion(packageName: 'mux.js' | 'preact') {
   const metadata = JSON.parse(
     readFileSync(
-      new URL(
-        `./node_modules/${packageName}/package.json`,
-        import.meta.url,
-      ),
+      new URL(`./node_modules/${packageName}/package.json`, import.meta.url),
       'utf8',
     ),
   ) as { version?: unknown }

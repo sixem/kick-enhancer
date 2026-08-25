@@ -3,28 +3,26 @@ import { unsafeWindow } from '$'
 import { onDocumentElementReady } from '../../dom/onDocumentElementReady'
 import { type Dispose } from '../../lifecycle'
 import { createLogger } from '../../logging/logger'
-import {
-  getSettings,
-  subscribeSettings,
-} from '../../settings/settings'
-import { applyStyleToggle } from '../styleToggle'
-import { ViewerCountAcquisition } from './acquisition'
+import { getSettings, subscribeSettings } from '../../settings/settings'
+import { applyStyleToggle } from '../shared/styleToggle'
+import { ViewerCountAcquisition } from './acquisition/acquisition'
+import { classifyViewerCountEndpoint } from './acquisition/endpoints'
 import { installViewerCountCaptureBridge } from './capture'
 import { recordViewerEndpointObservation } from './diagnostics'
-import { classifyViewerCountEndpoint } from './endpoints'
-import { normalizeViewerCountPayload } from './normalize'
+import { normalizeViewerCountPayload } from './model/normalize'
+import { getChannelSlugFromHref } from './model/slug'
+import { ViewerCountStore } from './model/store'
+import {
+  isCapturedViewerCountMessage,
+  type CapturedViewerCountMessage,
+} from './model/types'
 import {
   cleanupViewerCountDom,
   renderViewerCounts,
   type SidebarHoverTarget,
+  type ViewerCountRenderResult,
 } from './render'
 import { SIDEBAR_LINK_SELECTOR } from './render/selectors'
-import { getChannelSlugFromHref } from './slug'
-import { ViewerCountStore } from './store'
-import {
-  isCapturedViewerCountMessage,
-  type CapturedViewerCountMessage,
-} from './types'
 import styles from './viewerCounts.scss?inline'
 
 const STYLE_ID = 'kick-enhancer-viewer-count-styles'
@@ -46,7 +44,7 @@ let historyPushState: History['pushState'] | undefined
 let historyReplaceState: History['replaceState'] | undefined
 let historyPushStateWrapper: History['pushState'] | undefined
 let historyReplaceStateWrapper: History['replaceState'] | undefined
-let lastLogSummary = ''
+let lastLogCounts: ViewerCountRenderResult['counts'] | undefined
 let lastUrl = window.location.href
 let observer: MutationObserver | undefined
 let renderDeadline = Number.POSITIVE_INFINITY
@@ -153,11 +151,7 @@ function cancelFeatureActivation() {
 }
 
 function activateFeatureDom() {
-  if (
-    !featureEnabled ||
-    domFeatureActive ||
-    !document.documentElement
-  ) {
+  if (!featureEnabled || domFeatureActive || !document.documentElement) {
     return
   }
 
@@ -190,22 +184,10 @@ function deactivateFeatureDom() {
   observer?.disconnect()
   observer = undefined
   uninstallRouteObserver()
-  document.removeEventListener(
-    'pointerover',
-    handleSidebarHover,
-    true,
-  )
-  document.removeEventListener(
-    'pointerout',
-    handleSidebarHoverEnd,
-    true,
-  )
+  document.removeEventListener('pointerover', handleSidebarHover, true)
+  document.removeEventListener('pointerout', handleSidebarHoverEnd, true)
   document.removeEventListener('focusin', handleSidebarHover, true)
-  document.removeEventListener(
-    'focusout',
-    handleSidebarHoverEnd,
-    true,
-  )
+  document.removeEventListener('focusout', handleSidebarHoverEnd, true)
 
   if (renderTimer !== undefined) {
     window.clearTimeout(renderTimer)
@@ -284,9 +266,7 @@ function handleCaptureMessage(event: MessageEvent<unknown>) {
     normalized.kind === 'streams' ? normalized.streams.length : 0
   const hiddenStreamCount =
     normalized.kind === 'streams'
-      ? normalized.streams.filter(
-          (stream) => !stream.showViewCount,
-        ).length
+      ? normalized.streams.filter((stream) => !stream.showViewCount).length
       : 0
   const updated =
     normalized.kind === 'streams'
@@ -294,8 +274,7 @@ function handleCaptureMessage(event: MessageEvent<unknown>) {
       : store.upsertCurrentViewers(normalized.currentViewers)
 
   if (
-    message.endpoint ===
-      'PAGINATED_RECOMMENDED_LIVESTREAMS' &&
+    message.endpoint === 'PAGINATED_RECOMMENDED_LIVESTREAMS' &&
     featureEnabled &&
     hiddenStreamCount > 0
   ) {
@@ -355,10 +334,7 @@ function scheduleRender(reason: string, delay = RENDER_DELAY_MS) {
 
   // Keep the earliest deadline so route and hover renders can preempt the
   // normal mutation debounce.
-  if (
-    renderTimer !== undefined &&
-    deadline >= renderDeadline
-  ) {
+  if (renderTimer !== undefined && deadline >= renderDeadline) {
     return
   }
 
@@ -368,13 +344,16 @@ function scheduleRender(reason: string, delay = RENDER_DELAY_MS) {
 
   renderDeadline = deadline
   renderReason = reason
-  renderTimer = window.setTimeout(() => {
-    const scheduledReason = renderReason
-    renderTimer = undefined
-    renderDeadline = Number.POSITIVE_INFINITY
-    renderReason = ''
-    runRender(scheduledReason)
-  }, Math.max(0, deadline - performance.now()))
+  renderTimer = window.setTimeout(
+    () => {
+      const scheduledReason = renderReason
+      renderTimer = undefined
+      renderDeadline = Number.POSITIVE_INFINITY
+      renderReason = ''
+      runRender(scheduledReason)
+    },
+    Math.max(0, deadline - performance.now()),
+  )
 }
 
 function runRender(reason: string) {
@@ -382,21 +361,12 @@ function runRender(reason: string) {
     return
   }
 
-  const result = renderViewerCounts(
-    store,
-    sidebarHoverTarget,
-    getSettings().ui,
-  )
+  const result = renderViewerCounts(store, sidebarHoverTarget, getSettings().ui)
 
-  acquisition.syncTargets(
-    result.targetSlugs,
-    result.activeChannelSlug,
-  )
+  acquisition.syncTargets(result.targetSlugs, result.activeChannelSlug)
 
-  const summary = JSON.stringify(result.counts)
-
-  if (summary !== lastLogSummary) {
-    lastLogSummary = summary
+  if (!areRenderCountsEqual(result.counts, lastLogCounts)) {
+    lastLogCounts = result.counts
     const details = {
       reason,
       ...result.counts,
@@ -419,14 +389,28 @@ function runRender(reason: string) {
   }
 }
 
+function areRenderCountsEqual(
+  left: ViewerCountRenderResult['counts'],
+  right: ViewerCountRenderResult['counts'] | undefined,
+) {
+  return (
+    right !== undefined &&
+    left.cardUptimes === right.cardUptimes &&
+    left.cards === right.cards &&
+    left.channel === right.channel &&
+    left.sidebar === right.sidebar &&
+    left.sidebarUptimes === right.sidebarUptimes &&
+    left.tooltipUptimes === right.tooltipUptimes &&
+    left.tooltips === right.tooltips
+  )
+}
+
 function handleSidebarHover(event: Event) {
   if (!(event.target instanceof Element)) {
     return
   }
 
-  const link = event.target.closest<HTMLAnchorElement>(
-    SIDEBAR_LINK_SELECTOR,
-  )
+  const link = event.target.closest<HTMLAnchorElement>(SIDEBAR_LINK_SELECTOR)
   const slug = getChannelSlugFromHref(link?.getAttribute('href'))
 
   if (!link || !slug) {
@@ -453,9 +437,7 @@ function handleSidebarHoverEnd(event: Event) {
     return
   }
 
-  const link = event.target.closest<HTMLAnchorElement>(
-    SIDEBAR_LINK_SELECTOR,
-  )
+  const link = event.target.closest<HTMLAnchorElement>(SIDEBAR_LINK_SELECTOR)
   const slug = getChannelSlugFromHref(link?.getAttribute('href'))
 
   if (!link || !slug || sidebarHoverTarget?.slug !== slug) {
@@ -464,10 +446,7 @@ function handleSidebarHoverEnd(event: Event) {
 
   const relatedTarget = (event as FocusEvent).relatedTarget
 
-  if (
-    relatedTarget instanceof Node &&
-    link.contains(relatedTarget)
-  ) {
+  if (relatedTarget instanceof Node && link.contains(relatedTarget)) {
     return
   }
 
@@ -496,18 +475,18 @@ function installRouteObserver() {
     return
   }
 
+  // These methods are stored for restoration and invoked with their History
+  // receiver through Reflect.apply inside the wrappers below.
+  // eslint-disable-next-line @typescript-eslint/unbound-method
   historyPushState = window.history.pushState
+  // eslint-disable-next-line @typescript-eslint/unbound-method
   historyReplaceState = window.history.replaceState
 
   historyPushStateWrapper = function (
     this: History,
     ...argumentsList: Parameters<History['pushState']>
   ) {
-    Reflect.apply(
-      historyPushState as History['pushState'],
-      this,
-      argumentsList,
-    )
+    Reflect.apply(historyPushState as History['pushState'], this, argumentsList)
     handleRouteChange()
   }
 
@@ -580,23 +559,16 @@ function isIgnoredMutation(mutation: MutationRecord) {
     return true
   }
 
-  const changedNodes = [
-    ...mutation.addedNodes,
-    ...mutation.removedNodes,
-  ]
+  const changedNodes = [...mutation.addedNodes, ...mutation.removedNodes]
 
   return (
     changedNodes.length > 0 &&
     changedNodes.every(
       (node) =>
         node instanceof Element &&
-        (node.matches(
-          '[data-ke-viewer-count], [data-ke-stream-uptime]',
-        ) ||
+        (node.matches('[data-ke-viewer-count], [data-ke-stream-uptime]') ||
           Boolean(
-            node.closest(
-              '[data-ke-viewer-count], [data-ke-stream-uptime]',
-            ),
+            node.closest('[data-ke-viewer-count], [data-ke-stream-uptime]'),
           )),
     )
   )

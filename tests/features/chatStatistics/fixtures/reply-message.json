@@ -1,0 +1,5 @@
+{
+  "channel": "chatrooms.29191.v2",
+  "data": "{\"id\":\"message-002\",\"chatroom_id\":29191,\"content\":\"Synthetic fixture reply\",\"type\":\"reply\",\"created_at\":\"2026-01-01T00:00:01Z\",\"sender\":{\"id\":202,\"username\":\"fixture-replier\",\"slug\":\"fixture-replier\",\"identity\":{\"color\":\"#53fc18\",\"badges\":[],\"badges_v2\":[]}},\"metadata\":{\"message_ref\":\"client-reference-002\",\"original_sender\":{\"id\":101,\"username\":\"fixture-user\"},\"original_message\":{\"id\":\"message-001\",\"content\":\"Synthetic fixture message\"}},\"thread_parent_id\":\"message-001\"}",
+  "event": "App\\Events\\ChatMessageEvent"
+}

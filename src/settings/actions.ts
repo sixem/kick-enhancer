@@ -4,6 +4,7 @@ import {
   CHAT_FONT_SIZE_MIN,
   CHAT_MESSAGE_SPACING_MAX,
   CHAT_MESSAGE_SPACING_MIN,
+  normalizeDeletedMessageCacheSize,
   normalizeChatFontFamily,
   normalizeChatFontWeight,
   normalizeChatValue,
@@ -22,26 +23,16 @@ export function setChatFontSize(value: number | null) {
     'fontSize',
     value === null
       ? null
-      : normalizeChatValue(
-          value,
-          CHAT_FONT_SIZE_MIN,
-          CHAT_FONT_SIZE_MAX,
-        ),
+      : normalizeChatValue(value, CHAT_FONT_SIZE_MIN, CHAT_FONT_SIZE_MAX),
   )
 }
 
 export function setChatFontFamily(value: ChatFontFamily | null) {
-  return updateChatSetting(
-    'fontFamily',
-    normalizeChatFontFamily(value),
-  )
+  return updateChatSetting('fontFamily', normalizeChatFontFamily(value))
 }
 
 export function setChatFontWeight(value: number | null) {
-  return updateChatSetting(
-    'fontWeight',
-    normalizeChatFontWeight(value),
-  )
+  return updateChatSetting('fontWeight', normalizeChatFontWeight(value))
 }
 
 export function setChatMessageDividers(enabled: boolean) {
@@ -61,6 +52,21 @@ export function setChatMessageSpacing(value: number | null) {
   )
 }
 
+export function setShowChatStatistics(visible: boolean) {
+  return updateChatSetting('showChatStatistics', visible)
+}
+
+export function setShowDeletedMessages(visible: boolean) {
+  return updateChatSetting('showDeletedMessages', visible)
+}
+
+export function setDeletedMessageCacheSize(value: number) {
+  return updateChatSetting(
+    'deletedMessageCacheSize',
+    normalizeDeletedMessageCacheSize(value),
+  )
+}
+
 export function resetChatAppearance() {
   return updateSettings((settings) => {
     if (
@@ -76,6 +82,7 @@ export function resetChatAppearance() {
     return {
       ...settings,
       chat: {
+        ...settings.chat,
         fontFamily: null,
         fontSize: null,
         fontWeight: null,
@@ -96,6 +103,10 @@ export function setShowHiddenViewerCounts(visible: boolean) {
 
 export function setShowStreamUptime(visible: boolean) {
   return updateUiSetting('showStreamUptime', visible)
+}
+
+export function setHideChatLeaderboard(hidden: boolean) {
+  return updateUiSetting('hideChatLeaderboard', hidden)
 }
 
 export function setHideFollowingRecommendations(hidden: boolean) {

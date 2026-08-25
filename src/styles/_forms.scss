@@ -269,6 +269,11 @@
   background: transparent;
   cursor: pointer;
 
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
   &::-webkit-slider-runnable-track {
     height: 0.28rem;
     border-radius: 999px;

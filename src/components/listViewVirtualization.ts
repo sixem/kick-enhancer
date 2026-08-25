@@ -18,12 +18,9 @@ export function calculateListViewRange(
   const safeOverscan = Number.isFinite(overscan)
     ? Math.max(0, Math.floor(overscan))
     : 0
-  const firstVisible = Math.floor(
-    Math.max(0, scrollTop) / safeRowHeight,
-  )
+  const firstVisible = Math.floor(Math.max(0, scrollTop) / safeRowHeight)
   const afterLastVisible = Math.ceil(
-    (Math.max(0, scrollTop) + Math.max(0, viewportHeight)) /
-      safeRowHeight,
+    (Math.max(0, scrollTop) + Math.max(0, viewportHeight)) / safeRowHeight,
   )
 
   return {
@@ -31,9 +28,6 @@ export function calculateListViewRange(
       itemCount,
       Math.max(firstVisible + 1, afterLastVisible) + safeOverscan,
     ),
-    start: Math.min(
-      itemCount,
-      Math.max(0, firstVisible - safeOverscan),
-    ),
+    start: Math.min(itemCount, Math.max(0, firstVisible - safeOverscan)),
   }
 }

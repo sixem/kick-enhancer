@@ -1,11 +1,6 @@
-type DocumentElementObserver = Pick<
-  MutationObserver,
-  'disconnect' | 'observe'
->
+type DocumentElementObserver = Pick<MutationObserver, 'disconnect' | 'observe'>
 
-type ObserverFactory = (
-  callback: MutationCallback,
-) => DocumentElementObserver
+type ObserverFactory = (callback: MutationCallback) => DocumentElementObserver
 
 export function onDocumentElementReady(
   callback: () => void,

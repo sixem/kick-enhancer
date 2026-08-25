@@ -1,7 +1,5 @@
-export const CLIP_CARD_SELECTOR =
-  '[data-testid="livestream-results-card"]'
-export const CLIP_MODAL_BUTTON_SELECTOR =
-  'button[aria-label="Open clip modal"]'
+export const CLIP_CARD_SELECTOR = '[data-testid="livestream-results-card"]'
+export const CLIP_MODAL_BUTTON_SELECTOR = 'button[aria-label="Open clip modal"]'
 export const CLIP_PERMALINK_SELECTOR = 'a[href*="/clips/clip_"]'
 
 const CLIP_ID_PATTERN = /^clip_[A-Za-z0-9_-]+$/
@@ -14,10 +12,7 @@ type ScheduleCallback = (callback: () => void) => void
 export type ClipSelectionHandler = (clipId: string) => void
 
 export function isValidClipId(value: string) {
-  return (
-    value.length <= MAX_CLIP_ID_LENGTH &&
-    CLIP_ID_PATTERN.test(value)
-  )
+  return value.length <= MAX_CLIP_ID_LENGTH && CLIP_ID_PATTERN.test(value)
 }
 
 export function getClipIdFromHref(
@@ -44,18 +39,13 @@ export function getClipIdFromHref(
 
   const pathSegments = clipUrl.pathname.split('/').filter(Boolean)
 
-  if (
-    pathSegments.length !== 3 ||
-    pathSegments[1] !== 'clips'
-  ) {
+  if (pathSegments.length !== 3 || pathSegments[1] !== 'clips') {
     return undefined
   }
 
   const clipId = pathSegments[2]
 
-  if (
-    !isValidClipId(clipId)
-  ) {
+  if (!isValidClipId(clipId)) {
     return undefined
   }
 
@@ -76,15 +66,10 @@ export function getUniqueClipId(
     }
   }
 
-  return clipIds.size === 1
-    ? clipIds.values().next().value
-    : undefined
+  return clipIds.size === 1 ? clipIds.values().next().value : undefined
 }
 
-export function getClipIdFromCard(
-  card: ClipCard,
-  kickOrigin: string,
-) {
+export function getClipIdFromCard(card: ClipCard, kickOrigin: string) {
   if (!card.querySelector(CLIP_MODAL_BUTTON_SELECTOR)) {
     return undefined
   }

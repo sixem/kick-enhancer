@@ -3,6 +3,7 @@ import { createPortal } from 'preact/compat'
 import { useEffect, useId, useRef } from 'preact/hooks'
 
 import { Button } from './forms'
+import { useModalFocusRestoration } from './modalFocus'
 import { joinClassNames } from './utils'
 
 type ModalProps = {
@@ -33,9 +34,10 @@ export function Modal({
   title,
 }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
-  const previousFocusRef = useRef<HTMLElement | null>(null)
   const titleId = useId()
   const descriptionId = useId()
+
+  useModalFocusRestoration(open)
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -45,10 +47,6 @@ export function Modal({
     }
 
     if (open && !dialog.open) {
-      previousFocusRef.current =
-        document.activeElement instanceof HTMLElement
-          ? document.activeElement
-          : null
       dialog.showModal()
       initialFocusRef?.current?.focus()
     } else if (!open && dialog.open) {
@@ -56,16 +54,9 @@ export function Modal({
     }
   }, [initialFocusRef, open])
 
-  useEffect(() => {
-    return () => {
-      previousFocusRef.current?.focus()
-    }
-  }, [])
-
   const requestClose = () => {
     if (!dismissDisabled) {
       onRequestClose()
-      previousFocusRef.current?.focus()
     }
   }
 

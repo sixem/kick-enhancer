@@ -24,9 +24,7 @@ let restoreTarget: boolean | undefined
 let stopActiveFeature: Dispose | undefined
 
 function getSidebarButton() {
-  return document.querySelector<HTMLButtonElement>(
-    SIDEBAR_BUTTON_SELECTOR,
-  )
+  return document.querySelector<HTMLButtonElement>(SIDEBAR_BUTTON_SELECTOR)
 }
 
 function getSidebarLayout() {
@@ -62,11 +60,7 @@ function getCollapsedState() {
 }
 
 function attemptRestore() {
-  if (
-    !featureActive ||
-    !restoreRequested ||
-    !rememberSidebarState
-  ) {
+  if (!featureActive || !restoreRequested || !rememberSidebarState) {
     return
   }
 
@@ -100,7 +94,7 @@ function attemptRestore() {
 }
 
 function requestRestore() {
-  if (!featureActive) {
+  if (!featureActive || !rememberSidebarState) {
     return
   }
 
@@ -130,11 +124,7 @@ function rememberCollapsedState(collapsed: boolean) {
 export function setRememberSidebarState(enabled: boolean) {
   const collapsed = enabled ? getCollapsedState() : undefined
 
-  log.info(
-    enabled
-      ? 'Memory enabled'
-      : 'Memory disabled',
-  )
+  log.info(enabled ? 'Memory enabled' : 'Memory disabled')
 
   return updateSettings((settings) => ({
     ...settings,
@@ -150,7 +140,7 @@ export function startSidebarStateMemory(): Dispose {
   stopActiveFeature?.()
   featureActive = true
   rememberSidebarState = getSettings().ui.rememberSidebarState
-  activeLayout = getSidebarLayout()
+  let observerConnected = false
 
   const observer = new MutationObserver((records) => {
     const layout = getSidebarLayout()
@@ -206,32 +196,49 @@ export function startSidebarStateMemory(): Dispose {
     }
   })
 
-  observer.observe(document.documentElement, {
-    attributeFilter: ['data-sidebar'],
-    attributes: true,
-    childList: true,
-    subtree: true,
-  })
+  function connectObserver() {
+    if (observerConnected || !featureActive || !rememberSidebarState) {
+      return
+    }
+
+    activeLayout = getSidebarLayout()
+    observer.observe(document.documentElement, {
+      attributeFilter: ['data-sidebar'],
+      attributes: true,
+      childList: true,
+      subtree: true,
+    })
+    observerConnected = true
+    requestRestore()
+  }
+
+  function disconnectObserver() {
+    if (observerConnected) {
+      observer.disconnect()
+      observerConnected = false
+    }
+
+    activeLayout = null
+    restoreRequested = false
+    restoreTarget = undefined
+  }
 
   const stopObserving = subscribeSettings((settings) => {
-    if (
-      settings.ui.rememberSidebarState === rememberSidebarState
-    ) {
+    if (settings.ui.rememberSidebarState === rememberSidebarState) {
       return
     }
 
     rememberSidebarState = settings.ui.rememberSidebarState
 
     if (rememberSidebarState) {
-      requestRestore()
+      connectObserver()
     } else {
-      restoreRequested = false
-      restoreTarget = undefined
+      disconnectObserver()
     }
   })
 
   if (rememberSidebarState) {
-    requestRestore()
+    connectObserver()
   }
 
   let stopped = false
@@ -242,12 +249,9 @@ export function startSidebarStateMemory(): Dispose {
 
     stopped = true
     featureActive = false
-    observer.disconnect()
+    disconnectObserver()
     stopObserving()
-    activeLayout = null
     rememberSidebarState = false
-    restoreRequested = false
-    restoreTarget = undefined
 
     if (stopActiveFeature === stop) {
       stopActiveFeature = undefined
