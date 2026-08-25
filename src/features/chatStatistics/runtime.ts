@@ -6,22 +6,24 @@ import { KickChatAdapter } from './kickChatAdapter.ts'
 import { decodePusherEvent } from './pusherAdapter.ts'
 import { SocketRttTracker } from './rttTracker.ts'
 import { ChatStatsStore } from './statsStore.ts'
-import { type ChatStatisticsSnapshot, type WebSocketTapEvent } from './types.ts'
+import {
+  type ChatStatisticsSnapshot,
+  type KickChatEvent,
+  type WebSocketTapEvent,
+} from './types.ts'
 import { WebSocketTap } from './webSocketTap.ts'
 
 const PING_TIMEOUT_MS = 15_000
 const SNAPSHOT_INTERVAL_MS = 5_000
-const PUSHER_PING_FRAME = JSON.stringify({
-  data: {},
-  event: 'pusher:ping',
-})
 
 type SnapshotListener = (snapshot: ChatStatisticsSnapshot) => void
+type ChatEventListener = (event: KickChatEvent) => void
 
 const log = createLogger('chat-statistics')
 
 export class ChatStatisticsRuntime {
   readonly #chatAdapter = new KickChatAdapter()
+  readonly #chatEventListeners = new Set<ChatEventListener>()
   readonly #clock: () => number
   readonly #listeners = new Set<SnapshotListener>()
   readonly #rttTracker = new SocketRttTracker()
@@ -33,7 +35,11 @@ export class ChatStatisticsRuntime {
   #snapshotTimer: ReturnType<typeof setInterval> | undefined
 
   constructor(
-    webSocketTap: WebSocketTap = new WebSocketTap(unsafeWindow),
+    webSocketTap: WebSocketTap = new WebSocketTap(
+      unsafeWindow,
+      Date.now,
+      window,
+    ),
     clock: () => number = Date.now,
   ) {
     this.#clock = clock
@@ -65,14 +71,27 @@ export class ChatStatisticsRuntime {
 
       const chatEvents = this.#chatAdapter.accept(
         pusherEvent,
-        this.#collectionEnabled,
+        this.#collectionEnabled || this.#chatEventListeners.size > 0,
       )
       const selectedSocketId = this.#chatAdapter.getPreferredSocketId()
       let lifecycleChanged = previousSocketId !== selectedSocketId
 
       for (const chatEvent of chatEvents) {
-        this.#statsStore.accept(chatEvent)
-        lifecycleChanged ||= chatEvent.type !== 'message'
+        if (chatEvent.type !== 'message' || this.#collectionEnabled) {
+          this.#statsStore.accept(chatEvent)
+        }
+
+        lifecycleChanged ||=
+          chatEvent.type === 'sessionStarted' ||
+          chatEvent.type === 'sessionEnded'
+
+        for (const listener of this.#chatEventListeners) {
+          try {
+            listener(chatEvent)
+          } catch {
+            // Feature failures must not interrupt chat capture.
+          }
+        }
       }
 
       if (pusherEvent.type === 'socketClosed') {
@@ -154,7 +173,7 @@ export class ChatStatisticsRuntime {
       return false
     }
 
-    return this.#webSocketTap.send(socketId, PUSHER_PING_FRAME)
+    return this.#webSocketTap.ping(socketId)
   }
 
   subscribe(listener: SnapshotListener): Dispose {
@@ -174,6 +193,14 @@ export class ChatStatisticsRuntime {
         clearInterval(this.#snapshotTimer)
         this.#snapshotTimer = undefined
       }
+    }
+  }
+
+  subscribeChatEvents(listener: ChatEventListener): Dispose {
+    this.#chatEventListeners.add(listener)
+
+    return () => {
+      this.#chatEventListeners.delete(listener)
     }
   }
 

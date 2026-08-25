@@ -1,33 +1,43 @@
 import { type Dispose } from '../../lifecycle.ts'
 import { type WebSocketTapEvent } from './types.ts'
+import { installWebSocketPageHook } from './webSocketPageHook.ts'
 
 type TapListener = (event: WebSocketTapEvent) => void
-const WEB_SOCKET_OPEN_STATE = 1
+const BRIDGE_SOURCE = 'kick-enhancer-chat-statistics'
+const INSTALL_RESULT_ATTRIBUTE = 'data-kick-enhancer-websocket-hook'
+const MAX_FRAME_LENGTH = 256 * 1024
 
 type WebSocketHost = {
-  WebSocket: typeof WebSocket
+  document: Document
+  location: Pick<Location, 'origin'>
 }
 
-type CapturedSocket = Readonly<{
-  hookedSend: WebSocket['send']
-  onClose: EventListener
-  onError: EventListener
-  onMessage: EventListener
-  originalSend: WebSocket['send']
-  socket: WebSocket
-}>
+type WebSocketMessageHost = {
+  addEventListener: Window['addEventListener']
+  postMessage: Window['postMessage']
+  removeEventListener: Window['removeEventListener']
+}
+
+let nextChannelId = 1
 
 export class WebSocketTap {
   readonly #clock: () => number
   readonly #host: WebSocketHost
+  readonly #knownSocketIds = new Set<number>()
   readonly #listeners = new Set<TapListener>()
-  readonly #sockets = new Map<number, CapturedSocket>()
+  readonly #messageHost: WebSocketMessageHost
+  readonly #channel = createBridgeChannel()
   #installed = false
-  #nextSocketId = 1
 
-  constructor(host: WebSocketHost, clock: () => number = Date.now) {
+  constructor(
+    host: WebSocketHost,
+    clock: () => number = Date.now,
+    messageHost: WebSocketMessageHost = host as WebSocketHost &
+      WebSocketMessageHost,
+  ) {
     this.#host = host
     this.#clock = clock
+    this.#messageHost = messageHost
   }
 
   install(): boolean {
@@ -36,52 +46,62 @@ export class WebSocketTap {
     }
 
     try {
-      const NativeWebSocket = this.#host.WebSocket
-      const descriptor = Object.getOwnPropertyDescriptor(
-        this.#host,
-        'WebSocket',
-      )
-      const proxy = new Proxy(NativeWebSocket, {
-        construct: (target, argumentsList, newTarget) => {
-          const socket = Reflect.construct(
-            target,
-            argumentsList,
-            newTarget,
-          ) as WebSocket
+      const installTarget = this.#host.document.documentElement
 
-          try {
-            this.#captureSocket(socket)
-          } catch {
-            // Observation must never interfere with KICK's socket.
-          }
+      if (!installTarget) {
+        return false
+      }
 
-          return socket
-        },
-      })
+      this.#messageHost.addEventListener('message', this.#handleBridgeMessage)
+      const script = this.#host.document.createElement('script')
+      let installed = false
 
-      Object.defineProperty(this.#host, 'WebSocket', {
-        configurable: descriptor?.configurable ?? true,
-        enumerable: descriptor?.enumerable ?? true,
-        value: proxy,
-        writable: true,
-      })
+      try {
+        script.textContent = `try { (${installWebSocketPageHook.toString()})(${JSON.stringify(this.#channel)}) } catch {}`
+        installTarget.append(script)
+        installed = script.getAttribute(INSTALL_RESULT_ATTRIBUTE) === 'true'
+      } finally {
+        script.remove()
+      }
+
+      if (!installed) {
+        this.#messageHost.removeEventListener(
+          'message',
+          this.#handleBridgeMessage,
+        )
+        return false
+      }
 
       this.#installed = true
       return true
     } catch {
+      this.#messageHost.removeEventListener(
+        'message',
+        this.#handleBridgeMessage,
+      )
       return false
     }
   }
 
-  send(socketId: number, data: string): boolean {
-    const captured = this.#sockets.get(socketId)
-
-    if (!captured || captured.socket.readyState !== WEB_SOCKET_OPEN_STATE) {
+  ping(socketId: number): boolean {
+    if (
+      !this.#installed ||
+      !isSocketId(socketId) ||
+      !this.#knownSocketIds.has(socketId)
+    ) {
       return false
     }
 
     try {
-      captured.socket.send(data)
+      this.#messageHost.postMessage(
+        {
+          channel: this.#channel,
+          socketId,
+          source: BRIDGE_SOURCE,
+          type: 'ping',
+        },
+        this.#host.location.origin,
+      )
       return true
     } catch {
       return false
@@ -96,109 +116,100 @@ export class WebSocketTap {
     }
   }
 
-  #captureSocket(socket: WebSocket) {
-    const socketId = this.#nextSocketId
-    this.#nextSocketId += 1
+  readonly #handleBridgeMessage = (event: MessageEvent<unknown>) => {
+    const bridgeEvent = this.#decodeBridgeEvent(event)
 
-    // The original method is deliberately detached, then invoked with its
-    // socket through Reflect.apply and restored during cleanup.
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    const originalSend = socket.send
-    const hookedSend = new Proxy(originalSend, {
-      apply: (target, thisArgument, argumentsList) => {
-        const result = Reflect.apply(
-          target,
-          thisArgument,
-          argumentsList,
-        ) as unknown
-
-        this.#emit({
-          data: argumentsList[0] as unknown,
-          direction: 'outgoing',
-          observedAt: this.#clock(),
-          socketId,
-          type: 'frame',
-        })
-
-        return result
-      },
-    })
-    const onMessage: EventListener = (event) => {
-      this.#emit({
-        data: (event as MessageEvent<unknown>).data,
-        direction: 'incoming',
-        observedAt: this.#clock(),
-        socketId,
-        type: 'frame',
-      })
-    }
-    const onError: EventListener = () => {
-      this.#emit({
-        observedAt: this.#clock(),
-        socketId,
-        type: 'error',
-      })
-    }
-    const onClose: EventListener = () => {
-      this.#emit({
-        observedAt: this.#clock(),
-        socketId,
-        type: 'closed',
-      })
-      this.#releaseSocket(socketId)
-    }
-
-    Object.defineProperty(socket, 'send', {
-      configurable: true,
-      value: hookedSend,
-      writable: true,
-    })
-    socket.addEventListener('message', onMessage)
-    socket.addEventListener('error', onError)
-    socket.addEventListener('close', onClose)
-
-    this.#sockets.set(socketId, {
-      hookedSend,
-      onClose,
-      onError,
-      onMessage,
-      originalSend,
-      socket,
-    })
-  }
-
-  #emit(event: WebSocketTapEvent) {
-    for (const listener of this.#listeners) {
-      try {
-        listener(event)
-      } catch {
-        // Subscriber failures must never enter KICK's socket call path.
-      }
-    }
-  }
-
-  #releaseSocket(socketId: number) {
-    const captured = this.#sockets.get(socketId)
-
-    if (!captured) {
+    if (!bridgeEvent) {
       return
     }
 
-    this.#sockets.delete(socketId)
-    captured.socket.removeEventListener('message', captured.onMessage)
-    captured.socket.removeEventListener('error', captured.onError)
-    captured.socket.removeEventListener('close', captured.onClose)
+    if (bridgeEvent.type === 'closed') {
+      this.#knownSocketIds.delete(bridgeEvent.socketId)
+    } else {
+      this.#knownSocketIds.add(bridgeEvent.socketId)
+    }
 
-    if (captured.socket.send === captured.hookedSend) {
+    for (const listener of this.#listeners) {
       try {
-        Reflect.deleteProperty(captured.socket, 'send')
+        listener(bridgeEvent)
       } catch {
-        Object.defineProperty(captured.socket, 'send', {
-          configurable: true,
-          value: captured.originalSend,
-          writable: true,
-        })
+        // Subscriber failures must not interrupt message capture.
       }
     }
   }
+
+  #decodeBridgeEvent(event: MessageEvent<unknown>): WebSocketTapEvent | null {
+    try {
+      if (
+        !isExpectedMessageSource(event.source, this.#host, this.#messageHost) ||
+        event.origin !== this.#host.location.origin ||
+        !isRecord(event.data)
+      ) {
+        return null
+      }
+
+      const data = event.data
+
+      if (
+        data.source !== BRIDGE_SOURCE ||
+        data.channel !== this.#channel ||
+        !isSocketId(data.socketId)
+      ) {
+        return null
+      }
+
+      const observedAt = this.#clock()
+
+      if (data.type === 'closed' || data.type === 'error') {
+        return {
+          observedAt,
+          socketId: data.socketId,
+          type: data.type,
+        }
+      }
+
+      if (
+        data.type !== 'frame' ||
+        (data.direction !== 'incoming' && data.direction !== 'outgoing') ||
+        typeof data.data !== 'string' ||
+        data.data.length > MAX_FRAME_LENGTH
+      ) {
+        return null
+      }
+
+      return {
+        data: data.data,
+        direction: data.direction,
+        observedAt,
+        socketId: data.socketId,
+        type: 'frame',
+      }
+    } catch {
+      return null
+    }
+  }
+}
+
+function createBridgeChannel() {
+  const channelId = nextChannelId
+  nextChannelId += 1
+
+  const randomPart = globalThis.crypto?.randomUUID?.() ?? String(Date.now())
+  return `${BRIDGE_SOURCE}:${randomPart}:${channelId}`
+}
+
+function isExpectedMessageSource(
+  source: MessageEventSource | null,
+  host: WebSocketHost,
+  messageHost: WebSocketMessageHost,
+) {
+  return source === host || source === messageHost
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function isSocketId(value: unknown): value is number {
+  return Number.isSafeInteger(value) && (value as number) > 0
 }

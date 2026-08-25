@@ -1,82 +1,37 @@
 import { unsafeWindow } from '$'
 
 import { createLogger } from '../../logging/logger'
-import { classifyViewerCountEndpoint } from './acquisition/endpoints'
-import {
-  VIEWER_COUNT_MESSAGE_SOURCE,
-  VIEWER_COUNT_MESSAGE_TYPE,
-  type CapturedViewerCountMessage,
-} from './model/types'
+import { classifyViewerCountEndpoint } from './acquisition/endpoints.ts'
+import { installViewerCountPageHook } from './viewerCountPageHook.ts'
 
 const log = createLogger('viewer-counts:capture')
-
-type ViewerCountPageWindow = Window &
-  typeof globalThis & {
-    __kickEnhancerViewerCountHookInstalled?: boolean
-  }
+const INSTALL_RESULT_ATTRIBUTE = 'data-kick-enhancer-viewer-count-hook'
 
 export function installViewerCountCaptureBridge() {
-  const pageWindow = unsafeWindow as ViewerCountPageWindow
+  const pageWindow = unsafeWindow
 
   try {
-    if (pageWindow.__kickEnhancerViewerCountHookInstalled) {
-      return true
+    const installTarget = pageWindow.document.documentElement
+
+    if (!installTarget) {
+      throw new Error('The page document is not ready.')
     }
 
-    // The original method is deliberately detached and later invoked with the
-    // response as its receiver through Reflect.apply.
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    const originalJson = pageWindow.Response.prototype.json
-    const originalDescriptor = Object.getOwnPropertyDescriptor(
-      pageWindow.Response.prototype,
-      'json',
-    )
+    const script = pageWindow.document.createElement('script')
+    let installed = false
 
-    // Observe the page's promise without replacing it, preserving the exact
-    // fulfillment and rejection behavior Kick expects.
-    const hookedJson = new Proxy(originalJson, {
-      apply(target, thisArgument: Response, argumentsList) {
-        const payloadPromise = Reflect.apply(
-          target,
-          thisArgument,
-          argumentsList,
-        ) as Promise<unknown>
-        const endpoint = classifyViewerCountEndpoint(
-          thisArgument.url,
-          pageWindow.location.href,
-        )
+    try {
+      script.textContent = `try { (${installViewerCountPageHook.toString()})((${classifyViewerCountEndpoint.toString()})) } catch {}`
+      installTarget.append(script)
+      installed = script.getAttribute(INSTALL_RESULT_ATTRIBUTE) === 'true'
+    } finally {
+      script.remove()
+    }
 
-        if (endpoint) {
-          void payloadPromise
-            .then((payload) => {
-              const message: CapturedViewerCountMessage = {
-                endpoint,
-                payload,
-                source: VIEWER_COUNT_MESSAGE_SOURCE,
-                timestamp: Date.now(),
-                type: VIEWER_COUNT_MESSAGE_TYPE,
-                url: thisArgument.url,
-              }
+    if (!installed) {
+      throw new Error('The page-context hook could not be installed.')
+    }
 
-              pageWindow.postMessage(message, pageWindow.location.origin)
-            })
-            .catch(() => {
-              // Kick still receives the original rejected promise.
-            })
-        }
-
-        return payloadPromise
-      },
-    })
-
-    Object.defineProperty(pageWindow.Response.prototype, 'json', {
-      ...originalDescriptor,
-      configurable: true,
-      value: hookedJson,
-      writable: true,
-    })
-
-    pageWindow.__kickEnhancerViewerCountHookInstalled = true
     log.info('Installed')
     return true
   } catch (error) {
