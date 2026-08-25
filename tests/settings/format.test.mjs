@@ -3,9 +3,9 @@ import test from 'node:test'
 
 import {
   DEFAULT_SETTINGS,
+  normalizeDeletedMessageCacheSize,
   parseSettingsFile,
   serializeSettings,
-  SETTINGS_VERSION,
 } from '../../src/settings/settingsFormat.ts'
 
 test('round-trips current settings without a compatibility warning', () => {
@@ -15,11 +15,18 @@ test('round-trips current settings without a compatibility warning', () => {
 
   assert.deepEqual(result.settings, DEFAULT_SETTINGS)
   assert.equal(result.compatibilityWarning, false)
+  assert.equal(result.settings.chat.showDeletedMessages, false)
+  assert.equal(result.settings.chat.deletedMessageCacheSize, 250)
 })
 
-test('round-trips the chat leaderboard preference', () => {
+test('round-trips non-default settings without a compatibility warning', () => {
   const settings = {
     ...DEFAULT_SETTINGS,
+    chat: {
+      ...DEFAULT_SETTINGS.chat,
+      deletedMessageCacheSize: 500,
+      showDeletedMessages: true,
+    },
     ui: {
       ...DEFAULT_SETTINGS.ui,
       hideChatLeaderboard: true,
@@ -29,31 +36,35 @@ test('round-trips the chat leaderboard preference', () => {
     parseSettingsFile(serializeSettings(settings)),
   )
 
-  assert.equal(result.settings.ui.hideChatLeaderboard, true)
+  assert.deepEqual(result.settings, settings)
   assert.equal(result.compatibilityWarning, false)
 })
 
 test('imports older settings and defaults newer values', () => {
-  const version4Chat = {
-    ...DEFAULT_SETTINGS.chat,
-  }
-  delete version4Chat.showChatStatistics
-
-  const version4Ui = {
-    ...DEFAULT_SETTINGS.ui,
-    hideHomepageCarousel: true,
-    rememberSidebarState: true,
-    showHiddenViewerCounts: false,
-  }
-  delete version4Ui.hideChatLeaderboard
-  delete version4Ui.showClipDownloadButtons
-
   const result = expectSuccessful(
     parseSettingsFile(
       JSON.stringify({
-        chat: version4Chat,
-        ui: version4Ui,
-        version: 4,
+        chat: {
+          fontFamily: null,
+          fontSize: null,
+          fontWeight: null,
+          messageDividers: false,
+          messageSpacing: null,
+          showChatStatistics: true,
+        },
+        ui: {
+          hideChatLeaderboard: false,
+          hideFollowingRecommendations: false,
+          hideGamblingStreams: false,
+          hideHomepageCarousel: true,
+          hideRecommendedChannels: false,
+          rememberSidebarState: true,
+          showClipDownloadButtons: true,
+          showHiddenViewerCounts: false,
+          showStreamUptime: false,
+          sidebarCollapsed: false,
+        },
+        version: 7,
       }),
     ),
   )
@@ -62,8 +73,17 @@ test('imports older settings and defaults newer values', () => {
   assert.equal(result.settings.ui.hideChatLeaderboard, false)
   assert.equal(result.settings.ui.hideHomepageCarousel, true)
   assert.equal(result.settings.ui.showClipDownloadButtons, true)
-  assert.equal(result.settings.chat.showChatStatistics, false)
-  assert.equal(result.settings.version, SETTINGS_VERSION)
+  assert.equal(result.settings.chat.showChatStatistics, true)
+  assert.equal(result.settings.chat.showDeletedMessages, false)
+  assert.equal(result.settings.chat.deletedMessageCacheSize, 250)
+  assert.equal(result.settings.version, 8)
+})
+
+test('bounds and steps the deleted-message cache size', () => {
+  assert.equal(normalizeDeletedMessageCacheSize(1), 50)
+  assert.equal(normalizeDeletedMessageCacheSize(276), 300)
+  assert.equal(normalizeDeletedMessageCacheSize(5_000), 1_000)
+  assert.equal(normalizeDeletedMessageCacheSize(Number.NaN), 250)
 })
 
 test('normalizes invalid values and ignores unknown settings', () => {
@@ -77,7 +97,7 @@ test('normalizes invalid values and ignores unknown settings', () => {
           fontSize: 99,
         },
         futureSetting: true,
-        version: SETTINGS_VERSION + 1,
+        version: 9,
       }),
     ),
   )
@@ -85,7 +105,7 @@ test('normalizes invalid values and ignores unknown settings', () => {
   assert.equal(result.compatibilityWarning, true)
   assert.equal(result.settings.chat.fontFamily, null)
   assert.equal(result.settings.chat.fontSize, 24)
-  assert.equal(result.settings.version, SETTINGS_VERSION)
+  assert.equal(result.settings.version, 8)
 })
 
 test('rejects malformed and unrelated JSON', () => {

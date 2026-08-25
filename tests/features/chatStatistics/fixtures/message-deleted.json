@@ -1,0 +1,5 @@
+{
+  "channel": "chatrooms.29191.v2",
+  "data": "{\"id\":\"deletion-action-001\",\"message\":{\"id\":\"message-001\"},\"aiModerated\":true,\"violatedRules\":[\"spam\"]}",
+  "event": "App\\Events\\MessageDeletedEvent"
+}

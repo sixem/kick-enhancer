@@ -130,6 +130,14 @@
   justify-content: flex-end;
 }
 
+.ke-settings__divider {
+  width: 100%;
+  height: 1px;
+  margin: 0;
+  border: 0;
+  background: tokens.$border;
+}
+
 .ke-workspace-modal {
   --ke-workspace-modal-gutter: clamp(1rem, 4vw, 2rem);
   --ke-workspace-modal-height: 52rem;

@@ -1,12 +1,17 @@
+import { unsafeWindow } from '$'
+
+import { onDocumentElementReady } from '../../dom/onDocumentElementReady'
 import { type Dispose } from '../../lifecycle'
 import { observeSetting } from '../../settings/settings'
 import styles from './gamblingStreams.scss?inline'
 import { applyStyleToggle } from '../shared/styleToggle'
+import {
+  FollowedGamblingChannels,
+  reconcileGamblingSidebarRows,
+} from './followedChannels'
+import { handleFollowedChannelsCapture } from './followedChannelsCapture'
 
 const STYLE_ID = 'kick-enhancer-hide-gambling-streams'
-const SIDEBAR_GAMBLING_ATTRIBUTE = 'data-kick-enhancer-gambling-stream'
-const SIDEBAR_FOLLOWING_SELECTOR =
-  'a[data-testid^="sidebar-following-channel-"]'
 const GAMBLING_SURFACE_SELECTOR = [
   '[data-testid="followed-livestreams"]',
   '#sidebar-wrapper',
@@ -15,81 +20,30 @@ const CHATROOM_MESSAGES_SELECTOR = '#chatroom-messages'
 
 let gamblingStreamsHidden = false
 let featureActive = false
+let captureInitialized = false
 let sidebarScanFrame: number | undefined
 let stopActiveFeature: Dispose | undefined
+const followedGamblingChannels = new FollowedGamblingChannels()
 
 function applyGamblingStreamsVisibility(hidden: boolean) {
   applyStyleToggle(STYLE_ID, styles, hidden)
 }
 
-function getFollowedGamblingChannelPaths() {
-  const paths = new Set<string>()
-
-  for (const card of document.querySelectorAll<HTMLElement>(
-    '[data-testid="followed-livestreams"] ' +
-      '[data-testid="livestream-results-card"]' +
-      ':has(a[href="/category/slots"])',
-  )) {
-    const channelLink = card.querySelector<HTMLAnchorElement>(
-      'a[data-testid="media-card-thumbnail"]',
-    )
-    const path = channelLink?.getAttribute('href')
-
-    if (path) {
-      paths.add(path)
-    }
-  }
-
-  return paths
-}
-
-function isSlotsAndCasinoRow(
-  link: HTMLAnchorElement,
-  gamblingChannelPaths: ReadonlySet<string>,
-) {
-  const path = link.getAttribute('href')
-
-  if (path && gamblingChannelPaths.has(path)) {
-    return true
-  }
-
-  for (const span of link.querySelectorAll('span')) {
-    if (span.textContent?.trim() === 'Slots & Casino') {
-      return true
-    }
-  }
-
-  return false
-}
-
 function updateSidebarRows() {
   sidebarScanFrame = undefined
-
-  if (!gamblingStreamsHidden) {
-    for (const row of document.querySelectorAll(
-      `[${SIDEBAR_GAMBLING_ATTRIBUTE}]`,
-    )) {
-      row.removeAttribute(SIDEBAR_GAMBLING_ATTRIBUTE)
-    }
-
-    return
-  }
-
-  const gamblingChannelPaths = getFollowedGamblingChannelPaths()
-
-  for (const link of document.querySelectorAll<HTMLAnchorElement>(
-    SIDEBAR_FOLLOWING_SELECTOR,
-  )) {
-    const row = link.closest('button') ?? link
-    row.toggleAttribute(
-      SIDEBAR_GAMBLING_ATTRIBUTE,
-      isSlotsAndCasinoRow(link, gamblingChannelPaths),
-    )
-  }
+  reconcileGamblingSidebarRows(
+    document,
+    gamblingStreamsHidden,
+    followedGamblingChannels,
+  )
 }
 
 function scheduleSidebarScan() {
-  if (!featureActive || sidebarScanFrame !== undefined) {
+  if (
+    !featureActive ||
+    !gamblingStreamsHidden ||
+    sidebarScanFrame !== undefined
+  ) {
     return
   }
 
@@ -136,8 +90,10 @@ function mutationsTouchGamblingSurfaces(records: readonly MutationRecord[]) {
 }
 
 export function startGamblingStreamsVisibility(): Dispose {
+  initializeGamblingStreamsCapture()
   stopActiveFeature?.()
   featureActive = true
+  let cancelDocumentReady: Dispose | undefined
 
   const observer = new MutationObserver((records) => {
     if (gamblingStreamsHidden && mutationsTouchGamblingSurfaces(records)) {
@@ -154,26 +110,59 @@ export function startGamblingStreamsVisibility(): Dispose {
     sidebarScanFrame = undefined
   }
 
+  function activateVisibility() {
+    if (!gamblingStreamsHidden || !document.documentElement) {
+      return
+    }
+
+    applyGamblingStreamsVisibility(true)
+    observer.observe(document.documentElement, {
+      attributeFilter: ['data-testid', 'href'],
+      attributes: true,
+      characterData: true,
+      childList: true,
+      subtree: true,
+    })
+    scheduleSidebarScan()
+  }
+
+  function requestVisibilityActivation() {
+    if (document.documentElement) {
+      activateVisibility()
+      return
+    }
+
+    if (cancelDocumentReady) {
+      return
+    }
+
+    cancelDocumentReady = onDocumentElementReady(() => {
+      cancelDocumentReady = undefined
+      activateVisibility()
+    })
+  }
+
+  function cancelVisibilityActivation() {
+    cancelDocumentReady?.()
+    cancelDocumentReady = undefined
+  }
+
   function setVisibility(hidden: boolean) {
     if (gamblingStreamsHidden === hidden) {
       return
     }
 
     gamblingStreamsHidden = hidden
-    applyGamblingStreamsVisibility(hidden)
 
     if (hidden) {
-      observer.observe(document.documentElement, {
-        characterData: true,
-        childList: true,
-        subtree: true,
-      })
-      scheduleSidebarScan()
+      requestVisibilityActivation()
       return
     }
 
+    cancelVisibilityActivation()
     observer.disconnect()
     cancelSidebarScan()
+    applyGamblingStreamsVisibility(false)
     updateSidebarRows()
   }
 
@@ -189,6 +178,7 @@ export function startGamblingStreamsVisibility(): Dispose {
 
     stopped = true
     featureActive = false
+    cancelVisibilityActivation()
     observer.disconnect()
     stopObserving()
     cancelSidebarScan()
@@ -203,4 +193,25 @@ export function startGamblingStreamsVisibility(): Dispose {
 
   stopActiveFeature = stop
   return stop
+}
+
+export function initializeGamblingStreamsCapture() {
+  if (captureInitialized) {
+    return
+  }
+
+  captureInitialized = true
+  window.addEventListener('message', (event) => {
+    handleFollowedChannelsCapture(
+      event,
+      {
+        currentHref: window.location.href,
+        currentOrigin: window.location.origin,
+        messageWindow: window,
+        pageWindow: unsafeWindow,
+      },
+      followedGamblingChannels,
+      scheduleSidebarScan,
+    )
+  })
 }

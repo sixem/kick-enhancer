@@ -76,7 +76,7 @@ export function decodePusherEvent(
   return {
     channelName,
     // Keep event payloads lazy. Chat messages are the high-volume path, and
-    // their nested JSON is only needed while statistics collection is active.
+    // their nested JSON is only needed by active normalized-chat consumers.
     data: envelope.data,
     eventName,
     observedAt: event.observedAt,

@@ -13,6 +13,7 @@
 - Hide auto-playing front page streams to avoid bloat and noise.
 - Customizable chat settings (size, spacing, weight, fonts etc.).
 - Chat statistics (messages per minute, active chatters, socket latency etc.)
+- Optionally keep recently deleted chat messages visible.
 - A download manager for downloading clips directly _without_ watermark.
 
 ## Installation

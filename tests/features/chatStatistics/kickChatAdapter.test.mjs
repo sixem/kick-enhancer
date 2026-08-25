@@ -1,53 +1,72 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import test from 'node:test'
 
 import { KickChatAdapter } from '../../../src/features/chatStatistics/kickChatAdapter.ts'
+import { decodePusherEvent } from '../../../src/features/chatStatistics/pusherAdapter.ts'
 
 const CHANNEL = 'chatrooms.29191.v2'
 
-test('emits sanitized messages after subscription confirmation', () => {
+test('routes the sanitized current KICK contract fixtures', () => {
   const adapter = new KickChatAdapter()
-  const message = pusherMessage({
-    chatroom_id: 29191,
-    content: 'must not be retained',
-    created_at: '2026-01-01T00:00:00Z',
-    id: 'message-1',
-    metadata: { mentions: ['private-shape'] },
-    sender: {
-      id: 42,
-      username: 'must-not-be-retained',
-    },
-    type: 'message',
-  })
+  const normal = decodeFixture('normal-message.json')
+  const reply = decodeFixture('reply-message.json')
+  const deleted = decodeFixture('message-deleted.json')
 
-  assert.deepEqual(adapter.accept(subscribing()), [])
-  assert.deepEqual(adapter.accept(subscribed()), [
-    {
-      chatroomId: '29191',
-      observedAt: 200,
-      type: 'sessionStarted',
-    },
-  ])
-
-  const events = adapter.accept(message)
-
-  assert.deepEqual(events, [
-    {
-      chatroomId: '29191',
-      messageId: 'message-1',
-      messageType: 'message',
-      observedAt: 300,
-      senderId: '42',
-      type: 'message',
-    },
-  ])
-  assert.equal('content' in events[0], false)
-  assert.equal('username' in events[0], false)
+  assert.deepEqual(
+    [
+      ...adapter.accept(normal),
+      ...adapter.accept(reply),
+      ...adapter.accept(deleted),
+    ],
+    [
+      {
+        chatroomId: '29191',
+        observedAt: 100,
+        type: 'sessionStarted',
+      },
+      {
+        chatroomId: '29191',
+        content: 'Synthetic fixture message',
+        messageId: 'message-001',
+        messageType: 'message',
+        observedAt: 100,
+        senderId: '101',
+        type: 'message',
+      },
+      {
+        chatroomId: '29191',
+        content: 'Synthetic fixture reply',
+        messageId: 'message-002',
+        messageType: 'reply',
+        observedAt: 100,
+        senderId: '202',
+        type: 'message',
+      },
+      {
+        chatroomId: '29191',
+        messageId: 'message-001',
+        observedAt: 100,
+        type: 'messageDeleted',
+      },
+    ],
+  )
 })
 
-test('tracks sessions without decoding messages while collection is disabled', () => {
+test('tracks sessions without reading messages while collection is disabled', () => {
   const adapter = new KickChatAdapter()
-  const message = pusherMessage({
+  const unreadableMessage = {
+    ...pusherMessage({}),
+    data: new Proxy(
+      {},
+      {
+        get() {
+          throw new Error('Message payload was read.')
+        },
+      },
+    ),
+  }
+  const validMessage = pusherMessage({
     chatroom_id: 29191,
     id: 'message-1',
     sender: { id: 42 },
@@ -56,12 +75,12 @@ test('tracks sessions without decoding messages while collection is disabled', (
 
   adapter.accept(subscribing())
   assert.equal(adapter.accept(subscribed())[0]?.type, 'sessionStarted')
-  assert.deepEqual(adapter.accept(message, false), [])
-  assert.equal(adapter.accept(message)[0]?.type, 'message')
+  assert.deepEqual(adapter.accept(unreadableMessage, false), [])
+  assert.equal(adapter.accept(validMessage)[0]?.type, 'message')
   assert.equal(adapter.accept(unsubscribing())[0]?.type, 'sessionEnded')
 })
 
-test('rejects changed message contracts and late events', () => {
+test('rejects changed chat contracts and late events', () => {
   const adapter = new KickChatAdapter()
   adapter.accept(subscribing())
   adapter.accept(subscribed())
@@ -87,6 +106,7 @@ test('rejects changed message contracts and late events', () => {
     ),
     [],
   )
+  assert.deepEqual(adapter.accept(pusherDeletion({ message: [] })), [])
 
   assert.equal(adapter.accept(unsubscribing())[0]?.type, 'sessionEnded')
   assert.deepEqual(
@@ -100,21 +120,6 @@ test('rejects changed message contracts and late events', () => {
     ),
     [],
   )
-})
-
-test('keeps the logical session when its socket closes', () => {
-  const adapter = new KickChatAdapter()
-  adapter.accept(subscribing())
-  adapter.accept(subscribed())
-
-  const events = adapter.accept({
-    observedAt: 400,
-    socketId: 7,
-    type: 'socketClosed',
-  })
-
-  assert.deepEqual(events, [])
-  assert.equal(adapter.getPreferredSocketId(), null)
 })
 
 test('merges same-room socket replicas and fails RTT selection over', () => {
@@ -186,6 +191,12 @@ test('switches logical rooms before the previous room unsubscribes', () => {
     [],
   )
   assert.deepEqual(adapter.accept(subscribed(7, CHANNEL, 600)), [])
+  assert.deepEqual(
+    adapter.accept(
+      pusherDeletion({ message: { id: 'late-old-room' } }, { socketId: 7 }),
+    ),
+    [],
+  )
   assert.equal(adapter.getPreferredSocketId(), 8)
 })
 
@@ -198,6 +209,7 @@ test('preserves statistics lifecycle across a same-room reconnect', () => {
     adapter.accept({ observedAt: 300, socketId: 7, type: 'socketClosed' }),
     [],
   )
+  assert.equal(adapter.getPreferredSocketId(), null)
   assert.deepEqual(adapter.accept(subscribing(8, CHANNEL, 400)), [])
   assert.deepEqual(adapter.accept(subscribed(8, CHANNEL, 500)), [])
   assert.equal(adapter.getPreferredSocketId(), 8)
@@ -281,4 +293,32 @@ function pusherMessage(data, options = {}) {
     socketId: options.socketId ?? 7,
     type: 'event',
   }
+}
+
+function pusherDeletion(data, options = {}) {
+  return {
+    channelName: options.channelName ?? CHANNEL,
+    data: JSON.stringify(data),
+    eventName: 'App\\Events\\MessageDeletedEvent',
+    observedAt: options.observedAt ?? 350,
+    socketId: options.socketId ?? 7,
+    type: 'event',
+  }
+}
+
+function decodeFixture(name) {
+  const text = readFileSync(
+    new URL(`./fixtures/${name}`, import.meta.url),
+    'utf8',
+  )
+  const event = decodePusherEvent({
+    data: text,
+    direction: 'incoming',
+    observedAt: 100,
+    socketId: 7,
+    type: 'frame',
+  })
+
+  assert.equal(event?.type, 'event')
+  return event
 }

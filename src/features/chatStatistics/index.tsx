@@ -5,7 +5,11 @@ import { observeSetting } from '../../settings/settings'
 import { ChatStatisticsCard, ChatStatisticsTrigger } from './ChatStatisticsView'
 import { getChatStatisticsRuntime } from './runtime.ts'
 import styles from './chatStatistics.scss?inline'
-import { findChatStatisticsAnchors, type ChatStatisticsAnchors } from './dom'
+import {
+  findChatStatisticsAnchors,
+  LIVE_CHAT_MARKER_SELECTOR,
+  type ChatStatisticsAnchors,
+} from './dom'
 
 export { initializeChatStatisticsCapture } from './runtime.ts'
 
@@ -248,8 +252,12 @@ function startStatisticsUi(): Dispose {
     attributeFilter: [
       'aria-hidden',
       'class',
+      'data-aria-hidden',
+      'data-testid',
       'hidden',
+      'inert',
       NATIVE_TITLE_ATTRIBUTE,
+      'role',
       'style',
     ],
     attributes: true,
@@ -288,22 +296,37 @@ function installStyles() {
 
 function mutationMayChangeChatroom(mutation: MutationRecord) {
   if (mutation.type === 'attributes') {
+    if (
+      mutation.attributeName === 'data-testid' &&
+      mutation.target instanceof Element
+    ) {
+      return Boolean(mutation.target.closest(CHATROOM_SELECTOR))
+    }
+
     return containsChatroom(mutation.target)
   }
 
   for (const node of mutation.addedNodes) {
-    if (containsChatroom(node)) {
+    if (containsChatroom(node) || containsLiveChatMarker(node)) {
       return true
     }
   }
 
   for (const node of mutation.removedNodes) {
-    if (containsChatroom(node)) {
+    if (containsChatroom(node) || containsLiveChatMarker(node)) {
       return true
     }
   }
 
   return false
+}
+
+function containsLiveChatMarker(node: Node) {
+  return (
+    node instanceof Element &&
+    (node.matches(LIVE_CHAT_MARKER_SELECTOR) ||
+      Boolean(node.querySelector(LIVE_CHAT_MARKER_SELECTOR)))
+  )
 }
 
 function containsChatroom(node: Node) {

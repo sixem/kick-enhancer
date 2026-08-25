@@ -8,6 +8,7 @@ import {
   setChatFontWeight,
   setChatMessageDividers,
   setChatMessageSpacing,
+  setDeletedMessageCacheSize,
   setHideChatLeaderboard,
   setHideFollowingRecommendations,
   setHideGamblingStreams,
@@ -17,9 +18,13 @@ import {
   setShowClipDownloadButtons,
   setShowHiddenViewerCounts,
   setShowChatStatistics,
+  setShowDeletedMessages,
   setShowStreamUptime,
 } from './actions'
 import {
+  CHAT_DELETED_MESSAGE_CACHE_SIZE_MAX,
+  CHAT_DELETED_MESSAGE_CACHE_SIZE_MIN,
+  CHAT_DELETED_MESSAGE_CACHE_SIZE_STEP,
   CHAT_FONT_SIZE_DEFAULT,
   CHAT_FONT_SIZE_MAX,
   CHAT_FONT_SIZE_MIN,
@@ -96,6 +101,36 @@ export function ChatSettingsSection({
 
   return (
     <div className="ke-settings">
+      <Toggle
+        checked={settings.showChatStatistics}
+        description="Show live message activity, active chatters, socket RTT, and session totals in chat."
+        label="Show chat statistics"
+        onCheckedChange={(visible) => {
+          void setShowChatStatistics(visible)
+        }}
+      />
+      <Toggle
+        checked={settings.showDeletedMessages}
+        description="Keep recently observed message text visible when KICK deletes it."
+        label="Show deleted chat messages"
+        onCheckedChange={(visible) => {
+          void setShowDeletedMessages(visible)
+        }}
+      />
+      <TrackBar
+        description="Limit how many recent chat messages are kept in memory."
+        disabled={!settings.showDeletedMessages}
+        formatValue={(value) => `${value} messages`}
+        label="Messages to cache"
+        max={CHAT_DELETED_MESSAGE_CACHE_SIZE_MAX}
+        min={CHAT_DELETED_MESSAGE_CACHE_SIZE_MIN}
+        onValueChange={(value) => {
+          void setDeletedMessageCacheSize(value)
+        }}
+        step={CHAT_DELETED_MESSAGE_CACHE_SIZE_STEP}
+        value={settings.deletedMessageCacheSize}
+      />
+      <hr className="ke-settings__divider" />
       <SelectBox
         description="Change the typeface used throughout the chatroom."
         label="Chat font"
@@ -161,14 +196,6 @@ export function ChatSettingsSection({
         label="Message dividers"
         onCheckedChange={(enabled) => {
           void setChatMessageDividers(enabled)
-        }}
-      />
-      <Toggle
-        checked={settings.showChatStatistics}
-        description="Show live message activity, active chatters, socket RTT, and session totals in chat."
-        label="Show chat statistics"
-        onCheckedChange={(visible) => {
-          void setShowChatStatistics(visible)
         }}
       />
       <div className="ke-settings__actions">

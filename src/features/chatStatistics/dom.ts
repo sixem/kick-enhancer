@@ -4,6 +4,7 @@ export type ChatStatisticsAnchors = Readonly<{
 }>
 
 const CHATROOM_SELECTOR = '#channel-chatroom'
+export const LIVE_CHAT_MARKER_SELECTOR = '[data-testid="chat-input"]'
 const MESSAGES_SELECTOR = '#chatroom-messages'
 const TITLE_POSITION_CLASSES = [
   'absolute',
@@ -14,26 +15,29 @@ const TITLE_POSITION_CLASSES = [
 export function findChatStatisticsAnchors(
   ownerDocument: Document = document,
 ): ChatStatisticsAnchors | null {
-  let fallback: ChatStatisticsAnchors | null = null
   let visible: ChatStatisticsAnchors | null = null
 
   for (const chatroom of ownerDocument.querySelectorAll<HTMLElement>(
     CHATROOM_SELECTOR,
   )) {
+    if (
+      chatroom.closest('[role="dialog"]') ||
+      !chatroom.querySelector(LIVE_CHAT_MARKER_SELECTOR) ||
+      !isVisible(chatroom)
+    ) {
+      continue
+    }
+
     const anchors = findChatroomAnchors(chatroom)
 
     if (!anchors) {
       continue
     }
 
-    fallback = anchors
-
-    if (isVisible(chatroom)) {
-      visible = anchors
-    }
+    visible = anchors
   }
 
-  return visible ?? fallback
+  return visible
 }
 
 function findChatroomAnchors(
@@ -82,11 +86,22 @@ function findChatroomAnchors(
 }
 
 function isVisible(element: HTMLElement) {
+  for (
+    let current: Element | null = element;
+    current;
+    current = current.parentElement
+  ) {
+    if (
+      current.hasAttribute('hidden') ||
+      current.hasAttribute('inert') ||
+      current.getAttribute('aria-hidden') === 'true' ||
+      current.getAttribute('data-aria-hidden') === 'true'
+    ) {
+      return false
+    }
+  }
+
   return (
-    typeof element.checkVisibility !== 'function' ||
-    element.checkVisibility({
-      checkOpacity: true,
-      checkVisibilityCSS: true,
-    })
+    typeof element.checkVisibility !== 'function' || element.checkVisibility()
   )
 }

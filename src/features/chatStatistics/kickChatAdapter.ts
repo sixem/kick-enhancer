@@ -2,6 +2,7 @@ import { type KickChatEvent, type PusherEvent } from './types.ts'
 
 const CHAT_CHANNEL_PATTERN = /^chatrooms\.(\d+)\.v2$/
 const CHAT_MESSAGE_EVENT = 'App\\Events\\ChatMessageEvent'
+const MESSAGE_DELETED_EVENT = 'App\\Events\\MessageDeletedEvent'
 
 type Session = {
   channelName: string
@@ -64,11 +65,37 @@ export class KickChatAdapter {
       return this.#confirmSubscription(event, chatroomId)
     }
 
-    if (event.type !== 'event' || event.eventName !== CHAT_MESSAGE_EVENT) {
+    if (event.type !== 'event') {
       return []
     }
 
     const session = this.#session
+
+    if (event.eventName === MESSAGE_DELETED_EVENT) {
+      const messageId = decodeDeletionMessageId(event.data)
+
+      if (!messageId || !session || session.channelName !== event.channelName) {
+        return []
+      }
+
+      const started = this.#markSocketLive(session, event.socketId)
+      const events: KickChatEvent[] = started
+        ? [createSessionEvent('sessionStarted', session, event)]
+        : []
+
+      events.push({
+        chatroomId: session.chatroomId,
+        messageId,
+        observedAt: event.observedAt,
+        type: 'messageDeleted',
+      })
+
+      return events
+    }
+
+    if (event.eventName !== CHAT_MESSAGE_EVENT) {
+      return []
+    }
 
     if (session && session.channelName !== event.channelName) {
       return []
@@ -109,6 +136,7 @@ export class KickChatAdapter {
 
     events.push({
       chatroomId: activeSession.chatroomId,
+      content: message.content,
       messageId: message.messageId,
       messageType: message.messageType,
       observedAt: event.observedAt,
@@ -246,6 +274,16 @@ function decodeEventData(value: unknown) {
   }
 }
 
+function decodeDeletionMessageId(value: unknown) {
+  const data = decodeEventData(value)
+
+  if (!isRecord(data) || !isRecord(data.message) || !isId(data.message.id)) {
+    return null
+  }
+
+  return String(data.message.id)
+}
+
 function decodeMessage(data: unknown, chatroomId: string) {
   if (!isRecord(data) || !isId(data.id)) {
     return null
@@ -262,6 +300,7 @@ function decodeMessage(data: unknown, chatroomId: string) {
   }
 
   return {
+    content: typeof data.content === 'string' ? data.content : null,
     messageId: String(data.id),
     messageType: data.type,
     senderId: String(data.sender.id),
@@ -288,5 +327,5 @@ function isId(value: unknown): value is string | number {
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

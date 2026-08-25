@@ -4,6 +4,7 @@ import {
   CHAT_FONT_SIZE_MIN,
   CHAT_MESSAGE_SPACING_MAX,
   CHAT_MESSAGE_SPACING_MIN,
+  normalizeDeletedMessageCacheSize,
   normalizeChatFontFamily,
   normalizeChatFontWeight,
   normalizeChatValue,
@@ -53,6 +54,17 @@ export function setChatMessageSpacing(value: number | null) {
 
 export function setShowChatStatistics(visible: boolean) {
   return updateChatSetting('showChatStatistics', visible)
+}
+
+export function setShowDeletedMessages(visible: boolean) {
+  return updateChatSetting('showDeletedMessages', visible)
+}
+
+export function setDeletedMessageCacheSize(value: number) {
+  return updateChatSetting(
+    'deletedMessageCacheSize',
+    normalizeDeletedMessageCacheSize(value),
+  )
 }
 
 export function resetChatAppearance() {

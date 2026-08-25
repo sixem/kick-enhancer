@@ -42,7 +42,11 @@ export function ChatStatisticsTrigger({
               snapshot.status === 'active' ? snapshot.messagesPerMinute : 0
             }
           />
-          /min
+          {' ('}
+          <AnimatedNumber
+            value={snapshot.status === 'active' ? snapshot.activeChatters : 0}
+          />
+          {') /min'}
         </span>
       )}
       {unavailable ? (

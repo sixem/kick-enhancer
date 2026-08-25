@@ -1,0 +1,5 @@
+{
+  "channel": "chatrooms.29191.v2",
+  "data": "{\"id\":\"message-001\",\"chatroom_id\":29191,\"content\":\"Synthetic fixture message\",\"type\":\"message\",\"created_at\":\"2026-01-01T00:00:00Z\",\"sender\":{\"id\":101,\"username\":\"fixture-user\",\"slug\":\"fixture-user\",\"identity\":{\"color\":\"#53fc18\",\"badges\":[],\"badges_v2\":[]}},\"metadata\":{\"message_ref\":\"client-reference-001\"}}",
+  "event": "App\\Events\\ChatMessageEvent"
+}

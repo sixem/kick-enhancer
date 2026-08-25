@@ -50,11 +50,18 @@ export type KickChatEvent =
     }>
   | Readonly<{
       chatroomId: string
+      content: string | null
       messageId: string
       messageType: string
       observedAt: number
       senderId: string
       type: 'message'
+    }>
+  | Readonly<{
+      chatroomId: string
+      messageId: string
+      observedAt: number
+      type: 'messageDeleted'
     }>
 
 export type ChatStatisticsUnavailableReason =

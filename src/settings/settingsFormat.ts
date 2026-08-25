@@ -1,4 +1,4 @@
-export const SETTINGS_VERSION = 7
+export const SETTINGS_VERSION = 8
 
 export const CHAT_FONT_FAMILIES = [
   'arial',
@@ -19,12 +19,14 @@ export type ChatFontWeight = (typeof CHAT_FONT_WEIGHTS)[number]
 
 export type Settings = Readonly<{
   chat: Readonly<{
+    deletedMessageCacheSize: number
     fontFamily: ChatFontFamily | null
     fontSize: number | null
     fontWeight: ChatFontWeight | null
     messageDividers: boolean
     messageSpacing: number | null
     showChatStatistics: boolean
+    showDeletedMessages: boolean
   }>
   ui: Readonly<{
     hideChatLeaderboard: boolean
@@ -54,6 +56,10 @@ export type SettingsFileResult =
 export const CHAT_FONT_SIZE_DEFAULT = 14
 export const CHAT_FONT_SIZE_MAX = 24
 export const CHAT_FONT_SIZE_MIN = 10
+export const CHAT_DELETED_MESSAGE_CACHE_SIZE_DEFAULT = 250
+export const CHAT_DELETED_MESSAGE_CACHE_SIZE_MAX = 1_000
+export const CHAT_DELETED_MESSAGE_CACHE_SIZE_MIN = 50
+export const CHAT_DELETED_MESSAGE_CACHE_SIZE_STEP = 50
 export const CHAT_FONT_WEIGHT_DEFAULT = 400
 export const CHAT_FONT_WEIGHT_MAX = 900
 export const CHAT_FONT_WEIGHT_MIN = 100
@@ -63,12 +69,14 @@ export const CHAT_MESSAGE_SPACING_MIN = 0
 
 export const DEFAULT_SETTINGS: Settings = {
   chat: {
+    deletedMessageCacheSize: CHAT_DELETED_MESSAGE_CACHE_SIZE_DEFAULT,
     fontFamily: null,
     fontSize: null,
     fontWeight: null,
     messageDividers: false,
     messageSpacing: null,
     showChatStatistics: false,
+    showDeletedMessages: false,
   },
   ui: {
     hideChatLeaderboard: false,
@@ -95,6 +103,9 @@ export function parseSettings(value: unknown): Settings {
 
   return {
     chat: {
+      deletedMessageCacheSize: normalizeDeletedMessageCacheSize(
+        chat.deletedMessageCacheSize,
+      ),
       fontFamily: normalizeChatFontFamily(chat.fontFamily),
       fontSize: normalizeChatValue(
         chat.fontSize,
@@ -109,6 +120,7 @@ export function parseSettings(value: unknown): Settings {
         CHAT_MESSAGE_SPACING_MAX,
       ),
       showChatStatistics: chat.showChatStatistics === true,
+      showDeletedMessages: chat.showDeletedMessages === true,
     },
     ui: {
       hideChatLeaderboard: ui.hideChatLeaderboard === true,
@@ -168,6 +180,23 @@ export function normalizeChatFontWeight(value: unknown): ChatFontWeight | null {
     (CHAT_FONT_WEIGHTS as readonly number[]).includes(value)
     ? (value as ChatFontWeight)
     : null
+}
+
+export function normalizeDeletedMessageCacheSize(value: unknown) {
+  const normalized = normalizeChatValue(
+    value,
+    CHAT_DELETED_MESSAGE_CACHE_SIZE_MIN,
+    CHAT_DELETED_MESSAGE_CACHE_SIZE_MAX,
+  )
+
+  if (normalized === null) {
+    return CHAT_DELETED_MESSAGE_CACHE_SIZE_DEFAULT
+  }
+
+  return (
+    Math.round(normalized / CHAT_DELETED_MESSAGE_CACHE_SIZE_STEP) *
+    CHAT_DELETED_MESSAGE_CACHE_SIZE_STEP
+  )
 }
 
 export function normalizeChatValue(value: unknown, min: number, max: number) {

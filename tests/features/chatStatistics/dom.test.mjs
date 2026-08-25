@@ -20,6 +20,9 @@ test('resolves the channel chat title and event stack', () => {
         </div>
         <div id="chatroom-messages"></div>
       </div>
+      <div id="chatroom-footer">
+        <div data-testid="chat-input"></div>
+      </div>
     </div>
   `
 
@@ -39,6 +42,7 @@ test('keeps the header anchor when the event stack is unavailable', () => {
         </div>
       </div>
       <div id="chatroom-messages"></div>
+      <div data-testid="chat-input"></div>
     </div>
   `
 
@@ -56,6 +60,7 @@ test('resolves the title when an SPA header omits the contents wrapper', () => {
         <span class="absolute left-1/2 -translate-x-1/2">Chat</span>
       </div>
       <div id="chatroom-messages"></div>
+      <div data-testid="chat-input"></div>
     </div>
   `
 
@@ -98,6 +103,100 @@ test('does not match similarly styled titles outside channel chat', () => {
   assert.equal(findChatStatisticsAnchors(window.document) === null, true)
 })
 
+test('does not attach to VOD or direct clip chat replay', () => {
+  const window = new Window({
+    url: 'https://kick.com/channel/videos/video-id',
+  })
+  window.document.body.innerHTML = `
+    <div id="channel-chatroom">
+      <div class="relative">
+        <span class="absolute left-1/2 -translate-x-1/2">Chat Replay</span>
+      </div>
+      <div id="chatroom-messages"></div>
+    </div>
+  `
+
+  assert.equal(findChatStatisticsAnchors(window.document), null)
+})
+
+test('does not fall back to hidden live chat behind a replay', () => {
+  const window = new Window({
+    url: 'https://kick.com/channel/videos/video-id',
+  })
+  window.document.body.innerHTML = `
+    <section>
+      <div id="channel-chatroom">
+        <div class="relative">
+          <span class="absolute left-1/2 -translate-x-1/2">Chat Replay</span>
+        </div>
+        <div id="chatroom-messages"></div>
+      </div>
+    </section>
+    <section style="display: none !important">
+      ${chatroomMarkup('Chat')}
+    </section>
+  `
+
+  assert.equal(findChatStatisticsAnchors(window.document), null)
+})
+
+test('does not treat clip-modal replay as live chat', () => {
+  const window = new Window({ url: 'https://kick.com/channel/clips' })
+  window.document.body.innerHTML = `
+    <main aria-hidden="true" data-aria-hidden="true">
+      ${chatroomMarkup('Chat')}
+    </main>
+    <div role="dialog">
+      <div id="channel-chatroom">
+        <div class="relative">
+          <span class="absolute left-1/2 -translate-x-1/2">Chat</span>
+        </div>
+        <div id="chatroom-messages"></div>
+        <div data-testid="chat-input"></div>
+      </div>
+    </div>
+  `
+
+  assert.equal(findChatStatisticsAnchors(window.document), null)
+})
+
+test('keeps visible offline-channel live chat eligible', () => {
+  const window = new Window({ url: 'https://kick.com/offline-channel' })
+  window.document.body.innerHTML = chatroomMarkup('Chat')
+
+  assert.equal(
+    findChatStatisticsAnchors(window.document)?.title.textContent,
+    'Chat',
+  )
+})
+
+test('keeps collapsed live chat eligible without cross-realm options', () => {
+  const window = new Window({ url: 'https://kick.com/offline-channel' })
+  window.document.body.innerHTML = `
+    <section style="opacity: 0">
+      ${chatroomMarkup('Chat')}
+    </section>
+  `
+  const chatroom = window.document.querySelector('#channel-chatroom')
+  let visibilityArguments
+
+  assert.equal(
+    findChatStatisticsAnchors(window.document)?.title.textContent,
+    'Chat',
+  )
+
+  chatroom.checkVisibility = (...args) => {
+    visibilityArguments = args
+    return true
+  }
+
+  assert.equal(
+    findChatStatisticsAnchors(window.document)?.title.textContent,
+    'Chat',
+  )
+  assert.deepEqual(visibilityArguments, [])
+})
+
 test('does not use a centered span inside chat content as the title', () => {
   const window = new Window()
   window.document.body.innerHTML = `
@@ -110,6 +209,7 @@ test('does not use a centered span inside chat content as the title', () => {
         </div>
       </div>
       <div id="chatroom-messages"></div>
+      <div data-testid="chat-input"></div>
     </div>
   `
 
@@ -123,6 +223,9 @@ function chatroomMarkup(title) {
         <span class="absolute left-1/2 -translate-x-1/2">${title}</span>
       </div>
       <div id="chatroom-messages"></div>
+      <div id="chatroom-footer">
+        <div data-testid="chat-input"></div>
+      </div>
     </div>
   `
 }
