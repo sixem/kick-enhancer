@@ -6,6 +6,7 @@ import {
   parseSettings,
   type Settings,
 } from './settingsFormat'
+import { notifySettingsListeners } from './settingsListeners'
 import { createSettingsPersistence } from './settingsPersistence'
 
 export * from './settingsFormat'
@@ -27,9 +28,11 @@ const persistence = createSettingsPersistence({
 })
 
 function notifyListeners() {
-  for (const listener of listeners) {
-    listener(currentSettings)
-  }
+  notifySettingsListeners(listeners, currentSettings, reportListenerError)
+}
+
+function reportListenerError(error: unknown) {
+  log.error('Listener failed', error)
 }
 
 export async function initializeSettings() {
@@ -72,7 +75,7 @@ export function observeSetting<Value>(
   listener: (value: Value) => void,
 ) {
   let currentValue = selector(currentSettings)
-  listener(currentValue)
+  notifySettingsListeners([listener], currentValue, reportListenerError)
 
   return subscribeSettings((settings) => {
     const nextValue = selector(settings)
@@ -94,10 +97,10 @@ export function updateSettings(update: (settings: Settings) => Settings) {
   }
 
   currentSettings = nextSettings
-  notifyListeners()
-
   const serializedSettings = JSON.stringify(currentSettings)
-  return persistence.schedule(serializedSettings)
+  const pendingWrite = persistence.schedule(serializedSettings)
+  notifyListeners()
+  return pendingWrite
 }
 
 function installPersistenceLifecycle() {
