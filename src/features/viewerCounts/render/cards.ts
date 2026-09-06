@@ -60,11 +60,12 @@ export function renderCardSurfaces(
       ownership.removeUptime(thumbnail, 'card')
     }
 
+    // Fallback channel details can omit show_view_count. The card itself
+    // determines whether a native count needs filling in, as in the sidebar.
     if (
       !options.showHiddenViewerCounts ||
       hasNativeCardCount(thumbnail) ||
-      !stream ||
-      stream.showViewCount
+      !stream
     ) {
       ownership.removeCount(card, 'card')
       continue
@@ -151,6 +152,21 @@ function hasNativeCardCount(thumbnail: HTMLElement) {
     const parentText = element.parentElement?.textContent ?? ''
 
     if (isCompactCount(title) && /\bwatching\b/i.test(parentText)) {
+      return true
+    }
+  }
+
+  // Some card variants render the count without a title attribute.
+  for (const element of thumbnail.querySelectorAll<HTMLElement>('div, span')) {
+    if (
+      element.closest(RENDER_ELEMENT_SELECTOR) ||
+      element.querySelector(RENDER_ELEMENT_SELECTOR)
+    ) {
+      continue
+    }
+
+    const match = /^(.*?)\s+watching$/i.exec(element.textContent?.trim() ?? '')
+    if (match && isCompactCount(match[1])) {
       return true
     }
   }
