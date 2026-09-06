@@ -1,4 +1,4 @@
-import { type KickChatEvent, type PusherEvent } from './types.ts'
+import { type KickChatEvent, type ChatSocketEvent } from './types.ts'
 
 const CHAT_CHANNEL_PATTERN = /^chatrooms\.(\d+)\.v2$/
 const CHAT_MESSAGE_EVENT = 'App\\Events\\ChatMessageEvent'
@@ -26,7 +26,10 @@ export class KickChatAdapter {
     return this.#session?.preferredSocketId ?? null
   }
 
-  accept(event: PusherEvent, collectMessages = true): readonly KickChatEvent[] {
+  accept(
+    event: ChatSocketEvent,
+    collectMessages = true,
+  ): readonly KickChatEvent[] {
     if (event.type === 'socketClosed') {
       this.#removeSocket(event.socketId)
       return []

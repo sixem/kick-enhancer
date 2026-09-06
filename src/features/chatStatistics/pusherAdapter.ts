@@ -1,8 +1,8 @@
-import { type PusherEvent, type WebSocketTapEvent } from './types.ts'
+import { type ChatSocketEvent, type WebSocketTapEvent } from './types.ts'
 
 export function decodePusherEvent(
   event: WebSocketTapEvent,
-): PusherEvent | null {
+): ChatSocketEvent | null {
   if (event.type === 'closed') {
     return {
       observedAt: event.observedAt,

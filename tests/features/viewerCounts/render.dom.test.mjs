@@ -8,6 +8,7 @@ import {
   renderViewerCounts,
 } from '../../../src/features/viewerCounts/render/index.ts'
 import { ViewerCountStore } from '../../../src/features/viewerCounts/model/store.ts'
+import { normalizeViewerCountPayload } from '../../../src/features/viewerCounts/model/normalize.ts'
 
 const DEFAULT_OPTIONS = {
   hideFollowingRecommendations: false,
@@ -92,6 +93,89 @@ test('renders and reconciles card count and uptime elements', (t) => {
     nativeLive?.hasAttribute('data-ke-native-card-live-hidden'),
     false,
   )
+})
+
+test('fills counts on newly added cards when fallback data omits visibility metadata', (t) => {
+  const document = installDom(t, '/browse')
+  const store = new ViewerCountStore()
+  renderViewerCounts(store, undefined, DEFAULT_OPTIONS)
+  document.body.innerHTML = `
+    <article data-testid="livestream-results-card">
+      <a data-testid="media-card-thumbnail" href="/later-card">
+        <span>LIVE</span>
+      </a>
+    </article>
+  `
+  assert.deepEqual(
+    [...renderViewerCounts(store, undefined, DEFAULT_OPTIONS).targetSlugs],
+    ['later-card'],
+  )
+  const normalized = normalizeViewerCountPayload(
+    'CHANNEL_DETAILS',
+    {
+      slug: 'later-card',
+      livestream: {
+        id: 123,
+        viewer_count: 42,
+        start_time: new Date(Date.now() - 60_000).toISOString(),
+      },
+    },
+    Date.now(),
+  )
+  assert.equal(normalized.kind, 'streams')
+  assert.equal(normalized.streams[0].showViewCount, true)
+  store.upsertStreams(normalized.streams)
+  const result = renderViewerCounts(store, undefined, DEFAULT_OPTIONS)
+  assert.equal(result.counts.cards, 1)
+  assert.equal(result.counts.cardUptimes, 1)
+  assert.equal(
+    document.querySelector('[data-ke-viewer-count]')?.textContent,
+    '42 watching',
+  )
+  renderViewerCounts(store, undefined, DEFAULT_OPTIONS)
+  assert.equal(document.querySelectorAll('[data-ke-viewer-count]').length, 1)
+
+  // KICK can add its own count after the fallback has already rendered.
+  const native = document.createElement('div')
+  native.innerHTML = '<span>42</span> watching'
+  document.querySelector('a').append(native)
+  assert.equal(
+    renderViewerCounts(store, undefined, DEFAULT_OPTIONS).counts.cards,
+    0,
+  )
+  assert.equal(document.querySelector('[data-ke-viewer-count]'), null)
+  native.remove()
+  assert.equal(
+    renderViewerCounts(store, undefined, DEFAULT_OPTIONS).counts.cards,
+    1,
+  )
+  renderViewerCounts(store, undefined, {
+    ...DEFAULT_OPTIONS,
+    showHiddenViewerCounts: false,
+  })
+  assert.equal(document.querySelector('[data-ke-viewer-count]'), null)
+})
+
+test('keeps native card counts without duplicating them', (t) => {
+  const document = installDom(t, '/browse')
+  const store = createStore([stream('card-one')])
+  for (const markup of [
+    '<span title="100">100</span> watching',
+    '<span>100</span> watching',
+  ]) {
+    document.body.innerHTML = `
+      <article data-testid="livestream-results-card">
+        <a data-testid="media-card-thumbnail" href="/card-one">
+          <span>LIVE</span><div>${markup}</div>
+        </a>
+      </article>
+    `
+    assert.equal(
+      renderViewerCounts(store, undefined, DEFAULT_OPTIONS).counts.cards,
+      0,
+    )
+    assert.equal(document.querySelector('[data-ke-viewer-count]'), null)
+  }
 })
 
 test('renders sidebar and linked tooltip enhancements independently', (t) => {

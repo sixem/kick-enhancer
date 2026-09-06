@@ -1,4 +1,4 @@
-import { type PusherEvent } from './types.ts'
+import { type ChatSocketEvent } from './types.ts'
 
 export type SocketRttSample = Readonly<{
   rttMs: number
@@ -12,7 +12,10 @@ export class SocketRttTracker {
     this.#pending.clear()
   }
 
-  accept(event: PusherEvent): SocketRttSample | null {
+  accept(event: ChatSocketEvent): SocketRttSample | null {
+    if (event.type === 'rttSample') {
+      return { socketId: event.socketId, rttMs: event.rttMs }
+    }
     if (event.type === 'socketClosed') {
       this.#pending.delete(event.socketId)
       return null
