@@ -3,7 +3,7 @@ import { unsafeWindow } from '$'
 import { type Dispose } from '../../lifecycle'
 import { createLogger } from '../../logging/logger'
 import { KickChatAdapter } from './kickChatAdapter.ts'
-import { decodePusherEvent } from './pusherAdapter.ts'
+import { ChatSocketAdapter } from './chatSocketAdapter.ts'
 import { SocketRttTracker } from './rttTracker.ts'
 import { ChatStatsStore } from './statsStore.ts'
 import {
@@ -26,7 +26,9 @@ export class ChatStatisticsRuntime {
   readonly #chatEventListeners = new Set<ChatEventListener>()
   readonly #clock: () => number
   readonly #listeners = new Set<SnapshotListener>()
+  readonly #latestPassiveRtt = new Map<number, number>()
   readonly #rttTracker = new SocketRttTracker()
+  readonly #socketAdapter = new ChatSocketAdapter()
   readonly #statsStore = new ChatStatsStore()
   readonly #webSocketTap: WebSocketTap
   #captureFailed = false
@@ -52,54 +54,54 @@ export class ChatStatisticsRuntime {
     }
 
     const observeEvent = (event: WebSocketTapEvent) => {
-      const previousSocketId = this.#chatAdapter.getPreferredSocketId()
+      for (const socketEvent of this.#socketAdapter.accept(event)) {
+        if (socketEvent.type === 'rttSample') {
+          this.#latestPassiveRtt.set(socketEvent.socketId, socketEvent.rttMs)
+        }
+        const previousSocketId = this.#chatAdapter.getPreferredSocketId()
 
-      const pusherEvent = decodePusherEvent(event)
+        const rttSample = this.#collectionEnabled
+          ? this.#rttTracker.accept(socketEvent)
+          : null
 
-      if (!pusherEvent) {
-        return
-      }
-
-      const rttSample = this.#collectionEnabled
-        ? this.#rttTracker.accept(pusherEvent)
-        : null
-
-      if (rttSample) {
-        this.#statsStore.addRttSample(rttSample.socketId, rttSample.rttMs)
-        this.#publish()
-      }
-
-      const chatEvents = this.#chatAdapter.accept(
-        pusherEvent,
-        this.#collectionEnabled || this.#chatEventListeners.size > 0,
-      )
-      const selectedSocketId = this.#chatAdapter.getPreferredSocketId()
-      let lifecycleChanged = previousSocketId !== selectedSocketId
-
-      for (const chatEvent of chatEvents) {
-        if (chatEvent.type !== 'message' || this.#collectionEnabled) {
-          this.#statsStore.accept(chatEvent)
+        if (rttSample) {
+          this.#statsStore.addRttSample(rttSample.socketId, rttSample.rttMs)
+          this.#publish()
         }
 
-        lifecycleChanged ||=
-          chatEvent.type === 'sessionStarted' ||
-          chatEvent.type === 'sessionEnded'
+        const chatEvents = this.#chatAdapter.accept(
+          socketEvent,
+          this.#collectionEnabled || this.#chatEventListeners.size > 0,
+        )
+        const selectedSocketId = this.#chatAdapter.getPreferredSocketId()
+        let lifecycleChanged = previousSocketId !== selectedSocketId
 
-        for (const listener of this.#chatEventListeners) {
-          try {
-            listener(chatEvent)
-          } catch {
-            // Feature failures must not interrupt chat capture.
+        for (const chatEvent of chatEvents) {
+          if (chatEvent.type !== 'message' || this.#collectionEnabled) {
+            this.#statsStore.accept(chatEvent)
+          }
+
+          lifecycleChanged ||=
+            chatEvent.type === 'sessionStarted' ||
+            chatEvent.type === 'sessionEnded'
+
+          for (const listener of this.#chatEventListeners) {
+            try {
+              listener(chatEvent)
+            } catch {
+              // Feature failures must not interrupt chat capture.
+            }
           }
         }
-      }
 
-      if (pusherEvent.type === 'socketClosed') {
-        this.#statsStore.clearSocket(pusherEvent.socketId)
-      }
+        if (socketEvent.type === 'socketClosed') {
+          this.#latestPassiveRtt.delete(socketEvent.socketId)
+          this.#statsStore.clearSocket(socketEvent.socketId)
+        }
 
-      if (lifecycleChanged) {
-        this.#publish()
+        if (lifecycleChanged) {
+          this.#publish()
+        }
       }
     }
     const stopTapEvents = this.#webSocketTap.subscribe(observeEvent)
@@ -153,6 +155,12 @@ export class ChatStatisticsRuntime {
     this.#collectionEnabled = enabled
     this.#rttTracker.clear()
     this.#statsStore.resetStatistics(this.#clock())
+    if (enabled) {
+      // Initial handshakes can finish before settings enable collection.
+      for (const [socketId, rttMs] of this.#latestPassiveRtt) {
+        this.#statsStore.addRttSample(socketId, rttMs)
+      }
+    }
     this.#publish()
   }
 
@@ -163,7 +171,7 @@ export class ChatStatisticsRuntime {
 
     const socketId = this.#chatAdapter.getPreferredSocketId()
 
-    if (socketId === null) {
+    if (socketId === null || !this.#socketAdapter.canPing(socketId)) {
       return false
     }
 

@@ -14,30 +14,31 @@ export type WebSocketTapEvent =
       type: 'closed' | 'error'
     }>
 
-type PusherEventBase = Readonly<{
+type ChatSocketEventBase = Readonly<{
   observedAt: number
   socketId: number
 }>
 
-export type PusherEvent =
-  | (PusherEventBase &
+export type ChatSocketEvent =
+  | (ChatSocketEventBase & Readonly<{ type: 'rttSample'; rttMs: number }>)
+  | (ChatSocketEventBase &
       Readonly<{
         channelName: string
         type: 'subscribed' | 'subscribing' | 'unsubscribing'
       }>)
-  | (PusherEventBase &
+  | (ChatSocketEventBase &
       Readonly<{
         channelName: string
         data: unknown
         eventName: string
         type: 'event'
       }>)
-  | (PusherEventBase &
+  | (ChatSocketEventBase &
       Readonly<{
         direction: WebSocketFrameDirection
         type: 'ping' | 'pong'
       }>)
-  | (PusherEventBase &
+  | (ChatSocketEventBase &
       Readonly<{
         type: 'socketClosed'
       }>)
