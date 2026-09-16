@@ -1,6 +1,8 @@
 import { render } from 'preact'
 import { useState } from 'preact/hooks'
 
+import { observeOutsideSubtrees } from '../dom/observeOutsideSubtrees'
+
 import icon from '../assets/icon.png?inline'
 import {
   openDownloadCenter,
@@ -126,28 +128,28 @@ export function startTopNavButton(): Dispose {
   let mountScheduled = false
   let stopped = false
 
-  const observer = new MutationObserver(() => {
-    if (stopped || mountScheduled || document.getElementById(HOST_ID)) {
-      return
-    }
-
-    mountScheduled = true
-
-    // Let Kick finish replacing the navigation subtree before resolving the
-    // new anchor and mounting into it.
-    queueMicrotask(() => {
-      mountScheduled = false
-
-      if (!stopped) {
-        mountButton()
+  const stopDomObserver = observeOutsideSubtrees(
+    document.documentElement,
+    ['channel-chatroom'],
+    { childList: true },
+    () => {
+      if (stopped || mountScheduled || document.getElementById(HOST_ID)) {
+        return
       }
-    })
-  })
 
-  observer.observe(document.documentElement, {
-    childList: true,
-    subtree: true,
-  })
+      mountScheduled = true
+
+      // Let Kick finish replacing the navigation subtree before resolving the
+      // new anchor and mounting into it.
+      queueMicrotask(() => {
+        mountScheduled = false
+
+        if (!stopped) {
+          mountButton()
+        }
+      })
+    },
+  )
 
   const stop = () => {
     if (stopped) {
@@ -155,7 +157,7 @@ export function startTopNavButton(): Dispose {
     }
 
     stopped = true
-    observer.disconnect()
+    stopDomObserver()
 
     const host = mountedHost ?? document.getElementById(HOST_ID)
 

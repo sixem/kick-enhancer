@@ -1,5 +1,6 @@
 import { unsafeWindow } from '$'
 
+import { observeOutsideSubtrees } from '../../dom/observeOutsideSubtrees'
 import { onDocumentElementReady } from '../../dom/onDocumentElementReady'
 import { type Dispose } from '../../lifecycle'
 import { createLogger } from '../../logging/logger'
@@ -46,7 +47,7 @@ let historyPushStateWrapper: History['pushState'] | undefined
 let historyReplaceStateWrapper: History['replaceState'] | undefined
 let lastLogCounts: ViewerCountRenderResult['counts'] | undefined
 let lastUrl = window.location.href
-let observer: MutationObserver | undefined
+let stopDomObserver: Dispose | undefined
 let renderDeadline = Number.POSITIVE_INFINITY
 let renderReason = ''
 let renderTimer: number | undefined
@@ -181,8 +182,8 @@ function deactivateFeatureDom() {
 
   domFeatureActive = false
   acquisition.stop()
-  observer?.disconnect()
-  observer = undefined
+  stopDomObserver?.()
+  stopDomObserver = undefined
   uninstallRouteObserver()
   document.removeEventListener('pointerover', handleSidebarHover, true)
   document.removeEventListener('pointerout', handleSidebarHoverEnd, true)
@@ -302,27 +303,28 @@ function handleCaptureMessage(event: MessageEvent<unknown>) {
 }
 
 function installDomObserver() {
-  if (observer || !document.documentElement) {
+  if (stopDomObserver || !document.documentElement) {
     return
   }
 
-  observer = new MutationObserver((mutations) => {
-    if (window.location.href !== lastUrl) {
-      handleRouteChange()
-    }
-
-    if (mutations.some((mutation) => !isIgnoredMutation(mutation))) {
-      scheduleRender('mutation')
-    }
-  })
-
-  observer.observe(document.documentElement, {
-    attributeFilter: ['data-sidebar', 'data-testid', 'href'],
-    attributes: true,
-    characterData: true,
-    childList: true,
-    subtree: true,
-  })
+  stopDomObserver = observeOutsideSubtrees(
+    document.documentElement,
+    ['channel-chatroom'],
+    {
+      attributeFilter: ['data-sidebar', 'data-testid', 'href'],
+      attributes: true,
+      characterData: true,
+      childList: true,
+    },
+    (mutations) => {
+      if (window.location.href !== lastUrl) {
+        handleRouteChange()
+      }
+      if (mutations.some((mutation) => !isIgnoredMutation(mutation))) {
+        scheduleRender('mutation')
+      }
+    },
+  )
 }
 
 function scheduleRender(reason: string, delay = RENDER_DELAY_MS) {

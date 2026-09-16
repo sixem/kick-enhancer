@@ -5,6 +5,7 @@ import {
 } from '../settings/settings'
 import { type Dispose } from '../lifecycle'
 import { createLogger } from '../logging/logger'
+import { findSidebarLayout, observeSidebarLayout } from './sidebarDom'
 
 const SIDEBAR_BUTTON_SELECTOR = [
   'button[aria-controls="sidebar-wrapper"]',
@@ -27,16 +28,9 @@ function getSidebarButton() {
   return document.querySelector<HTMLButtonElement>(SIDEBAR_BUTTON_SELECTOR)
 }
 
-function getSidebarLayout() {
-  return (
-    document.querySelector<HTMLElement>(
-      '[data-sidebar][data-chat][data-theatre]',
-    ) ?? document.querySelector<HTMLElement>('[data-sidebar]')
-  )
-}
-
 function getCollapsedState() {
-  const sidebarVisible = getSidebarLayout()?.getAttribute('data-sidebar')
+  const layout = activeLayout?.isConnected ? activeLayout : findSidebarLayout()
+  const sidebarVisible = layout?.getAttribute('data-sidebar')
 
   if (sidebarVisible === 'true') {
     return false
@@ -140,84 +134,44 @@ export function startSidebarStateMemory(): Dispose {
   stopActiveFeature?.()
   featureActive = true
   rememberSidebarState = getSettings().ui.rememberSidebarState
-  let observerConnected = false
+  let stopLayoutObserver: Dispose | undefined
 
-  const observer = new MutationObserver((records) => {
-    const layout = getSidebarLayout()
-    const layoutChanged = layout !== activeLayout
+  function handleStateChange() {
+    const collapsed = getCollapsedState()
+    if (collapsed === undefined) return
 
-    if (layoutChanged) {
-      activeLayout = layout
-
-      if (rememberSidebarState) {
-        requestRestore()
-      }
-    }
-
-    const sidebarStateChanged = records.some(
-      (record) =>
-        record.type === 'attributes' &&
-        record.attributeName === 'data-sidebar' &&
-        record.target === layout,
-    )
-
-    if (sidebarStateChanged) {
-      const collapsed = getCollapsedState()
-
-      if (collapsed === undefined) {
-        return
-      }
-
-      // Do not persist the mutation caused by our own restoration click as a
-      // new user preference.
-      if (restoreTarget !== undefined) {
-        if (collapsed === restoreTarget) {
-          restoreTarget = undefined
-        }
-
-        return
-      }
-
-      if (restoreRequested) {
-        attemptRestore()
-        return
-      }
-
-      if (rememberSidebarState) {
-        rememberCollapsedState(collapsed)
-      }
-    }
-
-    if (
-      restoreRequested &&
-      records.some((record) => record.type === 'childList')
-    ) {
-      attemptRestore()
-    }
-  })
-
-  function connectObserver() {
-    if (observerConnected || !featureActive || !rememberSidebarState) {
+    // Do not persist the mutation caused by our own restoration click as a
+    // new user preference.
+    if (restoreTarget !== undefined) {
+      if (collapsed === restoreTarget) restoreTarget = undefined
       return
     }
+    if (restoreRequested) {
+      attemptRestore()
+      return
+    }
+    if (rememberSidebarState) rememberCollapsedState(collapsed)
+  }
 
-    activeLayout = getSidebarLayout()
-    observer.observe(document.documentElement, {
-      attributeFilter: ['data-sidebar'],
-      attributes: true,
-      childList: true,
-      subtree: true,
-    })
-    observerConnected = true
+  function connectObserver() {
+    if (stopLayoutObserver || !featureActive || !rememberSidebarState) return
+
     requestRestore()
+    stopLayoutObserver = observeSidebarLayout({
+      onLayoutChange: (layout) => {
+        activeLayout = layout
+        requestRestore()
+      },
+      onStateChange: handleStateChange,
+      onContentChange: () => {
+        if (restoreRequested) attemptRestore()
+      },
+    })
   }
 
   function disconnectObserver() {
-    if (observerConnected) {
-      observer.disconnect()
-      observerConnected = false
-    }
-
+    stopLayoutObserver?.()
+    stopLayoutObserver = undefined
     activeLayout = null
     restoreRequested = false
     restoreTarget = undefined

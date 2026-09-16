@@ -1,5 +1,6 @@
 import { unsafeWindow } from '$'
 
+import { observeOutsideSubtrees } from '../../dom/observeOutsideSubtrees'
 import { onDocumentElementReady } from '../../dom/onDocumentElementReady'
 import { type Dispose } from '../../lifecycle'
 import { observeSetting } from '../../settings/settings'
@@ -95,11 +96,7 @@ export function startGamblingStreamsVisibility(): Dispose {
   featureActive = true
   let cancelDocumentReady: Dispose | undefined
 
-  const observer = new MutationObserver((records) => {
-    if (gamblingStreamsHidden && mutationsTouchGamblingSurfaces(records)) {
-      scheduleSidebarScan()
-    }
-  })
+  let stopDomObserver: Dispose | undefined
 
   function cancelSidebarScan() {
     if (sidebarScanFrame === undefined) {
@@ -116,13 +113,22 @@ export function startGamblingStreamsVisibility(): Dispose {
     }
 
     applyGamblingStreamsVisibility(true)
-    observer.observe(document.documentElement, {
-      attributeFilter: ['data-testid', 'href'],
-      attributes: true,
-      characterData: true,
-      childList: true,
-      subtree: true,
-    })
+    stopDomObserver?.()
+    stopDomObserver = observeOutsideSubtrees(
+      document.documentElement,
+      ['channel-chatroom'],
+      {
+        attributeFilter: ['data-testid', 'href'],
+        attributes: true,
+        characterData: true,
+        childList: true,
+      },
+      (records) => {
+        if (gamblingStreamsHidden && mutationsTouchGamblingSurfaces(records)) {
+          scheduleSidebarScan()
+        }
+      },
+    )
     scheduleSidebarScan()
   }
 
@@ -160,7 +166,8 @@ export function startGamblingStreamsVisibility(): Dispose {
     }
 
     cancelVisibilityActivation()
-    observer.disconnect()
+    stopDomObserver?.()
+    stopDomObserver = undefined
     cancelSidebarScan()
     applyGamblingStreamsVisibility(false)
     updateSidebarRows()
@@ -179,7 +186,8 @@ export function startGamblingStreamsVisibility(): Dispose {
     stopped = true
     featureActive = false
     cancelVisibilityActivation()
-    observer.disconnect()
+    stopDomObserver?.()
+    stopDomObserver = undefined
     stopObserving()
     cancelSidebarScan()
     gamblingStreamsHidden = false
