@@ -27,6 +27,10 @@ export class DeletedMessagesController {
   readonly #document: Document
   readonly #createMutationObserver: MutationObserverFactory
   readonly #messages = new Map<string, CachedMessage>()
+  readonly #pendingRows = new Set<HTMLElement>()
+  readonly #rowsByMessage = new Map<string, Set<HTMLElement>>()
+  #messageByRow = new WeakMap<HTMLElement, string>()
+  #flushScheduled = false
   readonly #source: ChatEventSource
   #activeChatroomId: string | null = null
   #capacity = 0
@@ -53,10 +57,6 @@ export class DeletedMessagesController {
   setCapacity(capacity: number) {
     this.#capacity = Math.max(0, Math.trunc(capacity))
     this.#evictOverflow()
-
-    if (this.#enabled) {
-      this.#reconcileVisibleRows()
-    }
   }
 
   setEnabled(enabled: boolean) {
@@ -110,9 +110,7 @@ export class DeletedMessagesController {
         content: event.content,
         deleted: false,
       })
-      if (this.#evictOverflow()) {
-        this.#reconcileVisibleRows()
-      }
+      this.#evictOverflow()
       return
     }
 
@@ -128,7 +126,7 @@ export class DeletedMessagesController {
 
     message.deleted = true
     this.#bindSurface()
-    this.#reconcileVisibleRows()
+    this.#enqueueMessageRows(event.messageId)
   }
 
   #setChatroom(chatroomId: string) {
@@ -142,8 +140,6 @@ export class DeletedMessagesController {
   }
 
   #evictOverflow() {
-    let deletedMessageEvicted = false
-
     while (this.#messages.size > this.#capacity) {
       const oldestId = this.#messages.keys().next().value
 
@@ -151,11 +147,11 @@ export class DeletedMessagesController {
         break
       }
 
-      deletedMessageEvicted ||= this.#messages.get(oldestId)?.deleted === true
+      if (this.#messages.get(oldestId)?.deleted) {
+        this.#enqueueMessageRows(oldestId)
+      }
       this.#messages.delete(oldestId)
     }
-
-    return deletedMessageEvicted
   }
 
   #bindSurface() {
@@ -173,6 +169,9 @@ export class DeletedMessagesController {
     }
 
     this.#observer?.disconnect()
+    this.#pendingRows.clear()
+    this.#rowsByMessage.clear()
+    this.#messageByRow = new WeakMap()
     removeRestoredMessages(this.#surface)
     this.#chatroom = chatroom
     this.#surface = surface
@@ -182,44 +181,127 @@ export class DeletedMessagesController {
     }
 
     this.#observer ??= this.#createMutationObserver((records) => {
-      const previousSurface = this.#surface
-
-      if (
-        this.#chatroom?.isConnected &&
-        previousSurface?.isConnected &&
-        records.every((record) => previousSurface.contains(record.target))
-      ) {
-        this.#reconcileVisibleRows()
-        return
-      }
-
-      this.#bindSurface()
-
-      if (
-        previousSurface === this.#surface &&
-        records.some((record) => previousSurface?.contains(record.target))
-      ) {
-        this.#reconcileVisibleRows()
-      }
+      this.#handleMutations(records)
     })
-    this.#observer.observe(chatroom, {
-      characterData: true,
-      childList: true,
-      subtree: true,
-    })
-    this.#reconcileVisibleRows()
+    // Only initial attachment and surface replacement need a complete scan.
+    for (const row of surface?.querySelectorAll<HTMLElement>(ROW_SELECTOR) ??
+      []) {
+      this.#reconcileRow(row)
+    }
+    this.#observeChatroom()
   }
 
-  #reconcileVisibleRows() {
-    if (!this.#surface?.isConnected) {
-      this.#bindSurface()
+  #observeChatroom() {
+    if (this.#chatroom) {
+      this.#observer?.observe(this.#chatroom, {
+        characterData: true,
+        childList: true,
+        subtree: true,
+      })
+    }
+  }
+
+  #handleMutations(records: readonly MutationRecord[]) {
+    if (!this.#enabled || records.length === 0) {
+      return
     }
 
-    for (const row of this.#surface?.querySelectorAll<HTMLElement>(
-      ROW_SELECTOR,
-    ) ?? []) {
-      reconcileDeletedMessageRow(row, this.#messages)
+    const previousSurface = this.#surface
+    if (
+      !this.#chatroom?.isConnected ||
+      !previousSurface?.isConnected ||
+      records.some((record) => !previousSurface.contains(record.target))
+    ) {
+      this.#bindSurface()
+      if (previousSurface !== this.#surface) {
+        return
+      }
     }
+
+    for (const record of records) {
+      for (const node of record.removedNodes) {
+        forEachRow(node, (row) => {
+          this.#forgetRow(row)
+          this.#pendingRows.delete(row)
+        })
+      }
+      if (!this.#surface?.contains(record.target)) {
+        continue
+      }
+      const element =
+        record.target.nodeType === 1
+          ? (record.target as Element)
+          : record.target.parentElement
+      const row = element?.closest<HTMLElement>(ROW_SELECTOR)
+      if (row) {
+        this.#enqueueRow(row)
+      }
+      for (const node of record.addedNodes) {
+        forEachRow(node, (addedRow) => this.#enqueueRow(addedRow))
+      }
+    }
+  }
+
+  #enqueueMessageRows(messageId: string) {
+    for (const row of this.#rowsByMessage.get(messageId) ?? []) {
+      this.#enqueueRow(row)
+    }
+  }
+
+  #enqueueRow(row: HTMLElement) {
+    this.#pendingRows.add(row)
+    if (this.#flushScheduled) {
+      return
+    }
+    this.#flushScheduled = true
+    queueMicrotask(() => {
+      if (!this.#enabled) {
+        this.#flushScheduled = false
+        return
+      }
+      // Preserve native changes queued since the observer callback, then keep
+      // our synchronous writes out of the observer's next delivery.
+      this.#handleMutations(this.#observer?.takeRecords() ?? [])
+      this.#observer?.disconnect()
+      try {
+        for (const pendingRow of this.#pendingRows) {
+          if (pendingRow.isConnected && this.#surface?.contains(pendingRow)) {
+            this.#reconcileRow(pendingRow)
+          } else {
+            this.#forgetRow(pendingRow)
+          }
+        }
+        this.#pendingRows.clear()
+      } finally {
+        this.#flushScheduled = false
+        this.#observeChatroom()
+      }
+    })
+  }
+
+  #forgetRow(row: HTMLElement) {
+    const messageId = this.#messageByRow.get(row)
+    if (messageId === undefined) {
+      return
+    }
+    const rows = this.#rowsByMessage.get(messageId)
+    rows?.delete(row)
+    if (rows?.size === 0) {
+      this.#rowsByMessage.delete(messageId)
+    }
+    this.#messageByRow.delete(row)
+  }
+
+  #reconcileRow(row: HTMLElement) {
+    this.#forgetRow(row)
+    const entry = getChatEntry(row)
+    if (entry) {
+      const rows = this.#rowsByMessage.get(entry.id) ?? new Set<HTMLElement>()
+      rows.add(row)
+      this.#rowsByMessage.set(entry.id, rows)
+      this.#messageByRow.set(row, entry.id)
+    }
+    reconcileDeletedMessageRow(row, this.#messages, entry)
   }
 
   #reset() {
@@ -232,6 +314,23 @@ export class DeletedMessagesController {
     this.#surface = null
     this.#activeChatroomId = null
     this.#messages.clear()
+    this.#pendingRows.clear()
+    this.#rowsByMessage.clear()
+    this.#messageByRow = new WeakMap()
+  }
+}
+
+function forEachRow(node: Node, visit: (row: HTMLElement) => void) {
+  // The observed document can belong to the page realm rather than ours.
+  if (node.nodeType !== 1) {
+    return
+  }
+  const element = node as HTMLElement
+  if (element.matches(ROW_SELECTOR)) {
+    visit(element)
+  }
+  for (const row of element.querySelectorAll<HTMLElement>(ROW_SELECTOR)) {
+    visit(row)
   }
 }
 
@@ -277,8 +376,8 @@ function getChatEntry(row: Element) {
 export function reconcileDeletedMessageRow(
   row: HTMLElement,
   messages: ReadonlyMap<string, Readonly<CachedMessage>>,
+  chatEntry = getChatEntry(row),
 ) {
-  const chatEntry = getChatEntry(row)
   const message = chatEntry ? messages.get(chatEntry.id) : undefined
   const restored = [...row.querySelectorAll<HTMLElement>(`.${RESTORED_CLASS}`)]
   const host =
