@@ -215,3 +215,27 @@ function publication(name) {
   const { channel, data, event } = fixture(name)
   return { push: { channel, pub: { data: { event, data }, tags: { event } } } }
 }
+
+test('parses a Pusher envelope once and reuses envelopes parsed by the bridge', (t) => {
+  const adapter = new ChatSocketAdapter()
+  const envelope = {
+    event: 'pusher_internal:subscription_succeeded',
+    channel: CHANNEL,
+  }
+  const data = JSON.stringify(envelope)
+  const parse = t.mock.method(JSON, 'parse')
+  const event = {
+    type: 'frame',
+    direction: 'incoming',
+    socketId: 7,
+    observedAt: 100,
+    data,
+  }
+  assert.equal(adapter.accept(event)[0].type, 'subscribed')
+  assert.equal(parse.mock.callCount(), 1)
+  assert.equal(
+    adapter.accept({ ...event, data: '', envelopes: [envelope] })[0].type,
+    'subscribed',
+  )
+  assert.equal(parse.mock.callCount(), 1)
+})

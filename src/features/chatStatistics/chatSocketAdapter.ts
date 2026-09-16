@@ -37,15 +37,14 @@ export class ChatSocketAdapter {
     const events: ChatSocketEvent[] = []
 
     // Centrifugo batches independent JSON commands/replies with newlines.
-    for (const line of event.data.split('\n')) {
-      const envelope = parseRecord(line)
-
+    const envelopes = event.envelopes ?? event.data.split('\n').map(parseRecord)
+    for (const envelope of envelopes) {
       if (!envelope) {
         continue
       }
 
       if (typeof envelope.event === 'string') {
-        const decoded = decodePusherEvent({ ...event, data: line })
+        const decoded = decodePusherEvent(event, envelope)
 
         if (decoded) {
           this.#pusherSockets.add(event.socketId)
