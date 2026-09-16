@@ -1,7 +1,7 @@
+import type { KickApiEndpoint } from '../../../integrations/kick/endpoints.ts'
 import { normalizeChannelSlug } from './slug.ts'
 import type {
   CurrentViewerRecord,
-  ViewerCountEndpoint,
   ViewerCountRecord,
   ViewerCountSource,
 } from './types.ts'
@@ -18,7 +18,7 @@ export type NormalizedViewerCountPayload =
     }>
 
 const SOURCE_BY_ENDPOINT: Readonly<
-  Record<Exclude<ViewerCountEndpoint, 'CURRENT_VIEWERS'>, ViewerCountSource>
+  Record<Exclude<KickApiEndpoint, 'CURRENT_VIEWERS'>, ViewerCountSource>
 > = {
   CHANNEL_DETAILS: 'channel-details',
   FEATURED_LIVESTREAMS: 'featured',
@@ -30,7 +30,7 @@ const SOURCE_BY_ENDPOINT: Readonly<
 }
 
 export function normalizeViewerCountPayload(
-  endpoint: ViewerCountEndpoint,
+  endpoint: KickApiEndpoint,
   payload: unknown,
   capturedAt: number,
 ): NormalizedViewerCountPayload {
@@ -71,7 +71,7 @@ export function normalizeViewerCountPayload(
 }
 
 function normalizeStream(
-  endpoint: Exclude<ViewerCountEndpoint, 'CURRENT_VIEWERS'>,
+  endpoint: Exclude<KickApiEndpoint, 'CURRENT_VIEWERS'>,
   source: ViewerCountSource,
   value: unknown,
   capturedAt: number,

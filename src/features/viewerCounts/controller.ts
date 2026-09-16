@@ -7,16 +7,12 @@ import { createLogger } from '../../logging/logger'
 import { getSettings, subscribeSettings } from '../../settings/settings'
 import { applyStyleToggle } from '../shared/styleToggle'
 import { ViewerCountAcquisition } from './acquisition/acquisition'
-import { classifyViewerCountEndpoint } from './acquisition/endpoints'
+import { readCapturedKickApiMessage } from '../../integrations/kick/apiCapture'
 import { installViewerCountCaptureBridge } from './capture'
 import { recordViewerEndpointObservation } from './diagnostics'
 import { normalizeViewerCountPayload } from './model/normalize'
 import { getChannelSlugFromHref } from './model/slug'
 import { ViewerCountStore } from './model/store'
-import {
-  isCapturedViewerCountMessage,
-  type CapturedViewerCountMessage,
-} from './model/types'
 import {
   cleanupViewerCountDom,
   renderViewerCounts,
@@ -231,24 +227,14 @@ function clearUptimeRefreshTimer() {
 }
 
 function handleCaptureMessage(event: MessageEvent<unknown>) {
-  if (
-    (event.source !== window && event.source !== unsafeWindow) ||
-    event.origin !== window.location.origin ||
-    !isCapturedViewerCountMessage(event.data)
-  ) {
-    return
-  }
+  const message = readCapturedKickApiMessage(event, {
+    currentHref: window.location.href,
+    currentOrigin: window.location.origin,
+    messageWindow: window,
+    pageWindow: unsafeWindow,
+  })
 
-  const message: CapturedViewerCountMessage = event.data
-  const classifiedEndpoint = classifyViewerCountEndpoint(
-    message.url,
-    window.location.href,
-  )
-
-  if (
-    classifiedEndpoint !== message.endpoint ||
-    Math.abs(Date.now() - message.timestamp) > 60 * 1000
-  ) {
+  if (!message) {
     return
   }
 

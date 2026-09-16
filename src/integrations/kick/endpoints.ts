@@ -1,9 +1,18 @@
-import type { ViewerCountEndpoint } from '../model/types'
+export type KickApiEndpoint =
+  | 'CHANNEL_DETAILS'
+  | 'CURRENT_VIEWERS'
+  | 'FEATURED_LIVESTREAMS'
+  | 'FOLLOWED_CHANNELS'
+  | 'PAGINATED_RECOMMENDED_LIVESTREAMS'
+  | 'RECOMMENDED_LIVESTREAMS'
+  | 'SIDEBAR_LIVESTREAMS'
+  | 'USER_LIVESTREAMS'
 
-export function classifyViewerCountEndpoint(
+// Keep this function self-contained: the capture bridge serializes it into the page.
+export function classifyKickApiEndpoint(
   rawUrl: string,
   baseUrl = window.location.href,
-): ViewerCountEndpoint | undefined {
+): KickApiEndpoint | undefined {
   try {
     const url = new URL(rawUrl, baseUrl)
 

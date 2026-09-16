@@ -3,7 +3,9 @@ import test from 'node:test'
 
 import { Browser } from 'happy-dom'
 
-import { classifyViewerCountEndpoint } from '../../../src/features/viewerCounts/acquisition/endpoints.ts'
+import { readCapturedKickApiMessage } from '../../../src/integrations/kick/apiCapture.ts'
+
+import { classifyKickApiEndpoint } from '../../../src/integrations/kick/endpoints.ts'
 import { installViewerCountPageHook } from '../../../src/features/viewerCounts/viewerCountPageHook.ts'
 
 const INSTALL_RESULT_ATTRIBUTE = 'data-kick-enhancer-viewer-count-hook'
@@ -76,6 +78,22 @@ test('captures viewer endpoints in the page realm without changing json semantic
   assert.equal(messages[0].endpoint, 'CHANNEL_DETAILS')
   assert.equal(messages[0].url, 'https://kick.com/api/v2/channels/example')
   assert.equal(messages[0].payload.viewers, 42)
+  const source = {}
+  for (const data of messages) {
+    assert.equal(
+      readCapturedKickApiMessage(
+        { data, origin: 'https://kick.com', source },
+        {
+          currentHref: PAGE_URL,
+          currentOrigin: 'https://kick.com',
+          messageWindow: source,
+          pageWindow: source,
+          now: data.timestamp,
+        },
+      ),
+      data,
+    )
+  }
   messages.length = 0
 
   const endpoints = [
@@ -102,7 +120,7 @@ test('captures viewer endpoints in the page realm without changing json semantic
   ]
 
   for (const [url, endpoint] of endpoints) {
-    assert.equal(classifyViewerCountEndpoint(url, PAGE_URL), endpoint)
+    assert.equal(classifyKickApiEndpoint(url, PAGE_URL), endpoint)
     await page.evaluate(`
       new Response(${JSON.stringify(url)}, { endpoint: ${JSON.stringify(endpoint)} }).json()
     `)
@@ -140,7 +158,7 @@ test('ignores lookalikes and isolates observation failures', async (t) => {
   ]
 
   for (const url of lookalikes) {
-    assert.equal(classifyViewerCountEndpoint(url, PAGE_URL), undefined)
+    assert.equal(classifyKickApiEndpoint(url, PAGE_URL), undefined)
     await page.evaluate(`
       new Response(${JSON.stringify(url)}, { ignored: true }).json()
     `)
@@ -263,7 +281,7 @@ function injectPageHook(host) {
   const script = host.document.createElement('script')
 
   try {
-    script.textContent = `try { (${installViewerCountPageHook.toString()})((${classifyViewerCountEndpoint.toString()})) } catch {}`
+    script.textContent = `try { (${installViewerCountPageHook.toString()})((${classifyKickApiEndpoint.toString()})) } catch {}`
     host.document.documentElement.append(script)
     return script.getAttribute(INSTALL_RESULT_ATTRIBUTE) === 'true'
   } finally {

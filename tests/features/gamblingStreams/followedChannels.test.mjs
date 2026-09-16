@@ -228,30 +228,33 @@ test('validates followed captures and schedules reconciliation on changes', () =
   )
   assert.equal(reconciliations, 1)
 
-  const invalidEvents = [
-    { ...event, source: {} },
-    { ...event, origin: 'https://example.test' },
-    { ...event, data: { ...data, timestamp: now - 60_001 } },
-    {
-      ...event,
-      data: {
-        ...data,
-        endpoint: 'CHANNEL_DETAILS',
-        url: 'https://kick.com/api/v2/channels/captured-casino',
+  // A valid shared capture still has to belong to this feature.
+  assert.equal(
+    readFollowedChannelsCapture(
+      {
+        ...event,
+        data: {
+          ...data,
+          endpoint: 'CHANNEL_DETAILS',
+          url: 'https://kick.com/api/v2/channels/captured-casino',
+        },
       },
-    },
-    {
-      ...event,
-      data: {
-        ...data,
-        url: 'https://example.test/api/v2/channels/followed',
+      context,
+    ),
+    undefined,
+  )
+  assert.equal(
+    handleFollowedChannelsCapture(
+      { ...event, data: { ...data, payload: { channels: 'invalid' } } },
+      context,
+      channels,
+      () => {
+        reconciliations += 1
       },
-    },
-  ]
-
-  for (const invalidEvent of invalidEvents) {
-    assert.equal(readFollowedChannelsCapture(invalidEvent, context), undefined)
-  }
+    ),
+    false,
+  )
+  assert.equal(reconciliations, 1)
 })
 
 test('ignores malformed records and removes stale live classifications', () => {
