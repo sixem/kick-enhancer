@@ -3,6 +3,7 @@ export type WebSocketFrameDirection = 'incoming' | 'outgoing'
 export type WebSocketTapEvent =
   | Readonly<{
       data: unknown
+      envelopes?: readonly Record<string, unknown>[]
       direction: WebSocketFrameDirection
       observedAt: number
       socketId: number

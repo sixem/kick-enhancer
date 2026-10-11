@@ -4,6 +4,7 @@ import { type Dispose } from '../../lifecycle'
 import { observeSetting } from '../../settings/settings'
 import { ChatStatisticsCard, ChatStatisticsTrigger } from './ChatStatisticsView'
 import { getChatStatisticsRuntime } from './runtime.ts'
+import { observeChatStatisticsDom } from './domObservation.ts'
 import styles from './chatStatistics.scss?inline'
 import {
   findChatStatisticsAnchors,
@@ -225,45 +226,26 @@ function startStatisticsUi(): Dispose {
 
   const stopSnapshots = runtime.subscribe(applySnapshot)
 
-  const observer = new MutationObserver((mutations) => {
-    if (
-      titleIsAttached() &&
-      (!panelOpen || panelHost?.isConnected) &&
-      !mutations.some(mutationMayChangeChatroom)
-    ) {
-      return
-    }
-
-    const relevant = mutations.some((mutation) => {
+  const stopDomObserver = observeChatStatisticsDom((mutations) => {
+    const relevant = mutations.filter((mutation) => {
       const target =
         mutation.target instanceof Element
           ? mutation.target
           : mutation.target.parentElement
-
       return !target?.closest('#chatroom-messages')
     })
+    if (relevant.length === 0) return
 
-    if (relevant) {
-      scheduleReconcile()
+    if (
+      titleIsAttached() &&
+      (!panelOpen || panelHost?.isConnected) &&
+      !relevant.some(mutationMayChangeChatroom)
+    ) {
+      return
     }
+    scheduleReconcile()
   })
 
-  observer.observe(document.documentElement, {
-    attributeFilter: [
-      'aria-hidden',
-      'class',
-      'data-aria-hidden',
-      'data-testid',
-      'hidden',
-      'inert',
-      NATIVE_TITLE_ATTRIBUTE,
-      'role',
-      'style',
-    ],
-    attributes: true,
-    childList: true,
-    subtree: true,
-  })
   reconcile()
 
   return () => {
@@ -272,7 +254,7 @@ function startStatisticsUi(): Dispose {
     }
 
     stopped = true
-    observer.disconnect()
+    stopDomObserver()
     stopSnapshots()
     panelOpen = false
     updateRttSampling()
@@ -296,6 +278,8 @@ function installStyles() {
 
 function mutationMayChangeChatroom(mutation: MutationRecord) {
   if (mutation.type === 'attributes') {
+    if (mutation.attributeName === 'id') return true
+
     if (
       mutation.attributeName === 'data-testid' &&
       mutation.target instanceof Element

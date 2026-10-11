@@ -1,23 +1,13 @@
-import { classifyViewerCountEndpoint } from '../viewerCounts/acquisition/endpoints.ts'
 import {
-  isCapturedViewerCountMessage,
-  type CapturedViewerCountMessage,
-} from '../viewerCounts/model/types.ts'
+  readCapturedKickApiMessage,
+  type ApiCaptureEvent,
+  type ApiCaptureContext,
+} from '../../integrations/kick/apiCapture.ts'
 import { type FollowedGamblingChannels } from './followedChannels.ts'
 
-type CaptureEvent = Pick<MessageEvent<unknown>, 'data' | 'origin' | 'source'>
-
-type CaptureContext = Readonly<{
-  currentHref: string
-  currentOrigin: string
-  messageWindow: MessageEventSource
-  now?: number
-  pageWindow: MessageEventSource
-}>
-
 export function handleFollowedChannelsCapture(
-  event: CaptureEvent,
-  context: CaptureContext,
+  event: ApiCaptureEvent,
+  context: ApiCaptureContext,
   channels: FollowedGamblingChannels,
   onChange: () => void,
 ) {
@@ -38,31 +28,11 @@ export function handleFollowedChannelsCapture(
 }
 
 export function readFollowedChannelsCapture(
-  event: CaptureEvent,
-  context: CaptureContext,
-): CapturedViewerCountMessage | undefined {
-  if (
-    (event.source !== context.messageWindow &&
-      event.source !== context.pageWindow) ||
-    event.origin !== context.currentOrigin ||
-    !isCapturedViewerCountMessage(event.data)
-  ) {
-    return undefined
-  }
-
-  const message = event.data
-  const capturedAt = context.now ?? Date.now()
-
-  if (
-    message.endpoint !== 'FOLLOWED_CHANNELS' ||
-    classifyViewerCountEndpoint(message.url, context.currentHref) !==
-      message.endpoint ||
-    Math.abs(capturedAt - message.timestamp) > 60 * 1000
-  ) {
-    return undefined
-  }
-
-  return message
+  event: ApiCaptureEvent,
+  context: ApiCaptureContext,
+) {
+  const message = readCapturedKickApiMessage(event, context)
+  return message?.endpoint === 'FOLLOWED_CHANNELS' ? message : undefined
 }
 
 function getFollowedChannelsPageKey(rawUrl: string, baseUrl: string) {

@@ -3,6 +3,9 @@ import test from 'node:test'
 
 import { Browser } from 'happy-dom'
 
+import { ChatSocketAdapter } from '../../../src/features/chatStatistics/chatSocketAdapter.ts'
+import { KickChatAdapter } from '../../../src/features/chatStatistics/kickChatAdapter.ts'
+
 import { WebSocketTap } from '../../../src/features/chatStatistics/webSocketTap.ts'
 
 const BRIDGE_SOURCE = 'kick-enhancer-chat-statistics'
@@ -291,6 +294,86 @@ test('fails closed when page-context script execution is unavailable', async (t)
   assert.equal(host.WebSocket, FakeWebSocket)
   assert.equal(host.document.querySelector('script'), null)
   assert.equal(tap.ping(1), false)
+})
+
+test('filters idle publications, preserves mixed-batch controls, and resumes on existing sockets', async (t) => {
+  const { browser, host, page } = createPageHarness()
+  t.after(() => browser.close())
+  const { messageHost } = createMessageHostFacade(host)
+  // Match the browser's page-message source (happy-dom postMessage omits it).
+  messageHost.postMessage = (data) => {
+    page.evaluate(`window.dispatchEvent(new MessageEvent('message', {
+      data: ${JSON.stringify(data)}, origin: window.location.origin, source: window,
+    }))`)
+  }
+  const tap = new WebSocketTap(host, Date.now, messageHost)
+  const adapter = new ChatSocketAdapter()
+  const chat = new KickChatAdapter()
+  const events = []
+  const messages = []
+  tap.subscribe((event) => {
+    events.push(event)
+    messages.push(
+      ...adapter.accept(event).flatMap((decoded) => chat.accept(decoded)),
+    )
+  })
+  assert.equal(tap.install(), true)
+  page.evaluate(`window.__socket = new WebSocket('wss://example.test/chat')`)
+  const receive = async (...frames) => {
+    const data = frames.map((frame) => JSON.stringify(frame)).join('\n')
+    page.evaluate(
+      `window.__socket.dispatchEvent(new MessageEvent('message', { data: ${JSON.stringify(data)} }))`,
+    )
+    await browser.waitUntilComplete()
+  }
+  const channel = 'chatrooms.12.v2'
+  const message = {
+    event: 'App\\Events\\ChatMessageEvent',
+    channel,
+    data: JSON.stringify({
+      id: 1,
+      chatroom_id: 12,
+      type: 'message',
+      sender: { id: 2 },
+    }),
+  }
+  await receive({ event: 'pusher_internal:subscription_succeeded', channel })
+  assert.equal(messages.at(-1).type, 'sessionStarted')
+  events.length = 0
+  await receive(message, message)
+  assert.equal(events.length, 0)
+
+  tap.setCollectionEnabled(true)
+  await browser.waitUntilComplete()
+  await receive(message)
+  assert.equal(events.length, 1)
+  assert.equal(events[0].data, '')
+  assert.equal(messages.at(-1).type, 'message')
+  await receive({ ...message, channel: 'unrelated.12' })
+  assert.equal(events.length, 1)
+
+  tap.setCollectionEnabled(false)
+  await browser.waitUntilComplete()
+  events.length = 0
+  const publication = {
+    push: { channel, pub: { data: { event: message.event, data: {} } } },
+  }
+  await receive(
+    publication,
+    { id: 3, subscribe: {} },
+    { push: { channel, unsubscribe: {} } },
+  )
+  assert.equal(events.length, 1)
+  assert.equal(events[0].envelopes.length, 2)
+  assert.equal(events[0].envelopes[0].id, 3)
+  assert.ok(events[0].envelopes[1].push.unsubscribe)
+
+  tap.setCollectionEnabled(true)
+  await browser.waitUntilComplete()
+  events.length = 0
+  await receive(publication, { push: { channel: 'unrelated', pub: {} } })
+  assert.equal(events.length, 1)
+  assert.ok(events[0].envelopes[0].push.pub)
 })
 
 function createPageHarness() {

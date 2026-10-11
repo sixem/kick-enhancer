@@ -28,6 +28,7 @@ export class WebSocketTap {
   readonly #messageHost: WebSocketMessageHost
   readonly #channel = createBridgeChannel()
   #installed = false
+  #collectionEnabled = false
 
   constructor(
     host: WebSocketHost,
@@ -57,7 +58,7 @@ export class WebSocketTap {
       let installed = false
 
       try {
-        script.textContent = `try { (${installWebSocketPageHook.toString()})(${JSON.stringify(this.#channel)}) } catch {}`
+        script.textContent = `try { (${installWebSocketPageHook.toString()})(${JSON.stringify(this.#channel)}, ${this.#collectionEnabled}) } catch {}`
         installTarget.append(script)
         installed = script.getAttribute(INSTALL_RESULT_ATTRIBUTE) === 'true'
       } finally {
@@ -81,6 +82,22 @@ export class WebSocketTap {
       )
       return false
     }
+  }
+
+  setCollectionEnabled(enabled: boolean) {
+    if (this.#collectionEnabled === enabled) return
+    this.#collectionEnabled = enabled
+    if (!this.#installed) return
+
+    this.#messageHost.postMessage(
+      {
+        channel: this.#channel,
+        source: BRIDGE_SOURCE,
+        type: 'collection',
+        enabled,
+      },
+      this.#host.location.origin,
+    )
   }
 
   ping(socketId: number): boolean {
@@ -179,6 +196,9 @@ export class WebSocketTap {
 
       return {
         data: data.data,
+        ...(Array.isArray(data.envelopes) && data.envelopes.every(isRecord)
+          ? { envelopes: data.envelopes }
+          : {}),
         direction: data.direction,
         observedAt,
         socketId: data.socketId,

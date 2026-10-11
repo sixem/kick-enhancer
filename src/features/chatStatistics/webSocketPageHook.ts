@@ -1,4 +1,7 @@
-export function installWebSocketPageHook(channel: string) {
+export function installWebSocketPageHook(
+  channel: string,
+  collectMessages = false,
+) {
   const BRIDGE_SOURCE = 'kick-enhancer-chat-statistics'
   const INSTALL_RESULT_ATTRIBUTE = 'data-kick-enhancer-websocket-hook'
   const MAX_FRAME_LENGTH = 256 * 1024
@@ -40,6 +43,49 @@ export function installWebSocketPageHook(channel: string) {
     data: unknown,
   ) => {
     if (typeof data !== 'string' || data.length > MAX_FRAME_LENGTH) {
+      return
+    }
+
+    if (direction === 'incoming' && /"(?:event|pub)"\s*:/.test(data)) {
+      const envelopes: Record<string, unknown>[] = []
+      for (const line of data.split('\n')) {
+        let envelope: Record<string, unknown>
+        try {
+          const parsed: unknown = JSON.parse(line)
+          if (
+            typeof parsed !== 'object' ||
+            parsed === null ||
+            Array.isArray(parsed)
+          )
+            continue
+          envelope = parsed as Record<string, unknown>
+        } catch {
+          continue
+        }
+        const push = envelope.push
+        const publication =
+          typeof push === 'object' && push !== null && 'pub' in push
+        const eventName = envelope.event
+        const pusherEvent =
+          typeof eventName === 'string' &&
+          !eventName.startsWith('pusher:') &&
+          !eventName.startsWith('pusher_internal:')
+        if (publication || pusherEvent) {
+          if (!collectMessages) continue
+          const channelName =
+            publication && 'channel' in push ? push.channel : envelope.channel
+          if (
+            typeof channelName !== 'string' ||
+            !/^chatrooms\.\d+\.v2$/.test(channelName)
+          )
+            continue
+        }
+        envelopes.push(envelope)
+      }
+      // Keep native batches together and avoid cloning the raw payload too.
+      if (envelopes.length) {
+        post({ data: '', envelopes, direction, socketId, type: 'frame' })
+      }
       return
     }
 
@@ -180,9 +226,19 @@ export function installWebSocketPageHook(channel: string) {
 
       const command = data as Record<string, unknown>
 
+      if (command.source !== BRIDGE_SOURCE || command.channel !== channel) {
+        return
+      }
+
       if (
-        command.source !== BRIDGE_SOURCE ||
-        command.channel !== channel ||
+        command.type === 'collection' &&
+        typeof command.enabled === 'boolean'
+      ) {
+        collectMessages = command.enabled
+        return
+      }
+
+      if (
         command.type !== 'ping' ||
         !Number.isSafeInteger(command.socketId) ||
         (command.socketId as number) <= 0

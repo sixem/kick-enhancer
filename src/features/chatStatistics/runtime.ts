@@ -153,6 +153,7 @@ export class ChatStatisticsRuntime {
     }
 
     this.#collectionEnabled = enabled
+    this.#updateCapture()
     this.#rttTracker.clear()
     this.#statsStore.resetStatistics(this.#clock())
     if (enabled) {
@@ -206,10 +207,18 @@ export class ChatStatisticsRuntime {
 
   subscribeChatEvents(listener: ChatEventListener): Dispose {
     this.#chatEventListeners.add(listener)
+    this.#updateCapture()
 
     return () => {
       this.#chatEventListeners.delete(listener)
+      this.#updateCapture()
     }
+  }
+
+  #updateCapture() {
+    this.#webSocketTap.setCollectionEnabled(
+      this.#collectionEnabled || this.#chatEventListeners.size > 0,
+    )
   }
 
   #publish() {

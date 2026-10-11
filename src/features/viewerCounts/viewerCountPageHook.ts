@@ -1,9 +1,9 @@
-import type { ViewerCountEndpoint } from './model/types.ts'
+import type { KickApiEndpoint } from '../../integrations/kick/endpoints.ts'
 
 type ClassifyEndpoint = (
   rawUrl: string,
   baseUrl?: string,
-) => ViewerCountEndpoint | undefined
+) => KickApiEndpoint | undefined
 
 export function installViewerCountPageHook(classifyEndpoint: ClassifyEndpoint) {
   const INSTALL_RESULT_ATTRIBUTE = 'data-kick-enhancer-viewer-count-hook'

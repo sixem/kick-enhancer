@@ -1,21 +1,18 @@
 import { unsafeWindow } from '$'
 
+import { observeOutsideSubtrees } from '../../dom/observeOutsideSubtrees'
 import { onDocumentElementReady } from '../../dom/onDocumentElementReady'
 import { type Dispose } from '../../lifecycle'
 import { createLogger } from '../../logging/logger'
 import { getSettings, subscribeSettings } from '../../settings/settings'
 import { applyStyleToggle } from '../shared/styleToggle'
 import { ViewerCountAcquisition } from './acquisition/acquisition'
-import { classifyViewerCountEndpoint } from './acquisition/endpoints'
+import { readCapturedKickApiMessage } from '../../integrations/kick/apiCapture'
 import { installViewerCountCaptureBridge } from './capture'
 import { recordViewerEndpointObservation } from './diagnostics'
 import { normalizeViewerCountPayload } from './model/normalize'
 import { getChannelSlugFromHref } from './model/slug'
 import { ViewerCountStore } from './model/store'
-import {
-  isCapturedViewerCountMessage,
-  type CapturedViewerCountMessage,
-} from './model/types'
 import {
   cleanupViewerCountDom,
   renderViewerCounts,
@@ -46,7 +43,7 @@ let historyPushStateWrapper: History['pushState'] | undefined
 let historyReplaceStateWrapper: History['replaceState'] | undefined
 let lastLogCounts: ViewerCountRenderResult['counts'] | undefined
 let lastUrl = window.location.href
-let observer: MutationObserver | undefined
+let stopDomObserver: Dispose | undefined
 let renderDeadline = Number.POSITIVE_INFINITY
 let renderReason = ''
 let renderTimer: number | undefined
@@ -181,8 +178,8 @@ function deactivateFeatureDom() {
 
   domFeatureActive = false
   acquisition.stop()
-  observer?.disconnect()
-  observer = undefined
+  stopDomObserver?.()
+  stopDomObserver = undefined
   uninstallRouteObserver()
   document.removeEventListener('pointerover', handleSidebarHover, true)
   document.removeEventListener('pointerout', handleSidebarHoverEnd, true)
@@ -230,24 +227,14 @@ function clearUptimeRefreshTimer() {
 }
 
 function handleCaptureMessage(event: MessageEvent<unknown>) {
-  if (
-    (event.source !== window && event.source !== unsafeWindow) ||
-    event.origin !== window.location.origin ||
-    !isCapturedViewerCountMessage(event.data)
-  ) {
-    return
-  }
+  const message = readCapturedKickApiMessage(event, {
+    currentHref: window.location.href,
+    currentOrigin: window.location.origin,
+    messageWindow: window,
+    pageWindow: unsafeWindow,
+  })
 
-  const message: CapturedViewerCountMessage = event.data
-  const classifiedEndpoint = classifyViewerCountEndpoint(
-    message.url,
-    window.location.href,
-  )
-
-  if (
-    classifiedEndpoint !== message.endpoint ||
-    Math.abs(Date.now() - message.timestamp) > 60 * 1000
-  ) {
+  if (!message) {
     return
   }
 
@@ -302,27 +289,28 @@ function handleCaptureMessage(event: MessageEvent<unknown>) {
 }
 
 function installDomObserver() {
-  if (observer || !document.documentElement) {
+  if (stopDomObserver || !document.documentElement) {
     return
   }
 
-  observer = new MutationObserver((mutations) => {
-    if (window.location.href !== lastUrl) {
-      handleRouteChange()
-    }
-
-    if (mutations.some((mutation) => !isIgnoredMutation(mutation))) {
-      scheduleRender('mutation')
-    }
-  })
-
-  observer.observe(document.documentElement, {
-    attributeFilter: ['data-sidebar', 'data-testid', 'href'],
-    attributes: true,
-    characterData: true,
-    childList: true,
-    subtree: true,
-  })
+  stopDomObserver = observeOutsideSubtrees(
+    document.documentElement,
+    ['channel-chatroom'],
+    {
+      attributeFilter: ['data-sidebar', 'data-testid', 'href'],
+      attributes: true,
+      characterData: true,
+      childList: true,
+    },
+    (mutations) => {
+      if (window.location.href !== lastUrl) {
+        handleRouteChange()
+      }
+      if (mutations.some((mutation) => !isIgnoredMutation(mutation))) {
+        scheduleRender('mutation')
+      }
+    },
+  )
 }
 
 function scheduleRender(reason: string, delay = RENDER_DELAY_MS) {

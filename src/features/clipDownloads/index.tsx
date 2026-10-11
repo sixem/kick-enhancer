@@ -1,5 +1,6 @@
 import { render } from 'preact'
 
+import { observeOutsideSubtrees } from '../../dom/observeOutsideSubtrees'
 import { onDocumentElementReady } from '../../dom/onDocumentElementReady'
 import { type Dispose } from '../../lifecycle'
 import { createLogger } from '../../logging/logger'
@@ -70,7 +71,7 @@ export function startClipDownloadActions(
 ): Dispose {
   stopActiveIntegration?.()
 
-  let observer: MutationObserver | undefined
+  let stopActionObserver: Dispose | undefined
   let actionsVisible = getSettings().ui.showClipDownloadButtons
   let directActionClipId: string | undefined
   let directActionHost: HTMLSpanElement | undefined
@@ -299,24 +300,28 @@ export function startClipDownloadActions(
   }
 
   function connectActionObserver() {
-    if (stopped || !actionsVisible || observer || !document.documentElement) {
+    if (
+      stopped ||
+      !actionsVisible ||
+      stopActionObserver ||
+      !document.documentElement
+    ) {
       return
     }
 
     lastUrl = window.location.href
     reconcileExistingActions()
-    observer = new MutationObserver(handleMutations)
-    observer.observe(document.documentElement, {
-      attributeFilter: ['href'],
-      attributes: true,
-      childList: true,
-      subtree: true,
-    })
+    stopActionObserver = observeOutsideSubtrees(
+      document.documentElement,
+      ['channel-chatroom'],
+      { attributeFilter: ['href'], attributes: true, childList: true },
+      handleMutations,
+    )
   }
 
   function disconnectActionObserver() {
-    observer?.disconnect()
-    observer = undefined
+    stopActionObserver?.()
+    stopActionObserver = undefined
     reconciler.teardown()
     removeDirectClipAction()
   }

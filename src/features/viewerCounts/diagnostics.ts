@@ -5,9 +5,9 @@ import {
 } from './model/normalize.ts'
 import { requestViewerJson } from './acquisition/network.ts'
 import { normalizeChannelSlug } from './model/slug.ts'
-import type { ViewerCountEndpoint } from './model/types.ts'
+import type { KickApiEndpoint } from '../../integrations/kick/endpoints.ts'
 
-export const VIEWER_COUNT_ENDPOINTS: readonly ViewerCountEndpoint[] = [
+export const VIEWER_COUNT_ENDPOINTS: readonly KickApiEndpoint[] = [
   'CHANNEL_DETAILS',
   'CURRENT_VIEWERS',
   'FOLLOWED_CHANNELS',
@@ -19,7 +19,7 @@ export const VIEWER_COUNT_ENDPOINTS: readonly ViewerCountEndpoint[] = [
 ]
 
 export const VIEWER_COUNT_ENDPOINT_LABELS: Readonly<
-  Record<ViewerCountEndpoint, string>
+  Record<KickApiEndpoint, string>
 > = {
   CHANNEL_DETAILS: 'Channel details',
   CURRENT_VIEWERS: 'Current viewers',
@@ -32,7 +32,7 @@ export const VIEWER_COUNT_ENDPOINT_LABELS: Readonly<
 }
 
 export type EndpointObservation = Readonly<{
-  endpoint: ViewerCountEndpoint
+  endpoint: KickApiEndpoint
   hiddenViewerCounts: number
   observedAt: number
   records: number
@@ -57,12 +57,12 @@ type ObservationListener = (
 
 const OBSERVATION_NOTIFY_INTERVAL_MS = 200
 const log = createLogger('diagnostics')
-const observations = new Map<ViewerCountEndpoint, EndpointObservation>()
+const observations = new Map<KickApiEndpoint, EndpointObservation>()
 const observationListeners = new Set<ObservationListener>()
 let observationNotifyTimer: ReturnType<typeof setTimeout> | undefined
 
 export function recordViewerEndpointObservation(
-  endpoint: ViewerCountEndpoint,
+  endpoint: KickApiEndpoint,
   normalized: NormalizedViewerCountPayload,
   observedAt: number,
   source: EndpointObservation['source'],

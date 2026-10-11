@@ -1,7 +1,7 @@
 import { unsafeWindow } from '$'
 
 import { createLogger } from '../../logging/logger'
-import { classifyViewerCountEndpoint } from './acquisition/endpoints.ts'
+import { classifyKickApiEndpoint } from '../../integrations/kick/endpoints.ts'
 import { installViewerCountPageHook } from './viewerCountPageHook.ts'
 
 const log = createLogger('viewer-counts:capture')
@@ -21,7 +21,7 @@ export function installViewerCountCaptureBridge() {
     let installed = false
 
     try {
-      script.textContent = `try { (${installViewerCountPageHook.toString()})((${classifyViewerCountEndpoint.toString()})) } catch {}`
+      script.textContent = `try { (${installViewerCountPageHook.toString()})((${classifyKickApiEndpoint.toString()})) } catch {}`
       installTarget.append(script)
       installed = script.getAttribute(INSTALL_RESULT_ATTRIBUTE) === 'true'
     } finally {

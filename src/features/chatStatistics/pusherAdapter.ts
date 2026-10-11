@@ -2,6 +2,9 @@ import { type ChatSocketEvent, type WebSocketTapEvent } from './types.ts'
 
 export function decodePusherEvent(
   event: WebSocketTapEvent,
+  envelope = event.type === 'frame' && typeof event.data === 'string'
+    ? parseRecord(event.data)
+    : null,
 ): ChatSocketEvent | null {
   if (event.type === 'closed') {
     return {
@@ -14,8 +17,6 @@ export function decodePusherEvent(
   if (event.type !== 'frame' || typeof event.data !== 'string') {
     return null
   }
-
-  const envelope = parseRecord(event.data)
 
   if (!envelope || typeof envelope.event !== 'string') {
     return null

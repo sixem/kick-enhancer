@@ -83,6 +83,7 @@ test('bounds and deduplicates the cache across room lifecycle changes', async ()
   source.emit(deletion('message-1', '1'))
   source.emit(deletion('message-2', '1'))
   source.emit(deletion('message-3', '1'))
+  await browser.happyDOM.waitUntilComplete()
 
   assert.equal(firstRow.querySelector('.ke-restored-deleted-message'), null)
   assert.equal(
@@ -95,6 +96,7 @@ test('bounds and deduplicates the cache across room lifecycle changes', async ()
   )
 
   controller.setCapacity(1)
+  await browser.happyDOM.waitUntilComplete()
   assert.equal(secondRow.querySelector('.ke-restored-deleted-message'), null)
   assert.equal(
     thirdRow.querySelectorAll('.ke-restored-deleted-message').length,
@@ -121,6 +123,7 @@ test('bounds and deduplicates the cache across room lifecycle changes', async ()
   const staleRow = createDeletedRow(browser.document, 'message-3')
   surface.append(staleRow)
   source.emit(deletion('message-3', '2'))
+  await browser.happyDOM.waitUntilComplete()
   assert.equal(staleRow.querySelector('.ke-restored-deleted-message'), null)
 
   controller.setEnabled(false)
@@ -128,7 +131,7 @@ test('bounds and deduplicates the cache across room lifecycle changes', async ()
   browser.close()
 })
 
-test('removes restored content when its cached message is evicted', () => {
+test('removes restored content when its cached message is evicted', async () => {
   const browser = new Window()
   const source = new FakeChatEventSource()
   const surface = mountChatroom(browser.document)
@@ -140,12 +143,14 @@ test('removes restored content when its cached message is evicted', () => {
   controller.setEnabled(true)
   source.emit(message('message-1', 'restored', '1'))
   source.emit(deletion('message-1', '1'))
+  await browser.happyDOM.waitUntilComplete()
   assert.equal(
     row.querySelector('.ke-restored-deleted-message')?.textContent,
     'restored',
   )
 
   source.emit(message('message-2', 'newest', '1'))
+  await browser.happyDOM.waitUntilComplete()
   assert.equal(row.querySelector('.ke-restored-deleted-message'), null)
 
   controller.dispose()
@@ -161,6 +166,7 @@ test('reconciles virtual and native updates, then clears cached content on disab
   controller.setEnabled(true)
   source.emit(message('message-1', 'restored', '1'))
   source.emit(deletion('message-1', '1'))
+  await browser.happyDOM.waitUntilComplete()
 
   const remountedRow = createDeletedRow(browser.document, 'message-1')
   surface.append(remountedRow)
@@ -180,6 +186,7 @@ test('reconciles virtual and native updates, then clears cached content on disab
   surface.append(pendingNativeRow)
   source.emit(message('message-2', 'pending native update', '1'))
   source.emit(deletion('message-2', '1'))
+  await browser.happyDOM.waitUntilComplete()
   assert.equal(
     pendingNativeRow.querySelector('.ke-restored-deleted-message'),
     null,
@@ -217,7 +224,7 @@ test('reconciles virtual and native updates, then clears cached content on disab
   browser.close()
 })
 
-test('rebinds to the visible SPA chat surface before restoring', () => {
+test('rebinds to the visible SPA chat surface before restoring', async () => {
   const browser = new Window()
   const source = new FakeChatEventSource()
   const visibleSurface = mountChatroom(browser.document)
@@ -236,6 +243,7 @@ test('rebinds to the visible SPA chat surface before restoring', () => {
   visibleSurface.append(visibleRow)
   oldSurface.append(hiddenRow)
   source.emit(deletion('message-1', '1'))
+  await browser.happyDOM.waitUntilComplete()
 
   assert.equal(
     visibleRow.querySelector('.ke-restored-deleted-message')?.textContent,
@@ -288,6 +296,7 @@ test('rebinds when the active chatroom replaces its virtual surface', async () =
   controller.setEnabled(true)
   source.emit(message('message-1', 'restored', '1'))
   source.emit(deletion('message-1', '1'))
+  await browser.happyDOM.waitUntilComplete()
 
   const replacement = browser.document.createElement('div')
   replacement.id = 'chatroom-messages'
@@ -308,7 +317,7 @@ test('rebinds when the active chatroom replaces its virtual surface', async () =
   browser.close()
 })
 
-test('rebinds on the next message after the active chatroom root is replaced', () => {
+test('rebinds on the next message after the active chatroom root is replaced', async () => {
   const browser = new Window()
   const source = new FakeChatEventSource()
   const surface = mountChatroom(browser.document)
@@ -317,6 +326,7 @@ test('rebinds on the next message after the active chatroom root is replaced', (
   controller.setEnabled(true)
   source.emit(message('message-1', 'restored', '1'))
   source.emit(deletion('message-1', '1'))
+  await browser.happyDOM.waitUntilComplete()
 
   surface.parentElement.remove()
 
@@ -325,12 +335,159 @@ test('rebinds on the next message after the active chatroom root is replaced', (
   replacementSurface.append(replacementRow)
 
   source.emit(message('message-2', 'rebind trigger', '1'))
+  await browser.happyDOM.waitUntilComplete()
   assert.equal(
     replacementRow.querySelector('.ke-restored-deleted-message')?.textContent,
     'restored',
   )
 
   controller.dispose()
+  browser.close()
+})
+
+test('batches only affected rows and does not observe its own restoration writes', async () => {
+  const browser = new Window()
+  const source = new FakeChatEventSource()
+  const surface = mountChatroom(browser.document)
+  let rowReads = 0
+  const rows = Array.from({ length: 100 }, (_, index) => {
+    const row = createDeletedRow(browser.document, `message-${index}`)
+    const props = row.__reactProps$fixture
+    Object.defineProperty(row, '__reactProps$fixture', {
+      get() {
+        rowReads += 1
+        return props
+      },
+    })
+    surface.append(row)
+    return row
+  })
+  const controller = new DeletedMessagesController(source, browser.document)
+  controller.setCapacity(250)
+  controller.setEnabled(true)
+  await browser.happyDOM.waitUntilComplete()
+  rowReads = 0
+
+  // An empty cache still needs to track recycled row identities, but only
+  // the changed row should be inspected once for this mutation batch.
+  const marker = rows[0].querySelector('.font-semibold')
+  marker.textContent = 'first update'
+  marker.textContent = 'second update'
+  marker.textContent = 'third update'
+  await browser.happyDOM.waitUntilComplete()
+  assert.equal(rowReads, 1)
+
+  rowReads = 0
+  for (let index = 0; index < 100; index += 1) {
+    marker.firstChild.data = `update-${index}`
+    await browser.happyDOM.waitUntilComplete()
+  }
+  assert.equal(rowReads, 100)
+
+  rowReads = 0
+  source.emit(message('message-0', 'restored', '1'))
+  source.emit(deletion('message-0', '1'))
+  source.emit(deletion('message-0', '1'))
+  await browser.happyDOM.waitUntilComplete()
+  assert.equal(rowReads, 1)
+  assert.equal(
+    rows[0].querySelector('.ke-restored-deleted-message')?.textContent,
+    'restored',
+  )
+
+  rowReads = 0
+  controller.setCapacity(0)
+  await browser.happyDOM.waitUntilComplete()
+  assert.equal(rowReads, 1)
+  assert.equal(rows[0].querySelector('.ke-restored-deleted-message'), null)
+  controller.dispose()
+  browser.close()
+})
+
+test('tracks added subtrees, recycled rows and externally removed restorations', async () => {
+  const browser = new Window()
+  const source = new FakeChatEventSource()
+  const surface = mountChatroom(browser.document)
+  const controller = new DeletedMessagesController(source, browser.document)
+  controller.setCapacity(50)
+  controller.setEnabled(true)
+  source.emit(message('message-1', 'first', '1'))
+  source.emit(deletion('message-1', '1'))
+  const wrapper = browser.document.createElement('div')
+  const row = createDeletedRow(browser.document, 'message-1')
+  wrapper.append(row)
+  surface.append(wrapper)
+  await browser.happyDOM.waitUntilComplete()
+  assert.equal(
+    row.querySelector('.ke-restored-deleted-message')?.textContent,
+    'first',
+  )
+
+  row.querySelector('.ke-restored-deleted-message').remove()
+  await browser.happyDOM.waitUntilComplete()
+  assert.equal(
+    row.querySelector('.ke-restored-deleted-message')?.textContent,
+    'first',
+  )
+
+  setChatEntry(row, {
+    type: 'message',
+    data: { id: 'message-2', ui_metadata: { deleted: 'user_deleted' } },
+  })
+  row.querySelector('.font-semibold').textContent = 'Recycled row'
+  source.emit(message('message-2', 'second', '1'))
+  source.emit(deletion('message-2', '1'))
+  await browser.happyDOM.waitUntilComplete()
+  assert.equal(
+    row.querySelector('.ke-restored-deleted-message')?.textContent,
+    'second',
+  )
+
+  // A detached subtree must leave the message index, even if retained by KICK.
+  wrapper.remove()
+  await browser.happyDOM.waitUntilComplete()
+  Object.defineProperty(row, '__reactProps$fixture', {
+    get() {
+      throw new Error('Detached rows must not be inspected')
+    },
+  })
+  source.emit(deletion('message-2', '1'))
+  await browser.happyDOM.waitUntilComplete()
+  controller.dispose()
+  browser.close()
+})
+
+test('preserves pending native mutations and cancels queued work on disable', async () => {
+  const browser = new Window()
+  const source = new FakeChatEventSource()
+  const surface = mountChatroom(browser.document)
+  const first = createDeletedRow(browser.document, 'message-1')
+  const second = createDeletedRow(browser.document, 'message-2', false, false)
+  surface.append(first, second)
+  const controller = new DeletedMessagesController(source, browser.document)
+  controller.setCapacity(50)
+  controller.setEnabled(true)
+  source.emit(message('message-1', 'first', '1'))
+  source.emit(message('message-2', 'second', '1'))
+  source.emit(deletion('message-1', '1'))
+  source.emit(deletion('message-2', '1'))
+  // These native records are still pending when the event-scheduled flush runs.
+  setChatEntry(second, {
+    type: 'message',
+    data: { id: 'message-2', ui_metadata: { deleted: 'user_deleted' } },
+  })
+  second.querySelector('.font-semibold').textContent = 'Native deletion'
+  await browser.happyDOM.waitUntilComplete()
+  assert.equal(
+    second.querySelector('.ke-restored-deleted-message')?.textContent,
+    'second',
+  )
+
+  source.emit(deletion('message-1', '1'))
+  controller.setEnabled(false)
+  await browser.happyDOM.waitUntilComplete()
+  assert.equal(surface.querySelector('.ke-restored-deleted-message'), null)
+  assert.equal(source.subscriberCount, 0)
   browser.close()
 })
 

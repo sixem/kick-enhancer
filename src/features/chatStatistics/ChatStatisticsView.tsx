@@ -64,7 +64,13 @@ export function ChatStatisticsTrigger({
           data-tone={trend.tone}
         >
           {trend.direction}
-          <AnimatedNumber value={trend.value} />%
+          {trend.value === null ? (
+            ' from 0'
+          ) : (
+            <>
+              <AnimatedNumber value={trend.value} />%
+            </>
+          )}
         </span>
       ) : null}
     </button>
@@ -145,7 +151,14 @@ export function ChatStatisticsCard({
                 className="ke-chat-statistics-card__trend"
                 data-tone={trend.tone}
               >
-                {trend.direction} <AnimatedNumber value={trend.value} />%
+                {trend.direction}{' '}
+                {trend.value === null ? (
+                  'from 0'
+                ) : (
+                  <>
+                    <AnimatedNumber value={trend.value} />%
+                  </>
+                )}
               </span>
             ) : null}
           </div>
@@ -206,7 +219,8 @@ export function ChatStatisticsCard({
 
 function formatTrend(value: number | null) {
   if (value === null) {
-    return null
+    // After calibration, null means activity increased from a zero baseline.
+    return { direction: '↑', tone: 'positive', value: null }
   }
 
   if (value > 0) {
